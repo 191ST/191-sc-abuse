@@ -215,9 +215,9 @@ MSSafetyContent.Size = UDim2.new(1,0,1,0)
 MSSafetyContent.BackgroundTransparency = 1
 MSSafetyContent.Visible = false
 MSSafetyContent.ScrollBarThickness = 6
-MSSafetyContent.CanvasSize = UDim2.new(0,0,0,300)
+MSSafetyContent.CanvasSize = UDim2.new(0,0,0,400) -- Diperbesar untuk 3 tombol
 
--- Title MS Safety - TETAP "DARI RK"
+-- Title MS Safety
 local MSSafetyTitle = Instance.new("TextLabel")
 MSSafetyTitle.Parent = MSSafetyContent
 MSSafetyTitle.Size = UDim2.new(1,-20,0,40)
@@ -229,13 +229,13 @@ MSSafetyTitle.TextXAlignment = Enum.TextXAlignment.Left
 MSSafetyTitle.Font = Enum.Font.GothamBold
 MSSafetyTitle.TextSize = 24
 
--- Description - 5 STUDS
+-- Description
 local MSSafetyDesc = Instance.new("TextLabel")
 MSSafetyDesc.Parent = MSSafetyContent
 MSSafetyDesc.Size = UDim2.new(1,-20,0,30)
 MSSafetyDesc.Position = UDim2.new(0,10,0,60)
 MSSafetyDesc.BackgroundTransparency = 1
-MSSafetyDesc.Text = "Blink 5 studs (langsung pindah, tidak balik)"
+MSSafetyDesc.Text = "Blink 5 studs (berdasarkan arah hadap)"
 MSSafetyDesc.TextColor3 = Color3.fromRGB(200,200,200)
 MSSafetyDesc.TextXAlignment = Enum.TextXAlignment.Left
 MSSafetyDesc.Font = Enum.Font.Gotham
@@ -244,7 +244,7 @@ MSSafetyDesc.TextSize = 14
 -- ===== BLINK KE BAWAH =====
 local BlinkDownFrame = Instance.new("Frame")
 BlinkDownFrame.Parent = MSSafetyContent
-BlinkDownFrame.Size = UDim2.new(1,-20,0,100)
+BlinkDownFrame.Size = UDim2.new(1,-20,0,80)
 BlinkDownFrame.Position = UDim2.new(0,10,0,100)
 BlinkDownFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
 BlinkDownFrame.BorderSizePixel = 0
@@ -268,7 +268,7 @@ BlinkDownIcon.TextColor3 = Color3.fromRGB(255,255,255)
 local BlinkDownTitle = Instance.new("TextLabel")
 BlinkDownTitle.Parent = BlinkDownFrame
 BlinkDownTitle.Size = UDim2.new(1,-120,0,30)
-BlinkDownTitle.Position = UDim2.new(0,70,0,15)
+BlinkDownTitle.Position = UDim2.new(0,70,0,10)
 BlinkDownTitle.BackgroundTransparency = 1
 BlinkDownTitle.Text = "BLINK KE BAWAH"
 BlinkDownTitle.TextColor3 = Color3.fromRGB(255,255,255)
@@ -276,13 +276,13 @@ BlinkDownTitle.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownTitle.Font = Enum.Font.GothamBold
 BlinkDownTitle.TextSize = 18
 
--- Description - 5 STUDS
+-- Description
 local BlinkDownDesc = Instance.new("TextLabel")
 BlinkDownDesc.Parent = BlinkDownFrame
 BlinkDownDesc.Size = UDim2.new(1,-120,0,20)
-BlinkDownDesc.Position = UDim2.new(0,70,0,45)
+BlinkDownDesc.Position = UDim2.new(0,70,0,40)
 BlinkDownDesc.BackgroundTransparency = 1
-BlinkDownDesc.Text = "Turun 5 studs (langsung pindah)"
+BlinkDownDesc.Text = "Turun 5 studs"
 BlinkDownDesc.TextColor3 = Color3.fromRGB(180,180,180)
 BlinkDownDesc.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownDesc.Font = Enum.Font.Gotham
@@ -303,75 +303,137 @@ local BlinkDownBtnCorner = Instance.new("UICorner")
 BlinkDownBtnCorner.Parent = BlinkDownBtn
 BlinkDownBtnCorner.CornerRadius = UDim.new(0,8)
 
--- ===== BLINK KE DEPAN =====
-local BlinkForwardFrame = Instance.new("Frame")
-BlinkForwardFrame.Parent = MSSafetyContent
-BlinkForwardFrame.Size = UDim2.new(1,-20,0,100)
-BlinkForwardFrame.Position = UDim2.new(0,10,0,210)
-BlinkForwardFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
-BlinkForwardFrame.BorderSizePixel = 0
+-- ===== BLINK MAJU (DEPAN) =====
+local BlinkMajuFrame = Instance.new("Frame")
+BlinkMajuFrame.Parent = MSSafetyContent
+BlinkMajuFrame.Size = UDim2.new(1,-20,0,80)
+BlinkMajuFrame.Position = UDim2.new(0,10,0,190)
+BlinkMajuFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+BlinkMajuFrame.BorderSizePixel = 0
 
-local BlinkForwardCorner = Instance.new("UICorner")
-BlinkForwardCorner.Parent = BlinkForwardFrame
-BlinkForwardCorner.CornerRadius = UDim.new(0,10)
+local BlinkMajuCorner = Instance.new("UICorner")
+BlinkMajuCorner.Parent = BlinkMajuFrame
+BlinkMajuCorner.CornerRadius = UDim.new(0,10)
 
 -- Icon
-local BlinkForwardIcon = Instance.new("TextLabel")
-BlinkForwardIcon.Parent = BlinkForwardFrame
-BlinkForwardIcon.Size = UDim2.new(0,50,1,0)
-BlinkForwardIcon.Position = UDim2.new(0,10,0,0)
-BlinkForwardIcon.BackgroundTransparency = 1
-BlinkForwardIcon.Text = "⬆️"
-BlinkForwardIcon.TextSize = 40
-BlinkForwardIcon.Font = Enum.Font.GothamBold
-BlinkForwardIcon.TextColor3 = Color3.fromRGB(255,255,255)
+local BlinkMajuIcon = Instance.new("TextLabel")
+BlinkMajuIcon.Parent = BlinkMajuFrame
+BlinkMajuIcon.Size = UDim2.new(0,50,1,0)
+BlinkMajuIcon.Position = UDim2.new(0,10,0,0)
+BlinkMajuIcon.BackgroundTransparency = 1
+BlinkMajuIcon.Text = "⬆️"
+BlinkMajuIcon.TextSize = 40
+BlinkMajuIcon.Font = Enum.Font.GothamBold
+BlinkMajuIcon.TextColor3 = Color3.fromRGB(255,255,255)
 
 -- Title
-local BlinkForwardTitle = Instance.new("TextLabel")
-BlinkForwardTitle.Parent = BlinkForwardFrame
-BlinkForwardTitle.Size = UDim2.new(1,-120,0,30)
-BlinkForwardTitle.Position = UDim2.new(0,70,0,15)
-BlinkForwardTitle.BackgroundTransparency = 1
-BlinkForwardTitle.Text = "BLINK KE DEPAN"
-BlinkForwardTitle.TextColor3 = Color3.fromRGB(255,255,255)
-BlinkForwardTitle.TextXAlignment = Enum.TextXAlignment.Left
-BlinkForwardTitle.Font = Enum.Font.GothamBold
-BlinkForwardTitle.TextSize = 18
+local BlinkMajuTitle = Instance.new("TextLabel")
+BlinkMajuTitle.Parent = BlinkMajuFrame
+BlinkMajuTitle.Size = UDim2.new(1,-120,0,30)
+BlinkMajuTitle.Position = UDim2.new(0,70,0,10)
+BlinkMajuTitle.BackgroundTransparency = 1
+BlinkMajuTitle.Text = "BLINK MAJU (DEPAN)"
+BlinkMajuTitle.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkMajuTitle.TextXAlignment = Enum.TextXAlignment.Left
+BlinkMajuTitle.Font = Enum.Font.GothamBold
+BlinkMajuTitle.TextSize = 18
 
--- Description - 5 STUDS
-local BlinkForwardDesc = Instance.new("TextLabel")
-BlinkForwardDesc.Parent = BlinkForwardFrame
-BlinkForwardDesc.Size = UDim2.new(1,-120,0,20)
-BlinkForwardDesc.Position = UDim2.new(0,70,0,45)
-BlinkForwardDesc.BackgroundTransparency = 1
-BlinkForwardDesc.Text = "Maju 5 studs (langsung pindah)"
-BlinkForwardDesc.TextColor3 = Color3.fromRGB(180,180,180)
-BlinkForwardDesc.TextXAlignment = Enum.TextXAlignment.Left
-BlinkForwardDesc.Font = Enum.Font.Gotham
-BlinkForwardDesc.TextSize = 12
+-- Description
+local BlinkMajuDesc = Instance.new("TextLabel")
+BlinkMajuDesc.Parent = BlinkMajuFrame
+BlinkMajuDesc.Size = UDim2.new(1,-120,0,20)
+BlinkMajuDesc.Position = UDim2.new(0,70,0,40)
+BlinkMajuDesc.BackgroundTransparency = 1
+BlinkMajuDesc.Text = "Maju 5 studs (arah hadap)"
+BlinkMajuDesc.TextColor3 = Color3.fromRGB(180,180,180)
+BlinkMajuDesc.TextXAlignment = Enum.TextXAlignment.Left
+BlinkMajuDesc.Font = Enum.Font.Gotham
+BlinkMajuDesc.TextSize = 12
 
--- Button Blink Forward
-local BlinkForwardBtn = Instance.new("TextButton")
-BlinkForwardBtn.Parent = BlinkForwardFrame
-BlinkForwardBtn.Size = UDim2.new(0,40,0,40)
-BlinkForwardBtn.Position = UDim2.new(1,-50,0.5,-20)
-BlinkForwardBtn.BackgroundColor3 = Color3.fromRGB(0,150,200)
-BlinkForwardBtn.Text = "▶️"
-BlinkForwardBtn.TextColor3 = Color3.fromRGB(255,255,255)
-BlinkForwardBtn.TextSize = 20
-BlinkForwardBtn.Font = Enum.Font.GothamBold
+-- Button Blink Maju
+local BlinkMajuBtn = Instance.new("TextButton")
+BlinkMajuBtn.Parent = BlinkMajuFrame
+BlinkMajuBtn.Size = UDim2.new(0,40,0,40)
+BlinkMajuBtn.Position = UDim2.new(1,-50,0.5,-20)
+BlinkMajuBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+BlinkMajuBtn.Text = "▶️"
+BlinkMajuBtn.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkMajuBtn.TextSize = 20
+BlinkMajuBtn.Font = Enum.Font.GothamBold
 
-local BlinkForwardBtnCorner = Instance.new("UICorner")
-BlinkForwardBtnCorner.Parent = BlinkForwardBtn
-BlinkForwardBtnCorner.CornerRadius = UDim.new(0,8)
+local BlinkMajuBtnCorner = Instance.new("UICorner")
+BlinkMajuBtnCorner.Parent = BlinkMajuBtn
+BlinkMajuBtnCorner.CornerRadius = UDim.new(0,8)
+
+-- ===== BLINK MUNDUR (BELAKANG) =====
+local BlinkMundurFrame = Instance.new("Frame")
+BlinkMundurFrame.Parent = MSSafetyContent
+BlinkMundurFrame.Size = UDim2.new(1,-20,0,80)
+BlinkMundurFrame.Position = UDim2.new(0,10,0,280)
+BlinkMundurFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+BlinkMundurFrame.BorderSizePixel = 0
+
+local BlinkMundurCorner = Instance.new("UICorner")
+BlinkMundurCorner.Parent = BlinkMundurFrame
+BlinkMundurCorner.CornerRadius = UDim.new(0,10)
+
+-- Icon
+local BlinkMundurIcon = Instance.new("TextLabel")
+BlinkMundurIcon.Parent = BlinkMundurFrame
+BlinkMundurIcon.Size = UDim2.new(0,50,1,0)
+BlinkMundurIcon.Position = UDim2.new(0,10,0,0)
+BlinkMundurIcon.BackgroundTransparency = 1
+BlinkMundurIcon.Text = "⬇️"
+BlinkMundurIcon.TextSize = 40
+BlinkMundurIcon.Font = Enum.Font.GothamBold
+BlinkMundurIcon.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- Title
+local BlinkMundurTitle = Instance.new("TextLabel")
+BlinkMundurTitle.Parent = BlinkMundurFrame
+BlinkMundurTitle.Size = UDim2.new(1,-120,0,30)
+BlinkMundurTitle.Position = UDim2.new(0,70,0,10)
+BlinkMundurTitle.BackgroundTransparency = 1
+BlinkMundurTitle.Text = "BLINK MUNDUR (BELAKANG)"
+BlinkMundurTitle.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkMundurTitle.TextXAlignment = Enum.TextXAlignment.Left
+BlinkMundurTitle.Font = Enum.Font.GothamBold
+BlinkMundurTitle.TextSize = 18
+
+-- Description
+local BlinkMundurDesc = Instance.new("TextLabel")
+BlinkMundurDesc.Parent = BlinkMundurFrame
+BlinkMundurDesc.Size = UDim2.new(1,-120,0,20)
+BlinkMundurDesc.Position = UDim2.new(0,70,0,40)
+BlinkMundurDesc.BackgroundTransparency = 1
+BlinkMundurDesc.Text = "Mundur 5 studs"
+BlinkMundurDesc.TextColor3 = Color3.fromRGB(180,180,180)
+BlinkMundurDesc.TextXAlignment = Enum.TextXAlignment.Left
+BlinkMundurDesc.Font = Enum.Font.Gotham
+BlinkMundurDesc.TextSize = 12
+
+-- Button Blink Mundur
+local BlinkMundurBtn = Instance.new("TextButton")
+BlinkMundurBtn.Parent = BlinkMundurFrame
+BlinkMundurBtn.Size = UDim2.new(0,40,0,40)
+BlinkMundurBtn.Position = UDim2.new(1,-50,0.5,-20)
+BlinkMundurBtn.BackgroundColor3 = Color3.fromRGB(200,100,0)
+BlinkMundurBtn.Text = "▶️"
+BlinkMundurBtn.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkMundurBtn.TextSize = 20
+BlinkMundurBtn.Font = Enum.Font.GothamBold
+
+local BlinkMundurBtnCorner = Instance.new("UICorner")
+BlinkMundurBtnCorner.Parent = BlinkMundurBtn
+BlinkMundurBtnCorner.CornerRadius = UDim.new(0,8)
 
 -- Status Label
 local BlinkStatus = Instance.new("TextLabel")
 BlinkStatus.Parent = MSSafetyContent
 BlinkStatus.Size = UDim2.new(1,-20,0,30)
-BlinkStatus.Position = UDim2.new(0,10,0,320)
+BlinkStatus.Position = UDim2.new(0,10,0,370)
 BlinkStatus.BackgroundColor3 = Color3.fromRGB(40,40,50)
-BlinkStatus.Text = "✅ Siap blink 5 studs (langsung pindah)"
+BlinkStatus.Text = "✅ Siap blink 5 studs"
 BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
 BlinkStatus.Font = Enum.Font.GothamBold
 BlinkStatus.TextSize = 14
@@ -804,7 +866,7 @@ function pressE()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
--- ========== [DYRON] FUNGSI BLINK - SEKALI JALAN, 5 STUDS ==========
+-- ========== [DYRON] FUNGSI BLINK - PAKE LOOKVECTOR BIAR PAS ==========
 function blinkDown()
     local character = player.Character
     if not character then 
@@ -823,16 +885,14 @@ function blinkDown()
     BlinkStatus.Text = "⬇️ Blink ke bawah 5 studs..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
-    local blinkDistance = 5 -- 5 studs
-    
-    -- BLINK KE BAWAH - LANGSUNG PINDAH, TIDAK BALIK
+    local blinkDistance = 5
     hrp.CFrame = hrp.CFrame * CFrame.new(0, -blinkDistance, 0)
     
     BlinkStatus.Text = "✅ Sudah pindah 5 studs ke bawah!"
     BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
 end
 
-function blinkForward()
+function blinkMaju()
     local character = player.Character
     if not character then 
         BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
@@ -847,15 +907,42 @@ function blinkForward()
         return 
     end
     
-    BlinkStatus.Text = "⬆️ Blink ke depan 5 studs..."
+    BlinkStatus.Text = "⬆️ Blink maju 5 studs..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
-    local blinkDistance = 5 -- 5 studs
+    -- PAKE LOOKVECTOR BIAR PAS SESUAI ARAH HADAP
+    local blinkDistance = 5
+    local lookVector = hrp.CFrame.LookVector
+    hrp.CFrame = hrp.CFrame + (lookVector * blinkDistance)
     
-    -- BLINK KE DEPAN - LANGSUNG PINDAH, TIDAK BALIK
-    hrp.CFrame = hrp.CFrame * CFrame.new(0, 0, blinkDistance)
+    BlinkStatus.Text = "✅ Sudah maju 5 studs!"
+    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+end
+
+function blinkMundur()
+    local character = player.Character
+    if not character then 
+        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
     
-    BlinkStatus.Text = "✅ Sudah pindah 5 studs ke depan!"
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    BlinkStatus.Text = "⬇️ Blink mundur 5 studs..."
+    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    
+    -- MUNDUR = -lookVector
+    local blinkDistance = 5
+    local lookVector = hrp.CFrame.LookVector
+    hrp.CFrame = hrp.CFrame - (lookVector * blinkDistance)
+    
+    BlinkStatus.Text = "✅ Sudah mundur 5 studs!"
     BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
 end
 -- ========================================================
@@ -1174,7 +1261,8 @@ StopBuyBtn.MouseButton1Click:Connect(stopAutoBuy)
 
 -- ========== [DYRON] CONNECT BUTTONS MS SAFETY ==========
 BlinkDownBtn.MouseButton1Click:Connect(blinkDown)
-BlinkForwardBtn.MouseButton1Click:Connect(blinkForward)
+BlinkMajuBtn.MouseButton1Click:Connect(blinkMaju)
+BlinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
 -- ========================================================
 
 -- Slider

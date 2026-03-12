@@ -182,7 +182,7 @@ MSLoopContent.Size = UDim2.new(1,0,1,0)
 MSLoopContent.BackgroundTransparency = 1
 MSLoopContent.Visible = false
 MSLoopContent.ScrollBarThickness = 6
-MSLoopContent.CanvasSize = UDim2.new(0,0,0,400)
+MSLoopContent.CanvasSize = UDim2.new(0,0,0,450) -- Diperbesar untuk muat tombol baru
 
 -- Auto Buy Tab Content
 local AutoBuyContent = Instance.new("ScrollingFrame")
@@ -282,7 +282,66 @@ RSDesc.TextXAlignment = Enum.TextXAlignment.Left
 RSDesc.Font = Enum.Font.Gotham
 RSDesc.TextSize = 12
 
--- MS LOOP CONTENT
+-- ========== [DYRON:START] PENAMBAHAN FITUR MS SAFETY ==========
+local MSSafetyEnabled = false -- Variabel status fitur safety
+
+-- Fungsi untuk melakukan blink safety
+local function blinkSafety()
+    if not MSSafetyEnabled then return end -- Hanya jalan jika diaktifkan
+    local character = player.Character
+    if not character then return end
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local originalCF = hrp.CFrame
+    local blinkDistance = 5 -- 5 studs
+
+    -- Blink ke bawah dan kembali
+    hrp.CFrame = originalCF * CFrame.new(0, -blinkDistance, 0)
+    task.wait(0.05) -- Jeda sangat cepat
+    hrp.CFrame = originalCF
+    task.wait(0.05)
+
+    -- Blink ke depan dan kembali
+    hrp.CFrame = originalCF * CFrame.new(0, 0, blinkDistance)
+    task.wait(0.05)
+    hrp.CFrame = originalCF
+    task.wait(0.05)
+end
+
+-- Toggle Button untuk MS Safety
+local MSSafetyBtn = Instance.new("TextButton")
+MSSafetyBtn.Parent = MSLoopContent
+MSSafetyBtn.Size = UDim2.new(0.5,-15,0,35)
+MSSafetyBtn.Position = UDim2.new(0,10,0,260) -- Posisi di bawah tombol START/STOP
+MSSafetyBtn.BackgroundColor3 = Color3.fromRGB(70,70,80)
+MSSafetyBtn.Text = "🔒 MS SAFETY: OFF"
+MSSafetyBtn.TextColor3 = Color3.fromRGB(255,150,150)
+MSSafetyBtn.Font = Enum.Font.GothamBold
+MSSafetyBtn.TextSize = 14
+
+local MSSafetyCorner = Instance.new("UICorner")
+MSSafetyCorner.Parent = MSSafetyBtn
+MSSafetyCorner.CornerRadius = UDim.new(0,8)
+
+MSSafetyBtn.MouseButton1Click:Connect(function()
+    MSSafetyEnabled = not MSSafetyEnabled
+    if MSSafetyEnabled then
+        MSSafetyBtn.Text = "✅ MS SAFETY: ON"
+        MSSafetyBtn.TextColor3 = Color3.fromRGB(150,255,150)
+        MSSafetyBtn.BackgroundColor3 = Color3.fromRGB(50,100,50)
+    else
+        MSSafetyBtn.Text = "🔒 MS SAFETY: OFF"
+        MSSafetyBtn.TextColor3 = Color3.fromRGB(255,150,150)
+        MSSafetyBtn.BackgroundColor3 = Color3.fromRGB(70,70,80)
+    end
+end)
+
+-- Perbesar CanvasSize untuk menampung elemen baru
+MSLoopContent.CanvasSize = UDim2.new(0,0,0,500)
+-- ========== [DYRON:END] PENAMBAHAN FITUR MS SAFETY ==========
+
+-- MS LOOP CONTENT (Elemen yang sudah ada, hanya disesuaikan posisinya)
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-20,0,30)
@@ -696,7 +755,7 @@ function resetCounters()
     updateProgress()
 end
 
--- MS LOOP
+-- MS LOOP (Telah dimodifikasi dengan pemanggilan blinkSafety)
 function startMSLoop()
     if loopRunning then return end
     
@@ -805,6 +864,15 @@ function startMSLoop()
         
         task.wait(0.2)
         if not loopRunning then break end
+
+        -- ========== [DYRON:START] INTEGRASI FITUR MS SAFETY ==========
+        -- Blink safety dilakukan setelah semua proses dan sebelum loop restart
+        if MSSafetyEnabled then
+            MSLoopStepLabel.Text = "MS SAFETY: Blink aktif..."
+            blinkSafety()
+            MSLoopStepLabel.Text = "MS SAFETY: Selesai"
+        end
+        -- ========== [DYRON:END] INTEGRASI FITUR MS SAFETY ==========
         
         if loopRunning then
             MSLoopStepLabel.Text = "Loop complete! Restarting from WATER..."

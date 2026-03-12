@@ -804,7 +804,7 @@ function pressE()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
--- ========== [DYRON] FUNGSI BLINK UNTUK MS SAFETY ==========
+-- ========== [DYRON] FUNGSI BLINK UNTUK MS SAFETY - DIPERCEPAT ==========
 function blinkDown()
     local character = player.Character
     if not character then 
@@ -820,19 +820,19 @@ function blinkDown()
         return 
     end
     
-    BlinkStatus.Text = "⬇️ Blink ke bawah..."
+    BlinkStatus.Text = "⬇️ Blink ke bawah (super cepat)..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
     local originalCF = hrp.CFrame
     local blinkDistance = 5 -- 5 studs
     
-    -- Blink ke bawah
+    -- Blink ke bawah (DIPERCEPAT: 0.03 detik)
     hrp.CFrame = originalCF * CFrame.new(0, -blinkDistance, 0)
-    task.wait(0.1)
+    task.wait(0.03)
     
-    -- Kembali ke posisi awal
+    -- Kembali ke posisi awal (DIPERCEPAT: 0.03 detik)
     hrp.CFrame = originalCF
-    task.wait(0.1)
+    task.wait(0.03)
     
     BlinkStatus.Text = "✅ Blink ke bawah selesai!"
     BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
@@ -853,19 +853,19 @@ function blinkForward()
         return 
     end
     
-    BlinkStatus.Text = "⬆️ Blink ke depan..."
+    BlinkStatus.Text = "⬆️ Blink ke depan (super cepat)..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
     local originalCF = hrp.CFrame
     local blinkDistance = 5 -- 5 studs
     
-    -- Blink ke depan (arah hadap karakter)
+    -- Blink ke depan (arah hadap karakter) (DIPERCEPAT: 0.03 detik)
     hrp.CFrame = originalCF * CFrame.new(0, 0, blinkDistance)
-    task.wait(0.1)
+    task.wait(0.03)
     
-    -- Kembali ke posisi awal
+    -- Kembali ke posisi awal (DIPERCEPAT: 0.03 detik)
     hrp.CFrame = originalCF
-    task.wait(0.1)
+    task.wait(0.03)
     
     BlinkStatus.Text = "✅ Blink ke depan selesai!"
     BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)

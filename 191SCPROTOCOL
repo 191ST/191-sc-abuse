@@ -223,7 +223,7 @@ MSSafetyTitle.Parent = MSSafetyContent
 MSSafetyTitle.Size = UDim2.new(1,-20,0,40)
 MSSafetyTitle.Position = UDim2.new(0,10,0,20)
 MSSafetyTitle.BackgroundTransparency = 1
-MSSafetyTitle.Text = "🛡️ MS SAFETY BLINK"
+MSSafetyTitle.Text = "🛡️ MS SAFETY DARI RK"
 MSSafetyTitle.TextColor3 = Color3.fromRGB(100,200,255)
 MSSafetyTitle.TextXAlignment = Enum.TextXAlignment.Left
 MSSafetyTitle.Font = Enum.Font.GothamBold
@@ -235,7 +235,7 @@ MSSafetyDesc.Parent = MSSafetyContent
 MSSafetyDesc.Size = UDim2.new(1,-20,0,30)
 MSSafetyDesc.Position = UDim2.new(0,10,0,60)
 MSSafetyDesc.BackgroundTransparency = 1
-MSSafetyDesc.Text = "Blink lambat 5 studs (biar keliatan)"
+MSSafetyDesc.Text = "Blink safety 3 studs (pelan)"
 MSSafetyDesc.TextColor3 = Color3.fromRGB(200,200,200)
 MSSafetyDesc.TextXAlignment = Enum.TextXAlignment.Left
 MSSafetyDesc.Font = Enum.Font.Gotham
@@ -270,7 +270,7 @@ BlinkDownTitle.Parent = BlinkDownFrame
 BlinkDownTitle.Size = UDim2.new(1,-120,0,30)
 BlinkDownTitle.Position = UDim2.new(0,70,0,15)
 BlinkDownTitle.BackgroundTransparency = 1
-BlinkDownTitle.Text = "BLINK KE BAWAH (LAMBAT)"
+BlinkDownTitle.Text = "BLINK KE BAWAH"
 BlinkDownTitle.TextColor3 = Color3.fromRGB(255,255,255)
 BlinkDownTitle.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownTitle.Font = Enum.Font.GothamBold
@@ -282,7 +282,7 @@ BlinkDownDesc.Parent = BlinkDownFrame
 BlinkDownDesc.Size = UDim2.new(1,-120,0,20)
 BlinkDownDesc.Position = UDim2.new(0,70,0,45)
 BlinkDownDesc.BackgroundTransparency = 1
-BlinkDownDesc.Text = "Turun 5 studs pelan-pelan dan kembali"
+BlinkDownDesc.Text = "Turun 3 studs pelan-pelan dan kembali"
 BlinkDownDesc.TextColor3 = Color3.fromRGB(180,180,180)
 BlinkDownDesc.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownDesc.Font = Enum.Font.Gotham
@@ -332,7 +332,7 @@ BlinkForwardTitle.Parent = BlinkForwardFrame
 BlinkForwardTitle.Size = UDim2.new(1,-120,0,30)
 BlinkForwardTitle.Position = UDim2.new(0,70,0,15)
 BlinkForwardTitle.BackgroundTransparency = 1
-BlinkForwardTitle.Text = "BLINK KE DEPAN (LAMBAT)"
+BlinkForwardTitle.Text = "BLINK KE DEPAN"
 BlinkForwardTitle.TextColor3 = Color3.fromRGB(255,255,255)
 BlinkForwardTitle.TextXAlignment = Enum.TextXAlignment.Left
 BlinkForwardTitle.Font = Enum.Font.GothamBold
@@ -344,7 +344,7 @@ BlinkForwardDesc.Parent = BlinkForwardFrame
 BlinkForwardDesc.Size = UDim2.new(1,-120,0,20)
 BlinkForwardDesc.Position = UDim2.new(0,70,0,45)
 BlinkForwardDesc.BackgroundTransparency = 1
-BlinkForwardDesc.Text = "Maju 5 studs pelan-pelan dan kembali"
+BlinkForwardDesc.Text = "Maju 3 studs pelan-pelan dan kembali"
 BlinkForwardDesc.TextColor3 = Color3.fromRGB(180,180,180)
 BlinkForwardDesc.TextXAlignment = Enum.TextXAlignment.Left
 BlinkForwardDesc.Font = Enum.Font.Gotham
@@ -371,7 +371,7 @@ BlinkStatus.Parent = MSSafetyContent
 BlinkStatus.Size = UDim2.new(1,-20,0,30)
 BlinkStatus.Position = UDim2.new(0,10,0,320)
 BlinkStatus.BackgroundColor3 = Color3.fromRGB(40,40,50)
-BlinkStatus.Text = "✅ Siap melakukan blink lambat"
+BlinkStatus.Text = "✅ Siap melakukan blink safety"
 BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
 BlinkStatus.Font = Enum.Font.GothamBold
 BlinkStatus.TextSize = 14
@@ -804,7 +804,7 @@ function pressE()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
--- ========== [DYRON] FUNGSI BLINK UNTUK MS SAFETY - DIPELANIN ==========
+-- ========== [DYRON] FUNGSI BLINK UNTUK MS SAFETY - 3 STUDS ==========
 function blinkDown()
     local character = player.Character
     if not character then 
@@ -820,17 +820,17 @@ function blinkDown()
         return 
     end
     
-    BlinkStatus.Text = "⬇️ Blink ke bawah (pelan)..."
+    BlinkStatus.Text = "⬇️ Blink ke bawah (3 studs)..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
     local originalCF = hrp.CFrame
-    local blinkDistance = 5 -- 5 studs
+    local blinkDistance = 3 -- 3 studs (diubah dari 5)
     
-    -- Blink ke bawah (DIPELANIN: 0.3 detik)
+    -- Blink ke bawah
     hrp.CFrame = originalCF * CFrame.new(0, -blinkDistance, 0)
     task.wait(0.3)
     
-    -- Kembali ke posisi awal (DIPELANIN: 0.3 detik)
+    -- Kembali ke posisi awal
     hrp.CFrame = originalCF
     task.wait(0.3)
     
@@ -853,17 +853,17 @@ function blinkForward()
         return 
     end
     
-    BlinkStatus.Text = "⬆️ Blink ke depan (pelan)..."
+    BlinkStatus.Text = "⬆️ Blink ke depan (3 studs)..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
     local originalCF = hrp.CFrame
-    local blinkDistance = 5 -- 5 studs
+    local blinkDistance = 3 -- 3 studs (diubah dari 5)
     
-    -- Blink ke depan (arah hadap karakter) (DIPELANIN: 0.3 detik)
-    hrp.CFrame = originalCF * CFrame.new(0, 0, blinkDistance)
+    -- BLINK KE DEPAN (bukan ke belakang) - POSITIF Z untuk maju
+    hrp.CFrame = originalCF * CFrame.new(0, 0, blinkDistance) -- POSITIF = MAJU
     task.wait(0.3)
     
-    -- Kembali ke posisi awal (DIPELANIN: 0.3 detik)
+    -- Kembali ke posisi awal
     hrp.CFrame = originalCF
     task.wait(0.3)
     

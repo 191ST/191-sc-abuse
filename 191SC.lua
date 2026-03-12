@@ -215,7 +215,7 @@ MSSafetyContent.Size = UDim2.new(1,0,1,0)
 MSSafetyContent.BackgroundTransparency = 1
 MSSafetyContent.Visible = false
 MSSafetyContent.ScrollBarThickness = 6
-MSSafetyContent.CanvasSize = UDim2.new(0,0,0,400) -- Diperbesar untuk 3 tombol
+MSSafetyContent.CanvasSize = UDim2.new(0,0,0,400)
 
 -- Title MS Safety
 local MSSafetyTitle = Instance.new("TextLabel")
@@ -276,13 +276,13 @@ BlinkDownTitle.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownTitle.Font = Enum.Font.GothamBold
 BlinkDownTitle.TextSize = 18
 
--- Description (DIUBAH JADI 4 STUDS)
+-- Description (4 STUDS)
 local BlinkDownDesc = Instance.new("TextLabel")
 BlinkDownDesc.Parent = BlinkDownFrame
 BlinkDownDesc.Size = UDim2.new(1,-120,0,20)
 BlinkDownDesc.Position = UDim2.new(0,70,0,40)
 BlinkDownDesc.BackgroundTransparency = 1
-BlinkDownDesc.Text = "Turun 4 studs"  -- DIUBAH JADI 4 STUDS
+BlinkDownDesc.Text = "Turun 4 studs"
 BlinkDownDesc.TextColor3 = Color3.fromRGB(180,180,180)
 BlinkDownDesc.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownDesc.Font = Enum.Font.Gotham
@@ -651,7 +651,7 @@ AutoBuyInfo.Parent = AutoBuyContent
 AutoBuyInfo.Size = UDim2.new(1,-20,0,30)
 AutoBuyInfo.Position = UDim2.new(0,10,0,45)
 AutoBuyInfo.BackgroundColor3 = Color3.fromRGB(50,50,60)
-AutoBuyInfo.Text = "📌 Langsung START tanpa set posisi"
+AutoBuyInfo.Text = "📌 Auto beli WATER, SUGAR BLOCK BAG, GELATIN"
 AutoBuyInfo.TextColor3 = Color3.fromRGB(255,255,255)
 AutoBuyInfo.Font = Enum.Font.Gotham
 AutoBuyInfo.TextSize = 12
@@ -885,7 +885,7 @@ function blinkDown()
     BlinkStatus.Text = "⬇️ Blink ke bawah 4 studs..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
-    local blinkDistance = 4 -- DIUBAH JADI 4 STUDS
+    local blinkDistance = 4
     hrp.CFrame = hrp.CFrame * CFrame.new(0, -blinkDistance, 0)
     
     BlinkStatus.Text = "✅ Sudah pindah 4 studs ke bawah!"
@@ -910,8 +910,7 @@ function blinkMaju()
     BlinkStatus.Text = "⬆️ Blink maju 5 studs..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
-    -- PAKE LOOKVECTOR BIAR PAS SESUAI ARAH HADAP
-    local blinkDistance = 5 -- TETAP 5 STUDS
+    local blinkDistance = 5
     local lookVector = hrp.CFrame.LookVector
     hrp.CFrame = hrp.CFrame + (lookVector * blinkDistance)
     
@@ -937,8 +936,7 @@ function blinkMundur()
     BlinkStatus.Text = "⬇️ Blink mundur 5 studs..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
-    -- MUNDUR = -lookVector
-    local blinkDistance = 5 -- TETAP 5 STUDS
+    local blinkDistance = 5
     local lookVector = hrp.CFrame.LookVector
     hrp.CFrame = hrp.CFrame - (lookVector * blinkDistance)
     
@@ -947,59 +945,64 @@ function blinkMundur()
 end
 -- ========================================================
 
--- Fungsi untuk mencari dan klik button berdasarkan teks
+-- ========== [DYRON] AUTO BUY FIX - DENGAN NAMA EXACT ==========
 function clickBuyButton(itemName)
-    local searchText = ""
+    local searchPatterns = {}
+    
+    -- Pattern sesuai nama persis di GUI
     if itemName == "Water" then
-        searchText = "WATER"
+        searchPatterns = {"WATER", "Water", "water", "$20"}
     elseif itemName == "Sugar" then
-        searchText = "SUGAR"
+        searchPatterns = {"SUGAR BLOCK BAG", "Sugar Block Bag", "sugar block", "SUGAR", "$100"}
     elseif itemName == "Gelatin" then
-        searchText = "GELATIN"
+        searchPatterns = {"GELATIN", "Gelatin", "gelatin", "$70"}
     end
     
-    -- Cari di PlayerGui
+    -- Cari di semua GUI (PlayerGui dan CoreGui)
+    local allGuis = {}
     for _, gui in pairs(player.PlayerGui:GetChildren()) do
         if gui:IsA("ScreenGui") then
-            for _, button in pairs(gui:GetDescendants()) do
-                if button:IsA("TextButton") then
-                    local text = string.upper(button.Text or "")
-                    if string.find(text, searchText) then
-                        local pos = button.AbsolutePosition
-                        local size = button.AbsoluteSize
-                        local clickX = pos.X + size.X/2
-                        local clickY = pos.Y + size.Y/2
-                        
-                        VirtualInputManager:SendMouseMoveEvent(clickX, clickY, game)
-                        task.wait(0.1)
-                        VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, true, game, 1)
-                        task.wait(0.1)
-                        VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, false, game, 1)
-                        return true
-                    end
-                end
-            end
+            table.insert(allGuis, gui)
         end
     end
     
-    -- Cari di CoreGui
     local coreGui = game:GetService("CoreGui")
     for _, gui in pairs(coreGui:GetChildren()) do
         if gui:IsA("ScreenGui") then
-            for _, button in pairs(gui:GetDescendants()) do
-                if button:IsA("TextButton") then
-                    local text = string.upper(button.Text or "")
-                    if string.find(text, searchText) then
+            table.insert(allGuis, gui)
+        end
+    end
+    
+    -- Cari tombol berdasarkan teks
+    for _, gui in pairs(allGuis) do
+        for _, button in pairs(gui:GetDescendants()) do
+            if button:IsA("TextButton") or button:IsA("ImageButton") then
+                local buttonText = button.Text or ""
+                local buttonName = button.Name or ""
+                
+                -- Cek semua pattern
+                for _, pattern in pairs(searchPatterns) do
+                    if string.find(string.upper(buttonText), string.upper(pattern)) or 
+                       string.find(string.upper(buttonName), string.upper(pattern)) then
+                        
+                        -- Klik tombol
                         local pos = button.AbsolutePosition
                         local size = button.AbsoluteSize
                         local clickX = pos.X + size.X/2
                         local clickY = pos.Y + size.Y/2
                         
+                        -- Method 1: VirtualInputManager
                         VirtualInputManager:SendMouseMoveEvent(clickX, clickY, game)
                         task.wait(0.1)
                         VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, true, game, 1)
                         task.wait(0.1)
                         VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, false, game, 1)
+                        
+                        -- Method 2: Fire event (backup)
+                        pcall(function()
+                            button:Fire("MouseButton1Click")
+                        end)
+                        
                         return true
                     end
                 end
@@ -1009,6 +1012,90 @@ function clickBuyButton(itemName)
     
     return false
 end
+
+-- ========== [DYRON] AUTO BUY FIX - BELI BERTURUT-TURUT ==========
+function startAutoBuy()
+    if autoBuyRunning then 
+        AutoBuyStatus.Text = "⚠️ Auto Buy sudah berjalan!"
+        return 
+    end
+    
+    -- Reset counter
+    waterCount = 0
+    sugarCount = 0
+    gelatinCount = 0
+    updateProgress()
+    
+    autoBuyRunning = true
+    
+    AutoBuyStatus.Text = "💰 AUTO BUY RUNNING (Target: " .. targetAmount .. " masing2)"
+    AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    
+    -- Loop beli berurutan sampai target tercapai
+    while autoBuyRunning and (waterCount < targetAmount or sugarCount < targetAmount or gelatinCount < targetAmount) do
+        
+        -- WATER (cari "Water" atau "$20")
+        if autoBuyRunning and waterCount < targetAmount then
+            AutoBuyStatus.Text = "💧 Beli WATER... (" .. (waterCount + 1) .. "/" .. targetAmount .. ")"
+            if clickBuyButton("Water") then
+                waterCount = waterCount + 1
+                updateProgress()
+                task.wait(0.5) -- Jeda biar tidak terburu-buru
+            else
+                AutoBuyStatus.Text = "⚠️ Tombol WATER tidak ditemukan!"
+                task.wait(1)
+            end
+        end
+        
+        if not autoBuyRunning then break end
+        task.wait(0.3)
+        
+        -- SUGAR (cari "Sugar Block Bag" atau "$100")
+        if autoBuyRunning and sugarCount < targetAmount then
+            AutoBuyStatus.Text = "🍬 Beli SUGAR... (" .. (sugarCount + 1) .. "/" .. targetAmount .. ")"
+            if clickBuyButton("Sugar") then
+                sugarCount = sugarCount + 1
+                updateProgress()
+                task.wait(0.5)
+            else
+                AutoBuyStatus.Text = "⚠️ Tombol SUGAR tidak ditemukan!"
+                task.wait(1)
+            end
+        end
+        
+        if not autoBuyRunning then break end
+        task.wait(0.3)
+        
+        -- GELATIN (cari "Gelatin" atau "$70")
+        if autoBuyRunning and gelatinCount < targetAmount then
+            AutoBuyStatus.Text = "🧪 Beli GELATIN... (" .. (gelatinCount + 1) .. "/" .. targetAmount .. ")"
+            if clickBuyButton("Gelatin") then
+                gelatinCount = gelatinCount + 1
+                updateProgress()
+                task.wait(0.5)
+            else
+                AutoBuyStatus.Text = "⚠️ Tombol GELATIN tidak ditemukan!"
+                task.wait(1)
+            end
+        end
+        
+        -- Update progress setiap selesai 1 siklus
+        AutoBuyStatus.Text = string.format("✅ Progress: W:%d S:%d G:%d", waterCount, sugarCount, gelatinCount)
+        task.wait(0.5)
+    end
+    
+    autoBuyRunning = false
+    
+    -- Cek apakah target tercapai
+    if waterCount >= targetAmount and sugarCount >= targetAmount and gelatinCount >= targetAmount then
+        AutoBuyStatus.Text = "✅ SELESAI! Semua target tercapai!"
+        AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    else
+        AutoBuyStatus.Text = "⏹️ STOPPED"
+        AutoBuyStatus.TextColor3 = Color3.fromRGB(255,100,100)
+    end
+end
+-- ============================================================
 
 function updateProgress()
     WaterProgress.Text = "💧 WATER: " .. waterCount
@@ -1150,70 +1237,6 @@ function startMSLoop()
     MSLoopStepLabel.Text = "Step: Stopped"
     MSLoopTimer.Text = "Timer: 0s"
     ToolStatus.Text = "Tool: -"
-end
-
--- AUTO BUY (LANGSUNG START TANPA SET POSISI)
-function startAutoBuy()
-    if autoBuyRunning then 
-        AutoBuyStatus.Text = "⚠️ Auto Buy sudah berjalan!"
-        return 
-    end
-    
-    resetCounters()
-    autoBuyRunning = true
-    
-    AutoBuyStatus.Text = "💰 AUTO BUY RUNNING"
-    AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
-    
-    -- Loop beli berurutan
-    while autoBuyRunning and (waterCount < targetAmount or sugarCount < targetAmount or gelatinCount < targetAmount) do
-        -- WATER
-        if autoBuyRunning and waterCount < targetAmount then
-            AutoBuyStatus.Text = "🔄 Beli WATER (" .. (waterCount + 1) .. "/" .. targetAmount .. ")"
-            if clickBuyButton("Water") then
-                waterCount = waterCount + 1
-                updateProgress()
-            end
-            task.wait(0.8)
-        end
-        
-        if not autoBuyRunning then break end
-        
-        -- SUGAR
-        if autoBuyRunning and sugarCount < targetAmount then
-            AutoBuyStatus.Text = "🔄 Beli SUGAR (" .. (sugarCount + 1) .. "/" .. targetAmount .. ")"
-            if clickBuyButton("Sugar") then
-                sugarCount = sugarCount + 1
-                updateProgress()
-            end
-            task.wait(0.8)
-        end
-        
-        if not autoBuyRunning then break end
-        
-        -- GELATIN
-        if autoBuyRunning and gelatinCount < targetAmount then
-            AutoBuyStatus.Text = "🔄 Beli GELATIN (" .. (gelatinCount + 1) .. "/" .. targetAmount .. ")"
-            if clickBuyButton("Gelatin") then
-                gelatinCount = gelatinCount + 1
-                updateProgress()
-            end
-            task.wait(0.8)
-        end
-        
-        AutoBuyStatus.Text = string.format("✅ Progress: %d/%d", 
-            (waterCount + sugarCount + gelatinCount), (targetAmount * 3))
-        task.wait(0.5)
-    end
-    
-    autoBuyRunning = false
-    if waterCount >= targetAmount and sugarCount >= targetAmount and gelatinCount >= targetAmount then
-        AutoBuyStatus.Text = "✅ SELESAI! Target tercapai!"
-        AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
-    else
-        AutoBuyStatus.Text = "⏹️ STOPPED"
-        AutoBuyStatus.TextColor3 = Color3.fromRGB(255,100,100)
-    end
 end
 
 function stopAutoBuy()

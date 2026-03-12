@@ -276,13 +276,13 @@ BlinkDownTitle.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownTitle.Font = Enum.Font.GothamBold
 BlinkDownTitle.TextSize = 18
 
--- Description (DIUBAH JADI 3 STUDS)
+-- Description (DIUBAH JADI 4 STUDS)
 local BlinkDownDesc = Instance.new("TextLabel")
 BlinkDownDesc.Parent = BlinkDownFrame
 BlinkDownDesc.Size = UDim2.new(1,-120,0,20)
 BlinkDownDesc.Position = UDim2.new(0,70,0,40)
 BlinkDownDesc.BackgroundTransparency = 1
-BlinkDownDesc.Text = "Turun 3 studs"
+BlinkDownDesc.Text = "Turun 4 studs"  -- DIUBAH JADI 4 STUDS
 BlinkDownDesc.TextColor3 = Color3.fromRGB(180,180,180)
 BlinkDownDesc.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownDesc.Font = Enum.Font.Gotham
@@ -433,7 +433,7 @@ BlinkStatus.Parent = MSSafetyContent
 BlinkStatus.Size = UDim2.new(1,-20,0,30)
 BlinkStatus.Position = UDim2.new(0,10,0,370)
 BlinkStatus.BackgroundColor3 = Color3.fromRGB(40,40,50)
-BlinkStatus.Text = "✅ Siap blink (turun 3, maju/mundur 5)"
+BlinkStatus.Text = "✅ Siap blink (turun 4, maju/mundur 5)"
 BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
 BlinkStatus.Font = Enum.Font.GothamBold
 BlinkStatus.TextSize = 14
@@ -866,7 +866,7 @@ function pressE()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
--- ========== [DYRON] FUNGSI BLINK - TURUN 3 STUDS, MAJU/MUNDUR 5 STUDS ==========
+-- ========== [DYRON] FUNGSI BLINK - TURUN 4 STUDS, MAJU/MUNDUR 5 STUDS ==========
 function blinkDown()
     local character = player.Character
     if not character then 
@@ -882,13 +882,13 @@ function blinkDown()
         return 
     end
     
-    BlinkStatus.Text = "⬇️ Blink ke bawah 3 studs..."
+    BlinkStatus.Text = "⬇️ Blink ke bawah 4 studs..."
     BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
     
-    local blinkDistance = 3 -- DIUBAH JADI 3 STUDS
+    local blinkDistance = 4 -- DIUBAH JADI 4 STUDS
     hrp.CFrame = hrp.CFrame * CFrame.new(0, -blinkDistance, 0)
     
-    BlinkStatus.Text = "✅ Sudah pindah 3 studs ke bawah!"
+    BlinkStatus.Text = "✅ Sudah pindah 4 studs ke bawah!"
     BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
 end
 

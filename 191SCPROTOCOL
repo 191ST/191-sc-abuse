@@ -100,7 +100,7 @@ task.spawn(function()
     end
 end)
 
--- Tab Buttons
+-- Tab Buttons - SEKARANG 4 TAB (TP, MS AUTO, AUTO BUY, MS SAFETY)
 local TabFrame = Instance.new("Frame")
 TabFrame.Parent = Frame
 TabFrame.Size = UDim2.new(1,0,0,40)
@@ -111,7 +111,7 @@ TabFrame.BorderSizePixel = 0
 -- TP Tab Button
 local TPTabBtn = Instance.new("TextButton")
 TPTabBtn.Parent = TabFrame
-TPTabBtn.Size = UDim2.new(0.33,-2,1,-8)
+TPTabBtn.Size = UDim2.new(0.25,-2,1,-8)
 TPTabBtn.Position = UDim2.new(0,4,0,4)
 TPTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
 TPTabBtn.Text = "🚀 TP"
@@ -126,8 +126,8 @@ TPTabCorner.CornerRadius = UDim.new(0,8)
 -- MS Loop Tab Button
 local MSLoopTabBtn = Instance.new("TextButton")
 MSLoopTabBtn.Parent = TabFrame
-MSLoopTabBtn.Size = UDim2.new(0.33,-2,1,-8)
-MSLoopTabBtn.Position = UDim2.new(0.33,0,0,4)
+MSLoopTabBtn.Size = UDim2.new(0.25,-2,1,-8)
+MSLoopTabBtn.Position = UDim2.new(0.25,0,0,4)
 MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
 MSLoopTabBtn.Text = "🔄 MS AUTO"
 MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
@@ -141,10 +141,10 @@ MSLoopTabCorner.CornerRadius = UDim.new(0,8)
 -- Auto Buy Tab Button
 local AutoBuyTabBtn = Instance.new("TextButton")
 AutoBuyTabBtn.Parent = TabFrame
-AutoBuyTabBtn.Size = UDim2.new(0.34,-2,1,-8)
-AutoBuyTabBtn.Position = UDim2.new(0.66,0,0,4)
+AutoBuyTabBtn.Size = UDim2.new(0.25,-2,1,-8)
+AutoBuyTabBtn.Position = UDim2.new(0.5,0,0,4)
 AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
-AutoBuyTabBtn.Text = "🥖 IN REPAIR"
+AutoBuyTabBtn.Text = "💰 AUTO BUY"
 AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
 AutoBuyTabBtn.Font = Enum.Font.GothamBold
 AutoBuyTabBtn.TextSize = 14
@@ -152,6 +152,21 @@ AutoBuyTabBtn.TextSize = 14
 local AutoBuyTabCorner = Instance.new("UICorner")
 AutoBuyTabCorner.Parent = AutoBuyTabBtn
 AutoBuyTabCorner.CornerRadius = UDim.new(0,8)
+
+-- ========== [DYRON] TAB MS SAFETY BARU ==========
+local MSSafetyTabBtn = Instance.new("TextButton")
+MSSafetyTabBtn.Parent = TabFrame
+MSSafetyTabBtn.Size = UDim2.new(0.25,-2,1,-8)
+MSSafetyTabBtn.Position = UDim2.new(0.75,0,0,4)
+MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+MSSafetyTabBtn.Text = "🛡️ MS SAFETY"
+MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+MSSafetyTabBtn.Font = Enum.Font.GothamBold
+MSSafetyTabBtn.TextSize = 14
+
+local MSSafetyTabCorner = Instance.new("UICorner")
+MSSafetyTabCorner.Parent = MSSafetyTabBtn
+MSSafetyTabCorner.CornerRadius = UDim.new(0,8)
 
 -- Content Container
 local Content = Instance.new("Frame")
@@ -182,7 +197,7 @@ MSLoopContent.Size = UDim2.new(1,0,1,0)
 MSLoopContent.BackgroundTransparency = 1
 MSLoopContent.Visible = false
 MSLoopContent.ScrollBarThickness = 6
-MSLoopContent.CanvasSize = UDim2.new(0,0,0,450) -- Diperbesar untuk muat tombol baru
+MSLoopContent.CanvasSize = UDim2.new(0,0,0,400)
 
 -- Auto Buy Tab Content
 local AutoBuyContent = Instance.new("ScrollingFrame")
@@ -192,6 +207,180 @@ AutoBuyContent.BackgroundTransparency = 1
 AutoBuyContent.Visible = false
 AutoBuyContent.ScrollBarThickness = 6
 AutoBuyContent.CanvasSize = UDim2.new(0,0,0,450)
+
+-- ========== [DYRON] MS SAFETY TAB CONTENT ==========
+local MSSafetyContent = Instance.new("ScrollingFrame")
+MSSafetyContent.Parent = Content
+MSSafetyContent.Size = UDim2.new(1,0,1,0)
+MSSafetyContent.BackgroundTransparency = 1
+MSSafetyContent.Visible = false
+MSSafetyContent.ScrollBarThickness = 6
+MSSafetyContent.CanvasSize = UDim2.new(0,0,0,300)
+
+-- Title MS Safety
+local MSSafetyTitle = Instance.new("TextLabel")
+MSSafetyTitle.Parent = MSSafetyContent
+MSSafetyTitle.Size = UDim2.new(1,-20,0,40)
+MSSafetyTitle.Position = UDim2.new(0,10,0,20)
+MSSafetyTitle.BackgroundTransparency = 1
+MSSafetyTitle.Text = "🛡️ MS SAFETY BLINK"
+MSSafetyTitle.TextColor3 = Color3.fromRGB(100,200,255)
+MSSafetyTitle.TextXAlignment = Enum.TextXAlignment.Left
+MSSafetyTitle.Font = Enum.Font.GothamBold
+MSSafetyTitle.TextSize = 24
+
+-- Description
+local MSSafetyDesc = Instance.new("TextLabel")
+MSSafetyDesc.Parent = MSSafetyContent
+MSSafetyDesc.Size = UDim2.new(1,-20,0,30)
+MSSafetyDesc.Position = UDim2.new(0,10,0,60)
+MSSafetyDesc.BackgroundTransparency = 1
+MSSafetyDesc.Text = "Blink cepat 5 studs untuk menghindari crash"
+MSSafetyDesc.TextColor3 = Color3.fromRGB(200,200,200)
+MSSafetyDesc.TextXAlignment = Enum.TextXAlignment.Left
+MSSafetyDesc.Font = Enum.Font.Gotham
+MSSafetyDesc.TextSize = 14
+
+-- ===== BLINK KE BAWAH =====
+local BlinkDownFrame = Instance.new("Frame")
+BlinkDownFrame.Parent = MSSafetyContent
+BlinkDownFrame.Size = UDim2.new(1,-20,0,100)
+BlinkDownFrame.Position = UDim2.new(0,10,0,100)
+BlinkDownFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+BlinkDownFrame.BorderSizePixel = 0
+
+local BlinkDownCorner = Instance.new("UICorner")
+BlinkDownCorner.Parent = BlinkDownFrame
+BlinkDownCorner.CornerRadius = UDim.new(0,10)
+
+-- Icon
+local BlinkDownIcon = Instance.new("TextLabel")
+BlinkDownIcon.Parent = BlinkDownFrame
+BlinkDownIcon.Size = UDim2.new(0,50,1,0)
+BlinkDownIcon.Position = UDim2.new(0,10,0,0)
+BlinkDownIcon.BackgroundTransparency = 1
+BlinkDownIcon.Text = "⬇️"
+BlinkDownIcon.TextSize = 40
+BlinkDownIcon.Font = Enum.Font.GothamBold
+BlinkDownIcon.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- Title
+local BlinkDownTitle = Instance.new("TextLabel")
+BlinkDownTitle.Parent = BlinkDownFrame
+BlinkDownTitle.Size = UDim2.new(1,-120,0,30)
+BlinkDownTitle.Position = UDim2.new(0,70,0,15)
+BlinkDownTitle.BackgroundTransparency = 1
+BlinkDownTitle.Text = "BLINK KE BAWAH"
+BlinkDownTitle.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkDownTitle.TextXAlignment = Enum.TextXAlignment.Left
+BlinkDownTitle.Font = Enum.Font.GothamBold
+BlinkDownTitle.TextSize = 18
+
+-- Description
+local BlinkDownDesc = Instance.new("TextLabel")
+BlinkDownDesc.Parent = BlinkDownFrame
+BlinkDownDesc.Size = UDim2.new(1,-120,0,20)
+BlinkDownDesc.Position = UDim2.new(0,70,0,45)
+BlinkDownDesc.BackgroundTransparency = 1
+BlinkDownDesc.Text = "Turun 5 studs dan kembali ke posisi"
+BlinkDownDesc.TextColor3 = Color3.fromRGB(180,180,180)
+BlinkDownDesc.TextXAlignment = Enum.TextXAlignment.Left
+BlinkDownDesc.Font = Enum.Font.Gotham
+BlinkDownDesc.TextSize = 12
+
+-- Button Blink Down
+local BlinkDownBtn = Instance.new("TextButton")
+BlinkDownBtn.Parent = BlinkDownFrame
+BlinkDownBtn.Size = UDim2.new(0,40,0,40)
+BlinkDownBtn.Position = UDim2.new(1,-50,0.5,-20)
+BlinkDownBtn.BackgroundColor3 = Color3.fromRGB(0,150,200)
+BlinkDownBtn.Text = "▶️"
+BlinkDownBtn.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkDownBtn.TextSize = 20
+BlinkDownBtn.Font = Enum.Font.GothamBold
+
+local BlinkDownBtnCorner = Instance.new("UICorner")
+BlinkDownBtnCorner.Parent = BlinkDownBtn
+BlinkDownBtnCorner.CornerRadius = UDim.new(0,8)
+
+-- ===== BLINK KE DEPAN =====
+local BlinkForwardFrame = Instance.new("Frame")
+BlinkForwardFrame.Parent = MSSafetyContent
+BlinkForwardFrame.Size = UDim2.new(1,-20,0,100)
+BlinkForwardFrame.Position = UDim2.new(0,10,0,210)
+BlinkForwardFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+BlinkForwardFrame.BorderSizePixel = 0
+
+local BlinkForwardCorner = Instance.new("UICorner")
+BlinkForwardCorner.Parent = BlinkForwardFrame
+BlinkForwardCorner.CornerRadius = UDim.new(0,10)
+
+-- Icon
+local BlinkForwardIcon = Instance.new("TextLabel")
+BlinkForwardIcon.Parent = BlinkForwardFrame
+BlinkForwardIcon.Size = UDim2.new(0,50,1,0)
+BlinkForwardIcon.Position = UDim2.new(0,10,0,0)
+BlinkForwardIcon.BackgroundTransparency = 1
+BlinkForwardIcon.Text = "⬆️"
+BlinkForwardIcon.TextSize = 40
+BlinkForwardIcon.Font = Enum.Font.GothamBold
+BlinkForwardIcon.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- Title
+local BlinkForwardTitle = Instance.new("TextLabel")
+BlinkForwardTitle.Parent = BlinkForwardFrame
+BlinkForwardTitle.Size = UDim2.new(1,-120,0,30)
+BlinkForwardTitle.Position = UDim2.new(0,70,0,15)
+BlinkForwardTitle.BackgroundTransparency = 1
+BlinkForwardTitle.Text = "BLINK KE DEPAN"
+BlinkForwardTitle.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkForwardTitle.TextXAlignment = Enum.TextXAlignment.Left
+BlinkForwardTitle.Font = Enum.Font.GothamBold
+BlinkForwardTitle.TextSize = 18
+
+-- Description
+local BlinkForwardDesc = Instance.new("TextLabel")
+BlinkForwardDesc.Parent = BlinkForwardFrame
+BlinkForwardDesc.Size = UDim2.new(1,-120,0,20)
+BlinkForwardDesc.Position = UDim2.new(0,70,0,45)
+BlinkForwardDesc.BackgroundTransparency = 1
+BlinkForwardDesc.Text = "Maju 5 studs dan kembali ke posisi"
+BlinkForwardDesc.TextColor3 = Color3.fromRGB(180,180,180)
+BlinkForwardDesc.TextXAlignment = Enum.TextXAlignment.Left
+BlinkForwardDesc.Font = Enum.Font.Gotham
+BlinkForwardDesc.TextSize = 12
+
+-- Button Blink Forward
+local BlinkForwardBtn = Instance.new("TextButton")
+BlinkForwardBtn.Parent = BlinkForwardFrame
+BlinkForwardBtn.Size = UDim2.new(0,40,0,40)
+BlinkForwardBtn.Position = UDim2.new(1,-50,0.5,-20)
+BlinkForwardBtn.BackgroundColor3 = Color3.fromRGB(0,150,200)
+BlinkForwardBtn.Text = "▶️"
+BlinkForwardBtn.TextColor3 = Color3.fromRGB(255,255,255)
+BlinkForwardBtn.TextSize = 20
+BlinkForwardBtn.Font = Enum.Font.GothamBold
+
+local BlinkForwardBtnCorner = Instance.new("UICorner")
+BlinkForwardBtnCorner.Parent = BlinkForwardBtn
+BlinkForwardBtnCorner.CornerRadius = UDim.new(0,8)
+
+-- Status Label
+local BlinkStatus = Instance.new("TextLabel")
+BlinkStatus.Parent = MSSafetyContent
+BlinkStatus.Size = UDim2.new(1,-20,0,30)
+BlinkStatus.Position = UDim2.new(0,10,0,320)
+BlinkStatus.BackgroundColor3 = Color3.fromRGB(40,40,50)
+BlinkStatus.Text = "✅ Siap melakukan blink"
+BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+BlinkStatus.Font = Enum.Font.GothamBold
+BlinkStatus.TextSize = 14
+
+local BlinkStatusCorner = Instance.new("UICorner")
+BlinkStatusCorner.Parent = BlinkStatus
+BlinkStatusCorner.CornerRadius = UDim.new(0,8)
+
+-- ====================================================
 
 -- TP Buttons
 local BtnBahan = Instance.new("TextButton")
@@ -282,66 +471,7 @@ RSDesc.TextXAlignment = Enum.TextXAlignment.Left
 RSDesc.Font = Enum.Font.Gotham
 RSDesc.TextSize = 12
 
--- ========== [DYRON:START] PENAMBAHAN FITUR MS SAFETY ==========
-local MSSafetyEnabled = false -- Variabel status fitur safety
-
--- Fungsi untuk melakukan blink safety
-local function blinkSafety()
-    if not MSSafetyEnabled then return end -- Hanya jalan jika diaktifkan
-    local character = player.Character
-    if not character then return end
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local originalCF = hrp.CFrame
-    local blinkDistance = 5 -- 5 studs
-
-    -- Blink ke bawah dan kembali
-    hrp.CFrame = originalCF * CFrame.new(0, -blinkDistance, 0)
-    task.wait(0.05) -- Jeda sangat cepat
-    hrp.CFrame = originalCF
-    task.wait(0.05)
-
-    -- Blink ke depan dan kembali
-    hrp.CFrame = originalCF * CFrame.new(0, 0, blinkDistance)
-    task.wait(0.05)
-    hrp.CFrame = originalCF
-    task.wait(0.05)
-end
-
--- Toggle Button untuk MS Safety
-local MSSafetyBtn = Instance.new("TextButton")
-MSSafetyBtn.Parent = MSLoopContent
-MSSafetyBtn.Size = UDim2.new(0.5,-15,0,35)
-MSSafetyBtn.Position = UDim2.new(0,10,0,260) -- Posisi di bawah tombol START/STOP
-MSSafetyBtn.BackgroundColor3 = Color3.fromRGB(70,70,80)
-MSSafetyBtn.Text = "🔒 MS SAFETY: OFF"
-MSSafetyBtn.TextColor3 = Color3.fromRGB(255,150,150)
-MSSafetyBtn.Font = Enum.Font.GothamBold
-MSSafetyBtn.TextSize = 14
-
-local MSSafetyCorner = Instance.new("UICorner")
-MSSafetyCorner.Parent = MSSafetyBtn
-MSSafetyCorner.CornerRadius = UDim.new(0,8)
-
-MSSafetyBtn.MouseButton1Click:Connect(function()
-    MSSafetyEnabled = not MSSafetyEnabled
-    if MSSafetyEnabled then
-        MSSafetyBtn.Text = "✅ MS SAFETY: ON"
-        MSSafetyBtn.TextColor3 = Color3.fromRGB(150,255,150)
-        MSSafetyBtn.BackgroundColor3 = Color3.fromRGB(50,100,50)
-    else
-        MSSafetyBtn.Text = "🔒 MS SAFETY: OFF"
-        MSSafetyBtn.TextColor3 = Color3.fromRGB(255,150,150)
-        MSSafetyBtn.BackgroundColor3 = Color3.fromRGB(70,70,80)
-    end
-end)
-
--- Perbesar CanvasSize untuk menampung elemen baru
-MSLoopContent.CanvasSize = UDim2.new(0,0,0,500)
--- ========== [DYRON:END] PENAMBAHAN FITUR MS SAFETY ==========
-
--- MS LOOP CONTENT (Elemen yang sudah ada, hanya disesuaikan posisinya)
+-- MS LOOP CONTENT
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-20,0,30)
@@ -441,7 +571,7 @@ local MSLoopStopCorner = Instance.new("UICorner")
 MSLoopStopCorner.Parent = MSLoopStopBtn
 MSLoopStopCorner.CornerRadius = UDim.new(0,8)
 
--- AUTO BUY CONTENT (SEDERHANA - LANGSUNG START)
+-- AUTO BUY CONTENT
 local AutoBuyTitle = Instance.new("TextLabel")
 AutoBuyTitle.Parent = AutoBuyContent
 AutoBuyTitle.Size = UDim2.new(1,-20,0,30)
@@ -674,6 +804,74 @@ function pressE()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
+-- ========== [DYRON] FUNGSI BLINK UNTUK MS SAFETY ==========
+function blinkDown()
+    local character = player.Character
+    if not character then 
+        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    BlinkStatus.Text = "⬇️ Blink ke bawah..."
+    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    
+    local originalCF = hrp.CFrame
+    local blinkDistance = 5 -- 5 studs
+    
+    -- Blink ke bawah
+    hrp.CFrame = originalCF * CFrame.new(0, -blinkDistance, 0)
+    task.wait(0.1)
+    
+    -- Kembali ke posisi awal
+    hrp.CFrame = originalCF
+    task.wait(0.1)
+    
+    BlinkStatus.Text = "✅ Blink ke bawah selesai!"
+    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+end
+
+function blinkForward()
+    local character = player.Character
+    if not character then 
+        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    BlinkStatus.Text = "⬆️ Blink ke depan..."
+    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    
+    local originalCF = hrp.CFrame
+    local blinkDistance = 5 -- 5 studs
+    
+    -- Blink ke depan (arah hadap karakter)
+    hrp.CFrame = originalCF * CFrame.new(0, 0, blinkDistance)
+    task.wait(0.1)
+    
+    -- Kembali ke posisi awal
+    hrp.CFrame = originalCF
+    task.wait(0.1)
+    
+    BlinkStatus.Text = "✅ Blink ke depan selesai!"
+    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+end
+-- ========================================================
+
 -- Fungsi untuk mencari dan klik button berdasarkan teks
 function clickBuyButton(itemName)
     local searchText = ""
@@ -755,7 +953,7 @@ function resetCounters()
     updateProgress()
 end
 
--- MS LOOP (Telah dimodifikasi dengan pemanggilan blinkSafety)
+-- MS LOOP
 function startMSLoop()
     if loopRunning then return end
     
@@ -864,15 +1062,6 @@ function startMSLoop()
         
         task.wait(0.2)
         if not loopRunning then break end
-
-        -- ========== [DYRON:START] INTEGRASI FITUR MS SAFETY ==========
-        -- Blink safety dilakukan setelah semua proses dan sebelum loop restart
-        if MSSafetyEnabled then
-            MSLoopStepLabel.Text = "MS SAFETY: Blink aktif..."
-            blinkSafety()
-            MSLoopStepLabel.Text = "MS SAFETY: Selesai"
-        end
-        -- ========== [DYRON:END] INTEGRASI FITUR MS SAFETY ==========
         
         if loopRunning then
             MSLoopStepLabel.Text = "Loop complete! Restarting from WATER..."
@@ -995,6 +1184,11 @@ end)
 
 StopBuyBtn.MouseButton1Click:Connect(stopAutoBuy)
 
+-- ========== [DYRON] CONNECT BUTTONS MS SAFETY ==========
+BlinkDownBtn.MouseButton1Click:Connect(blinkDown)
+BlinkForwardBtn.MouseButton1Click:Connect(blinkForward)
+-- ========================================================
+
 -- Slider
 local dragging = false
 SliderButton.MouseButton1Down:Connect(function() dragging = true end)
@@ -1013,35 +1207,53 @@ UIS.InputChanged:Connect(function(i)
     end
 end)
 
--- Tab Switching
+-- Tab Switching (SEKARANG 4 TAB)
 TPTabBtn.MouseButton1Click:Connect(function()
-    TPContent.Visible = true; MSLoopContent.Visible = false; AutoBuyContent.Visible = false
+    TPContent.Visible = true; MSLoopContent.Visible = false; AutoBuyContent.Visible = false; MSSafetyContent.Visible = false
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     TPTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+    MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
 end)
 
 MSLoopTabBtn.MouseButton1Click:Connect(function()
-    TPContent.Visible = false; MSLoopContent.Visible = true; AutoBuyContent.Visible = false
+    TPContent.Visible = false; MSLoopContent.Visible = true; AutoBuyContent.Visible = false; MSSafetyContent.Visible = false
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     TPTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+    MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
 end)
 
 AutoBuyTabBtn.MouseButton1Click:Connect(function()
-    TPContent.Visible = false; MSLoopContent.Visible = false; AutoBuyContent.Visible = true
+    TPContent.Visible = false; MSLoopContent.Visible = false; AutoBuyContent.Visible = true; MSSafetyContent.Visible = false
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
+    MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     TPTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+end)
+
+MSSafetyTabBtn.MouseButton1Click:Connect(function()
+    TPContent.Visible = false; MSLoopContent.Visible = false; AutoBuyContent.Visible = false; MSSafetyContent.Visible = true
+    TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
+    TPTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+    MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+    AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+    MSSafetyTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
 end)
 
 -- Minimize
@@ -1053,7 +1265,7 @@ local tweenInfo = TweenInfo.new(0.3)
 MinBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
     if minimized then
-        TPContent.Visible = false; MSLoopContent.Visible = false; AutoBuyContent.Visible = false
+        TPContent.Visible = false; MSLoopContent.Visible = false; AutoBuyContent.Visible = false; MSSafetyContent.Visible = false
         TabFrame.Visible = false
         MinBtn.Text = "□"
         TweenService:Create(Frame, tweenInfo, {Size = closedSize}):Play()
@@ -1070,7 +1282,7 @@ UIS.InputBegan:Connect(function(input, gp)
     if input.KeyCode == Enum.KeyCode.Z then
         minimized = not minimized
         if minimized then
-            TPContent.Visible = false; MSLoopContent.Visible = false; AutoBuyContent.Visible = false
+            TPContent.Visible = false; MSLoopContent.Visible = false; AutoBuyContent.Visible = false; MSSafetyContent.Visible = false
             TabFrame.Visible = false
             MinBtn.Text = "□"
             TweenService:Create(Frame, tweenInfo, {Size = closedSize}):Play()

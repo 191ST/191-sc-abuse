@@ -206,7 +206,7 @@ AutoBuyContent.Size = UDim2.new(1,0,1,0)
 AutoBuyContent.BackgroundTransparency = 1
 AutoBuyContent.Visible = false
 AutoBuyContent.ScrollBarThickness = 6
-AutoBuyContent.CanvasSize = UDim2.new(0,0,0,450)
+AutoBuyContent.CanvasSize = UDim2.new(0,0,0,500)
 
 -- ========== [DYRON] MS SAFETY TAB CONTENT ==========
 local MSSafetyContent = Instance.new("ScrollingFrame")
@@ -651,7 +651,7 @@ AutoBuyInfo.Parent = AutoBuyContent
 AutoBuyInfo.Size = UDim2.new(1,-20,0,30)
 AutoBuyInfo.Position = UDim2.new(0,10,0,45)
 AutoBuyInfo.BackgroundColor3 = Color3.fromRGB(50,50,60)
-AutoBuyInfo.Text = "📌 Auto beli WATER, SUGAR BLOCK BAG, GELATIN"
+AutoBuyInfo.Text = "📌 Cari tombol: WATER, SUGAR BLOCK BAG, GELATIN"
 AutoBuyInfo.TextColor3 = Color3.fromRGB(255,255,255)
 AutoBuyInfo.Font = Enum.Font.Gotham
 AutoBuyInfo.TextSize = 12
@@ -945,75 +945,43 @@ function blinkMundur()
 end
 -- ========================================================
 
--- ========== [DYRON] AUTO BUY FIX - DENGAN NAMA EXACT ==========
-function clickBuyButton(itemName)
-    local searchPatterns = {}
-    
-    -- Pattern sesuai nama persis di GUI
-    if itemName == "Water" then
-        searchPatterns = {"WATER", "Water", "water", "$20"}
-    elseif itemName == "Sugar" then
-        searchPatterns = {"SUGAR BLOCK BAG", "Sugar Block Bag", "sugar block", "SUGAR", "$100"}
-    elseif itemName == "Gelatin" then
-        searchPatterns = {"GELATIN", "Gelatin", "gelatin", "$70"}
-    end
-    
-    -- Cari di semua GUI (PlayerGui dan CoreGui)
-    local allGuis = {}
+-- ========== [DYRON] AUTO BUY FIX - VERSI SEDERHANA ==========
+function clickAtPosition(x, y)
+    VirtualInputManager:SendMouseMoveEvent(x, y, game)
+    task.wait(0.1)
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
+    task.wait(0.1)
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
+end
+
+function findButtonByText(text)
+    -- Cari di PlayerGui
     for _, gui in pairs(player.PlayerGui:GetChildren()) do
         if gui:IsA("ScreenGui") then
-            table.insert(allGuis, gui)
-        end
-    end
-    
-    local coreGui = game:GetService("CoreGui")
-    for _, gui in pairs(coreGui:GetChildren()) do
-        if gui:IsA("ScreenGui") then
-            table.insert(allGuis, gui)
-        end
-    end
-    
-    -- Cari tombol berdasarkan teks
-    for _, gui in pairs(allGuis) do
-        for _, button in pairs(gui:GetDescendants()) do
-            if button:IsA("TextButton") or button:IsA("ImageButton") then
-                local buttonText = button.Text or ""
-                local buttonName = button.Name or ""
-                
-                -- Cek semua pattern
-                for _, pattern in pairs(searchPatterns) do
-                    if string.find(string.upper(buttonText), string.upper(pattern)) or 
-                       string.find(string.upper(buttonName), string.upper(pattern)) then
-                        
-                        -- Klik tombol
-                        local pos = button.AbsolutePosition
-                        local size = button.AbsoluteSize
-                        local clickX = pos.X + size.X/2
-                        local clickY = pos.Y + size.Y/2
-                        
-                        -- Method 1: VirtualInputManager
-                        VirtualInputManager:SendMouseMoveEvent(clickX, clickY, game)
-                        task.wait(0.1)
-                        VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, true, game, 1)
-                        task.wait(0.1)
-                        VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, false, game, 1)
-                        
-                        -- Method 2: Fire event (backup)
-                        pcall(function()
-                            button:Fire("MouseButton1Click")
-                        end)
-                        
-                        return true
+            for _, button in pairs(gui:GetDescendants()) do
+                if button:IsA("TextButton") then
+                    if string.find(string.upper(button.Text or ""), string.upper(text)) then
+                        return button
                     end
                 end
             end
         end
     end
-    
-    return false
+    -- Cari di CoreGui
+    for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            for _, button in pairs(gui:GetDescendants()) do
+                if button:IsA("TextButton") then
+                    if string.find(string.upper(button.Text or ""), string.upper(text)) then
+                        return button
+                    end
+                end
+            end
+        end
+    end
+    return nil
 end
 
--- ========== [DYRON] AUTO BUY FIX - BELI BERTURUT-TURUT ==========
 function startAutoBuy()
     if autoBuyRunning then 
         AutoBuyStatus.Text = "⚠️ Auto Buy sudah berjalan!"
@@ -1026,67 +994,92 @@ function startAutoBuy()
     gelatinCount = 0
     updateProgress()
     
+    AutoBuyStatus.Text = "🔍 Mencari tombol-tombol..."
+    AutoBuyStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    task.wait(0.5)
+    
+    -- Cari semua tombol
+    local waterBtn = findButtonByText("WATER")
+    local sugarBtn = findButtonByText("SUGAR")
+    local gelatinBtn = findButtonByText("GELATIN")
+    
+    -- Cek apakah semua tombol ditemukan
+    if not waterBtn then
+        AutoBuyStatus.Text = "❌ Tombol WATER tidak ditemukan!"
+        return
+    end
+    
+    if not sugarBtn then
+        AutoBuyStatus.Text = "❌ Tombol SUGAR tidak ditemukan!"
+        return
+    end
+    
+    if not gelatinBtn then
+        AutoBuyStatus.Text = "❌ Tombol GELATIN tidak ditemukan!"
+        return
+    end
+    
+    -- Dapatkan posisi tombol
+    local waterPos = waterBtn.AbsolutePosition
+    local waterSize = waterBtn.AbsoluteSize
+    local waterX = waterPos.X + waterSize.X/2
+    local waterY = waterPos.Y + waterSize.Y/2
+    
+    local sugarPos = sugarBtn.AbsolutePosition
+    local sugarSize = sugarBtn.AbsoluteSize
+    local sugarX = sugarPos.X + sugarSize.X/2
+    local sugarY = sugarPos.Y + sugarSize.Y/2
+    
+    local gelatinPos = gelatinBtn.AbsolutePosition
+    local gelatinSize = gelatinBtn.AbsoluteSize
+    local gelatinX = gelatinPos.X + gelatinSize.X/2
+    local gelatinY = gelatinPos.Y + gelatinSize.Y/2
+    
+    -- Konfirmasi
+    AutoBuyStatus.Text = "✅ Tombol ditemukan! Memulai auto buy..."
+    AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    task.wait(1)
+    
     autoBuyRunning = true
     
-    AutoBuyStatus.Text = "💰 AUTO BUY RUNNING (Target: " .. targetAmount .. " masing2)"
-    AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
-    
-    -- Loop beli berurutan sampai target tercapai
+    -- Loop beli berurutan
     while autoBuyRunning and (waterCount < targetAmount or sugarCount < targetAmount or gelatinCount < targetAmount) do
-        
-        -- WATER (cari "Water" atau "$20")
+        -- WATER
         if autoBuyRunning and waterCount < targetAmount then
-            AutoBuyStatus.Text = "💧 Beli WATER... (" .. (waterCount + 1) .. "/" .. targetAmount .. ")"
-            if clickBuyButton("Water") then
-                waterCount = waterCount + 1
-                updateProgress()
-                task.wait(0.5) -- Jeda biar tidak terburu-buru
-            else
-                AutoBuyStatus.Text = "⚠️ Tombol WATER tidak ditemukan!"
-                task.wait(1)
-            end
+            AutoBuyStatus.Text = "💧 WATER " .. (waterCount + 1) .. "/" .. targetAmount
+            clickAtPosition(waterX, waterY)
+            waterCount = waterCount + 1
+            updateProgress()
+            task.wait(0.3)
         end
         
         if not autoBuyRunning then break end
-        task.wait(0.3)
         
-        -- SUGAR (cari "Sugar Block Bag" atau "$100")
+        -- SUGAR
         if autoBuyRunning and sugarCount < targetAmount then
-            AutoBuyStatus.Text = "🍬 Beli SUGAR... (" .. (sugarCount + 1) .. "/" .. targetAmount .. ")"
-            if clickBuyButton("Sugar") then
-                sugarCount = sugarCount + 1
-                updateProgress()
-                task.wait(0.5)
-            else
-                AutoBuyStatus.Text = "⚠️ Tombol SUGAR tidak ditemukan!"
-                task.wait(1)
-            end
+            AutoBuyStatus.Text = "🍬 SUGAR " .. (sugarCount + 1) .. "/" .. targetAmount
+            clickAtPosition(sugarX, sugarY)
+            sugarCount = sugarCount + 1
+            updateProgress()
+            task.wait(0.3)
         end
         
         if not autoBuyRunning then break end
-        task.wait(0.3)
         
-        -- GELATIN (cari "Gelatin" atau "$70")
+        -- GELATIN
         if autoBuyRunning and gelatinCount < targetAmount then
-            AutoBuyStatus.Text = "🧪 Beli GELATIN... (" .. (gelatinCount + 1) .. "/" .. targetAmount .. ")"
-            if clickBuyButton("Gelatin") then
-                gelatinCount = gelatinCount + 1
-                updateProgress()
-                task.wait(0.5)
-            else
-                AutoBuyStatus.Text = "⚠️ Tombol GELATIN tidak ditemukan!"
-                task.wait(1)
-            end
+            AutoBuyStatus.Text = "🧪 GELATIN " .. (gelatinCount + 1) .. "/" .. targetAmount
+            clickAtPosition(gelatinX, gelatinY)
+            gelatinCount = gelatinCount + 1
+            updateProgress()
+            task.wait(0.3)
         end
         
-        -- Update progress setiap selesai 1 siklus
-        AutoBuyStatus.Text = string.format("✅ Progress: W:%d S:%d G:%d", waterCount, sugarCount, gelatinCount)
-        task.wait(0.5)
+        AutoBuyStatus.Text = string.format("✅ W:%d S:%d G:%d", waterCount, sugarCount, gelatinCount)
     end
     
     autoBuyRunning = false
     
-    -- Cek apakah target tercapai
     if waterCount >= targetAmount and sugarCount >= targetAmount and gelatinCount >= targetAmount then
         AutoBuyStatus.Text = "✅ SELESAI! Semua target tercapai!"
         AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)

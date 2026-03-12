@@ -651,7 +651,7 @@ AutoBuyInfo.Parent = AutoBuyContent
 AutoBuyInfo.Size = UDim2.new(1,-20,0,30)
 AutoBuyInfo.Position = UDim2.new(0,10,0,45)
 AutoBuyInfo.BackgroundColor3 = Color3.fromRGB(50,50,60)
-AutoBuyInfo.Text = "📌 Cari tombol: WATER, SUGAR BLOCK BAG, GELATIN"
+AutoBuyInfo.Text = "📌 Support ImageButton | Cari: WATER, SUGAR, GELATIN"
 AutoBuyInfo.TextColor3 = Color3.fromRGB(255,255,255)
 AutoBuyInfo.Font = Enum.Font.Gotham
 AutoBuyInfo.TextSize = 12
@@ -945,7 +945,7 @@ function blinkMundur()
 end
 -- ========================================================
 
--- ========== [DYRON] AUTO BUY FIX - VERSI SEDERHANA ==========
+-- ========== [DYRON] AUTO BUY FIX - SUPPORT IMAGE BUTTON ==========
 function clickAtPosition(x, y)
     VirtualInputManager:SendMouseMoveEvent(x, y, game)
     task.wait(0.1)
@@ -954,31 +954,68 @@ function clickAtPosition(x, y)
     VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
 end
 
-function findButtonByText(text)
+function findAllButtons()
+    local buttons = {}
+    
     -- Cari di PlayerGui
     for _, gui in pairs(player.PlayerGui:GetChildren()) do
         if gui:IsA("ScreenGui") then
-            for _, button in pairs(gui:GetDescendants()) do
-                if button:IsA("TextButton") then
-                    if string.find(string.upper(button.Text or ""), string.upper(text)) then
-                        return button
-                    end
+            for _, obj in pairs(gui:GetDescendants()) do
+                if obj:IsA("TextButton") or obj:IsA("ImageButton") then
+                    table.insert(buttons, obj)
                 end
             end
         end
     end
+    
     -- Cari di CoreGui
     for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
         if gui:IsA("ScreenGui") then
-            for _, button in pairs(gui:GetDescendants()) do
-                if button:IsA("TextButton") then
-                    if string.find(string.upper(button.Text or ""), string.upper(text)) then
-                        return button
-                    end
+            for _, obj in pairs(gui:GetDescendants()) do
+                if obj:IsA("TextButton") or obj:IsA("ImageButton") then
+                    table.insert(buttons, obj)
                 end
             end
         end
     end
+    
+    return buttons
+end
+
+function findButtonByText(text)
+    local allButtons = findAllButtons()
+    local searchUpper = string.upper(text)
+    
+    for _, button in pairs(allButtons) do
+        -- Cek di Text (untuk TextButton)
+        local btnText = string.upper(button.Text or "")
+        if string.find(btnText, searchUpper) then
+            return button
+        end
+        
+        -- Cek di Name (untuk ImageButton yang mungkin punya nama)
+        local btnName = string.upper(button.Name or "")
+        if string.find(btnName, searchUpper) then
+            return button
+        end
+        
+        -- Cek di ToolTip (kadang ada tooltip)
+        local tooltip = string.upper(button.ToolTip or "")
+        if string.find(tooltip, searchUpper) then
+            return button
+        end
+        
+        -- Cek di child objects (mungkin ada TextLabel di dalam button)
+        for _, child in pairs(button:GetChildren()) do
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                local childText = string.upper(child.Text or "")
+                if string.find(childText, searchUpper) then
+                    return button
+                end
+            end
+        end
+    end
+    
     return nil
 end
 
@@ -994,14 +1031,23 @@ function startAutoBuy()
     gelatinCount = 0
     updateProgress()
     
-    AutoBuyStatus.Text = "🔍 Mencari tombol-tombol..."
+    AutoBuyStatus.Text = "🔍 Mencari tombol-tombol (support image)..."
     AutoBuyStatus.TextColor3 = Color3.fromRGB(255,255,0)
     task.wait(0.5)
     
-    -- Cari semua tombol
-    local waterBtn = findButtonByText("WATER")
-    local sugarBtn = findButtonByText("SUGAR")
-    local gelatinBtn = findButtonByText("GELATIN")
+    -- Cari semua tombol dengan berbagai pattern
+    local waterBtn = findButtonByText("WATER") or findButtonByText("$20")
+    local sugarBtn = findButtonByText("SUGAR") or findButtonByText("$100") or findButtonByText("BLOCK")
+    local gelatinBtn = findButtonByText("GELATIN") or findButtonByText("$70")
+    
+    -- Debug: kasih tau tombol apa yang ditemukan
+    local debugMsg = ""
+    if waterBtn then debugMsg = debugMsg .. " WATER✓" end
+    if sugarBtn then debugMsg = debugMsg .. " SUGAR✓" end
+    if gelatinBtn then debugMsg = debugMsg .. " GELATIN✓" end
+    
+    AutoBuyStatus.Text = "🔍 Ditemukan:" .. debugMsg
+    task.wait(1)
     
     -- Cek apakah semua tombol ditemukan
     if not waterBtn then

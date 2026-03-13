@@ -14,6 +14,8 @@ local keyGui = Instance.new("ScreenGui")
 keyGui.Name = "KeySystem_191"
 keyGui.Parent = player:WaitForChild("PlayerGui")
 keyGui.ResetOnSpawn = false
+keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+keyGui.DisplayOrder = 999
 
 -- Frame Utama Key System
 local mainFrame = Instance.new("Frame")
@@ -21,10 +23,12 @@ mainFrame.Parent = keyGui
 mainFrame.Size = UDim2.new(0, 350, 0, 200)
 mainFrame.Position = UDim2.new(0.5, -175, 0.5, -100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-mainFrame.BackgroundTransparency = 0.1
+mainFrame.BackgroundTransparency = 0
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Draggable = true
+mainFrame.Visible = true
+mainFrame.ZIndex = 2
 
 -- Rounded Corners
 local mainCorner = Instance.new("UICorner")
@@ -43,6 +47,7 @@ titleBar.Parent = mainFrame
 titleBar.Size = UDim2.new(1, 0, 0, 45)
 titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 titleBar.BorderSizePixel = 0
+titleBar.ZIndex = 3
 
 local titleCorner = Instance.new("UICorner")
 titleCorner.Parent = titleBar
@@ -59,6 +64,7 @@ titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleText.TextXAlignment = Enum.TextXAlignment.Left
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 16
+titleText.ZIndex = 4
 
 -- Konten Frame
 local contentFrame = Instance.new("Frame")
@@ -66,6 +72,7 @@ contentFrame.Parent = mainFrame
 contentFrame.Size = UDim2.new(1, -20, 1, -60)
 contentFrame.Position = UDim2.new(0, 10, 0, 50)
 contentFrame.BackgroundTransparency = 1
+contentFrame.ZIndex = 3
 
 -- Label instruksi
 local instructionLabel = Instance.new("TextLabel")
@@ -78,6 +85,7 @@ instructionLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 instructionLabel.TextXAlignment = Enum.TextXAlignment.Left
 instructionLabel.Font = Enum.Font.Gotham
 instructionLabel.TextSize = 14
+instructionLabel.ZIndex = 4
 
 -- TextBox untuk input key
 local keyBox = Instance.new("TextBox")
@@ -85,6 +93,7 @@ keyBox.Parent = contentFrame
 keyBox.Size = UDim2.new(1, 0, 0, 45)
 keyBox.Position = UDim2.new(0, 0, 0, 40)
 keyBox.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+keyBox.BackgroundTransparency = 0
 keyBox.PlaceholderText = "Masukkan Key..."
 keyBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 keyBox.Text = ""
@@ -92,6 +101,7 @@ keyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 keyBox.Font = Enum.Font.Gotham
 keyBox.TextSize = 16
 keyBox.ClearTextOnFocus = false
+keyBox.ZIndex = 4
 
 local keyBoxCorner = Instance.new("UICorner")
 keyBoxCorner.Parent = keyBox
@@ -103,10 +113,12 @@ submitBtn.Parent = contentFrame
 submitBtn.Size = UDim2.new(1, 0, 0, 45)
 submitBtn.Position = UDim2.new(0, 0, 0, 95)
 submitBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+submitBtn.BackgroundTransparency = 0
 submitBtn.Text = "✅ VERIFY KEY"
 submitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 submitBtn.Font = Enum.Font.GothamBold
 submitBtn.TextSize = 16
+submitBtn.ZIndex = 4
 
 local submitBtnCorner = Instance.new("UICorner")
 submitBtnCorner.Parent = submitBtn
@@ -123,6 +135,7 @@ statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 statusLabel.TextXAlignment = Enum.TextXAlignment.Center
 statusLabel.Font = Enum.Font.GothamBold
 statusLabel.TextSize = 14
+statusLabel.ZIndex = 4
 
 -- Fungsi untuk memuat GUI utama
 local function loadMainHub()
@@ -136,6 +149,8 @@ local function loadMainHub()
 	ScreenGui.Parent = player:WaitForChild("PlayerGui")
 	ScreenGui.Name = "TP_Hub_191"
 	ScreenGui.ResetOnSpawn = false
+	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	ScreenGui.DisplayOrder = 999
 
 	-- Main Frame
 	local Frame = Instance.new("Frame")
@@ -143,11 +158,13 @@ local function loadMainHub()
 	Frame.Size = UDim2.new(0,400,0,600)
 	Frame.Position = UDim2.new(0.5,-200,0.5,-300)
 	Frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
-	Frame.BackgroundTransparency = 0.1
+	Frame.BackgroundTransparency = 0
 	Frame.BorderSizePixel = 0
 	Frame.Active = true
 	Frame.Draggable = true
 	Frame.ClipsDescendants = true
+	Frame.Visible = true
+	Frame.ZIndex = 2
 
 	-- Rounded Corners
 	local Corner = Instance.new("UICorner")
@@ -166,6 +183,7 @@ local function loadMainHub()
 	TitleBar.Size = UDim2.new(1,0,0,60)
 	TitleBar.BackgroundColor3 = Color3.fromRGB(35,35,45)
 	TitleBar.BorderSizePixel = 0
+	TitleBar.ZIndex = 3
 
 	local TitleCorner = Instance.new("UICorner")
 	TitleCorner.Parent = TitleBar
@@ -182,6 +200,7 @@ local function loadMainHub()
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	Title.Font = Enum.Font.GothamBold
 	Title.TextSize = 20
+	Title.ZIndex = 4
 
 	-- Billboard Text
 	local BillboardText = Instance.new("TextLabel")
@@ -195,6 +214,7 @@ local function loadMainHub()
 	BillboardText.Font = Enum.Font.Gotham
 	BillboardText.TextSize = 12
 	BillboardText.TextWrapped = true
+	BillboardText.ZIndex = 4
 
 	-- Minimize Button
 	local MinBtn = Instance.new("TextButton")
@@ -202,10 +222,12 @@ local function loadMainHub()
 	MinBtn.Size = UDim2.new(0,30,0,30)
 	MinBtn.Position = UDim2.new(1,-35,0,15)
 	MinBtn.BackgroundColor3 = Color3.fromRGB(60,60,70)
+	MinBtn.BackgroundTransparency = 0
 	MinBtn.Text = "−"
 	MinBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	MinBtn.TextSize = 20
 	MinBtn.Font = Enum.Font.GothamBold
+	MinBtn.ZIndex = 4
 
 	local MinCorner = Instance.new("UICorner")
 	MinCorner.Parent = MinBtn
@@ -234,7 +256,9 @@ local function loadMainHub()
 	TabFrame.Size = UDim2.new(1,0,0,40)
 	TabFrame.Position = UDim2.new(0,0,0,60)
 	TabFrame.BackgroundColor3 = Color3.fromRGB(30,30,40)
+	TabFrame.BackgroundTransparency = 0
 	TabFrame.BorderSizePixel = 0
+	TabFrame.ZIndex = 3
 
 	-- TP Tab Button
 	local TPTabBtn = Instance.new("TextButton")
@@ -242,10 +266,12 @@ local function loadMainHub()
 	TPTabBtn.Size = UDim2.new(0.333,-3,1,-8)
 	TPTabBtn.Position = UDim2.new(0,4,0,4)
 	TPTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
+	TPTabBtn.BackgroundTransparency = 0
 	TPTabBtn.Text = "🚀 TP"
 	TPTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	TPTabBtn.Font = Enum.Font.GothamBold
 	TPTabBtn.TextSize = 14
+	TPTabBtn.ZIndex = 4
 
 	local TPTabCorner = Instance.new("UICorner")
 	TPTabCorner.Parent = TPTabBtn
@@ -257,10 +283,12 @@ local function loadMainHub()
 	MSLoopTabBtn.Size = UDim2.new(0.333,-3,1,-8)
 	MSLoopTabBtn.Position = UDim2.new(0.333,0,0,4)
 	MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+	MSLoopTabBtn.BackgroundTransparency = 0
 	MSLoopTabBtn.Text = "🔄 MS AUTO"
 	MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
 	MSLoopTabBtn.Font = Enum.Font.GothamBold
 	MSLoopTabBtn.TextSize = 14
+	MSLoopTabBtn.ZIndex = 4
 
 	local MSLoopTabCorner = Instance.new("UICorner")
 	MSLoopTabCorner.Parent = MSLoopTabBtn
@@ -272,10 +300,12 @@ local function loadMainHub()
 	MSSafetyTabBtn.Size = UDim2.new(0.333,-3,1,-8)
 	MSSafetyTabBtn.Position = UDim2.new(0.666,0,0,4)
 	MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+	MSSafetyTabBtn.BackgroundTransparency = 0
 	MSSafetyTabBtn.Text = "🛡️ MS SAFETY"
 	MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
 	MSSafetyTabBtn.Font = Enum.Font.GothamBold
 	MSSafetyTabBtn.TextSize = 14
+	MSSafetyTabBtn.ZIndex = 4
 
 	local MSSafetyTabCorner = Instance.new("UICorner")
 	MSSafetyTabCorner.Parent = MSSafetyTabBtn
@@ -288,7 +318,8 @@ local function loadMainHub()
 	Content.Position = UDim2.new(0,0,0,100)
 	Content.BackgroundColor3 = Color3.fromRGB(25,25,35)
 	Content.BorderSizePixel = 0
-	Content.BackgroundTransparency = 0.1
+	Content.BackgroundTransparency = 0
+	Content.ZIndex = 3
 
 	local ContentCorner = Instance.new("UICorner")
 	ContentCorner.Parent = Content
@@ -302,6 +333,9 @@ local function loadMainHub()
 	TPContent.Visible = true
 	TPContent.ScrollBarThickness = 6
 	TPContent.CanvasSize = UDim2.new(0,0,0,200)
+	TPContent.ZIndex = 4
+	TPContent.BackgroundColor3 = Color3.fromRGB(25,25,35)
+	TPContent.BorderSizePixel = 0
 
 	-- MS Loop Tab Content
 	local MSLoopContent = Instance.new("ScrollingFrame")
@@ -311,6 +345,9 @@ local function loadMainHub()
 	MSLoopContent.Visible = false
 	MSLoopContent.ScrollBarThickness = 6
 	MSLoopContent.CanvasSize = UDim2.new(0,0,0,400)
+	MSLoopContent.ZIndex = 4
+	MSLoopContent.BackgroundColor3 = Color3.fromRGB(25,25,35)
+	MSLoopContent.BorderSizePixel = 0
 
 	-- MS SAFETY TAB CONTENT
 	local MSSafetyContent = Instance.new("ScrollingFrame")
@@ -320,6 +357,9 @@ local function loadMainHub()
 	MSSafetyContent.Visible = false
 	MSSafetyContent.ScrollBarThickness = 6
 	MSSafetyContent.CanvasSize = UDim2.new(0,0,0,400)
+	MSSafetyContent.ZIndex = 4
+	MSSafetyContent.BackgroundColor3 = Color3.fromRGB(25,25,35)
+	MSSafetyContent.BorderSizePixel = 0
 
 	-- Title MS Safety
 	local MSSafetyTitle = Instance.new("TextLabel")
@@ -332,6 +372,7 @@ local function loadMainHub()
 	MSSafetyTitle.TextXAlignment = Enum.TextXAlignment.Left
 	MSSafetyTitle.Font = Enum.Font.GothamBold
 	MSSafetyTitle.TextSize = 24
+	MSSafetyTitle.ZIndex = 5
 
 	-- Description
 	local MSSafetyDesc = Instance.new("TextLabel")
@@ -344,6 +385,7 @@ local function loadMainHub()
 	MSSafetyDesc.TextXAlignment = Enum.TextXAlignment.Left
 	MSSafetyDesc.Font = Enum.Font.Gotham
 	MSSafetyDesc.TextSize = 14
+	MSSafetyDesc.ZIndex = 5
 
 	-- BLINK KE BAWAH
 	local BlinkDownFrame = Instance.new("Frame")
@@ -351,7 +393,9 @@ local function loadMainHub()
 	BlinkDownFrame.Size = UDim2.new(1,-20,0,80)
 	BlinkDownFrame.Position = UDim2.new(0,10,0,100)
 	BlinkDownFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+	BlinkDownFrame.BackgroundTransparency = 0
 	BlinkDownFrame.BorderSizePixel = 0
+	BlinkDownFrame.ZIndex = 5
 
 	local BlinkDownCorner = Instance.new("UICorner")
 	BlinkDownCorner.Parent = BlinkDownFrame
@@ -366,6 +410,7 @@ local function loadMainHub()
 	BlinkDownIcon.TextSize = 40
 	BlinkDownIcon.Font = Enum.Font.GothamBold
 	BlinkDownIcon.TextColor3 = Color3.fromRGB(255,255,255)
+	BlinkDownIcon.ZIndex = 6
 
 	local BlinkDownTitle = Instance.new("TextLabel")
 	BlinkDownTitle.Parent = BlinkDownFrame
@@ -377,6 +422,7 @@ local function loadMainHub()
 	BlinkDownTitle.TextXAlignment = Enum.TextXAlignment.Left
 	BlinkDownTitle.Font = Enum.Font.GothamBold
 	BlinkDownTitle.TextSize = 18
+	BlinkDownTitle.ZIndex = 6
 
 	local BlinkDownDesc = Instance.new("TextLabel")
 	BlinkDownDesc.Parent = BlinkDownFrame
@@ -388,16 +434,19 @@ local function loadMainHub()
 	BlinkDownDesc.TextXAlignment = Enum.TextXAlignment.Left
 	BlinkDownDesc.Font = Enum.Font.Gotham
 	BlinkDownDesc.TextSize = 12
+	BlinkDownDesc.ZIndex = 6
 
 	local BlinkDownBtn = Instance.new("TextButton")
 	BlinkDownBtn.Parent = BlinkDownFrame
 	BlinkDownBtn.Size = UDim2.new(0,40,0,40)
 	BlinkDownBtn.Position = UDim2.new(1,-50,0.5,-20)
 	BlinkDownBtn.BackgroundColor3 = Color3.fromRGB(0,150,200)
+	BlinkDownBtn.BackgroundTransparency = 0
 	BlinkDownBtn.Text = "▶️"
 	BlinkDownBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	BlinkDownBtn.TextSize = 20
 	BlinkDownBtn.Font = Enum.Font.GothamBold
+	BlinkDownBtn.ZIndex = 6
 
 	local BlinkDownBtnCorner = Instance.new("UICorner")
 	BlinkDownBtnCorner.Parent = BlinkDownBtn
@@ -409,7 +458,9 @@ local function loadMainHub()
 	BlinkMajuFrame.Size = UDim2.new(1,-20,0,80)
 	BlinkMajuFrame.Position = UDim2.new(0,10,0,190)
 	BlinkMajuFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+	BlinkMajuFrame.BackgroundTransparency = 0
 	BlinkMajuFrame.BorderSizePixel = 0
+	BlinkMajuFrame.ZIndex = 5
 
 	local BlinkMajuCorner = Instance.new("UICorner")
 	BlinkMajuCorner.Parent = BlinkMajuFrame
@@ -424,6 +475,7 @@ local function loadMainHub()
 	BlinkMajuIcon.TextSize = 40
 	BlinkMajuIcon.Font = Enum.Font.GothamBold
 	BlinkMajuIcon.TextColor3 = Color3.fromRGB(255,255,255)
+	BlinkMajuIcon.ZIndex = 6
 
 	local BlinkMajuTitle = Instance.new("TextLabel")
 	BlinkMajuTitle.Parent = BlinkMajuFrame
@@ -435,6 +487,7 @@ local function loadMainHub()
 	BlinkMajuTitle.TextXAlignment = Enum.TextXAlignment.Left
 	BlinkMajuTitle.Font = Enum.Font.GothamBold
 	BlinkMajuTitle.TextSize = 18
+	BlinkMajuTitle.ZIndex = 6
 
 	local BlinkMajuDesc = Instance.new("TextLabel")
 	BlinkMajuDesc.Parent = BlinkMajuFrame
@@ -446,16 +499,19 @@ local function loadMainHub()
 	BlinkMajuDesc.TextXAlignment = Enum.TextXAlignment.Left
 	BlinkMajuDesc.Font = Enum.Font.Gotham
 	BlinkMajuDesc.TextSize = 12
+	BlinkMajuDesc.ZIndex = 6
 
 	local BlinkMajuBtn = Instance.new("TextButton")
 	BlinkMajuBtn.Parent = BlinkMajuFrame
 	BlinkMajuBtn.Size = UDim2.new(0,40,0,40)
 	BlinkMajuBtn.Position = UDim2.new(1,-50,0.5,-20)
 	BlinkMajuBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+	BlinkMajuBtn.BackgroundTransparency = 0
 	BlinkMajuBtn.Text = "▶️"
 	BlinkMajuBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	BlinkMajuBtn.TextSize = 20
 	BlinkMajuBtn.Font = Enum.Font.GothamBold
+	BlinkMajuBtn.ZIndex = 6
 
 	local BlinkMajuBtnCorner = Instance.new("UICorner")
 	BlinkMajuBtnCorner.Parent = BlinkMajuBtn
@@ -467,7 +523,9 @@ local function loadMainHub()
 	BlinkMundurFrame.Size = UDim2.new(1,-20,0,80)
 	BlinkMundurFrame.Position = UDim2.new(0,10,0,280)
 	BlinkMundurFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+	BlinkMundurFrame.BackgroundTransparency = 0
 	BlinkMundurFrame.BorderSizePixel = 0
+	BlinkMundurFrame.ZIndex = 5
 
 	local BlinkMundurCorner = Instance.new("UICorner")
 	BlinkMundurCorner.Parent = BlinkMundurFrame
@@ -482,6 +540,7 @@ local function loadMainHub()
 	BlinkMundurIcon.TextSize = 40
 	BlinkMundurIcon.Font = Enum.Font.GothamBold
 	BlinkMundurIcon.TextColor3 = Color3.fromRGB(255,255,255)
+	BlinkMundurIcon.ZIndex = 6
 
 	local BlinkMundurTitle = Instance.new("TextLabel")
 	BlinkMundurTitle.Parent = BlinkMundurFrame
@@ -493,6 +552,7 @@ local function loadMainHub()
 	BlinkMundurTitle.TextXAlignment = Enum.TextXAlignment.Left
 	BlinkMundurTitle.Font = Enum.Font.GothamBold
 	BlinkMundurTitle.TextSize = 18
+	BlinkMundurTitle.ZIndex = 6
 
 	local BlinkMundurDesc = Instance.new("TextLabel")
 	BlinkMundurDesc.Parent = BlinkMundurFrame
@@ -504,16 +564,19 @@ local function loadMainHub()
 	BlinkMundurDesc.TextXAlignment = Enum.TextXAlignment.Left
 	BlinkMundurDesc.Font = Enum.Font.Gotham
 	BlinkMundurDesc.TextSize = 12
+	BlinkMundurDesc.ZIndex = 6
 
 	local BlinkMundurBtn = Instance.new("TextButton")
 	BlinkMundurBtn.Parent = BlinkMundurFrame
 	BlinkMundurBtn.Size = UDim2.new(0,40,0,40)
 	BlinkMundurBtn.Position = UDim2.new(1,-50,0.5,-20)
 	BlinkMundurBtn.BackgroundColor3 = Color3.fromRGB(200,100,0)
+	BlinkMundurBtn.BackgroundTransparency = 0
 	BlinkMundurBtn.Text = "▶️"
 	BlinkMundurBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	BlinkMundurBtn.TextSize = 20
 	BlinkMundurBtn.Font = Enum.Font.GothamBold
+	BlinkMundurBtn.ZIndex = 6
 
 	local BlinkMundurBtnCorner = Instance.new("UICorner")
 	BlinkMundurBtnCorner.Parent = BlinkMundurBtn
@@ -525,10 +588,12 @@ local function loadMainHub()
 	BlinkStatus.Size = UDim2.new(1,-20,0,30)
 	BlinkStatus.Position = UDim2.new(0,10,0,370)
 	BlinkStatus.BackgroundColor3 = Color3.fromRGB(40,40,50)
+	BlinkStatus.BackgroundTransparency = 0
 	BlinkStatus.Text = "klik aja ngab fitur nya"
 	BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
 	BlinkStatus.Font = Enum.Font.GothamBold
 	BlinkStatus.TextSize = 14
+	BlinkStatus.ZIndex = 6
 
 	local BlinkStatusCorner = Instance.new("UICorner")
 	BlinkStatusCorner.Parent = BlinkStatus
@@ -540,8 +605,10 @@ local function loadMainHub()
 	BtnBahan.Size = UDim2.new(1,-20,0,70)
 	BtnBahan.Position = UDim2.new(0,10,0,20)
 	BtnBahan.BackgroundColor3 = Color3.fromRGB(50,50,70)
+	BtnBahan.BackgroundTransparency = 0
 	BtnBahan.Text = ""
 	BtnBahan.BorderSizePixel = 0
+	BtnBahan.ZIndex = 5
 
 	local BtnBahanCorner = Instance.new("UICorner")
 	BtnBahanCorner.Parent = BtnBahan
@@ -556,6 +623,7 @@ local function loadMainHub()
 	BahanIcon.TextSize = 30
 	BahanIcon.Font = Enum.Font.GothamBold
 	BahanIcon.TextColor3 = Color3.fromRGB(255,255,255)
+	BahanIcon.ZIndex = 6
 
 	local BahanText = Instance.new("TextLabel")
 	BahanText.Parent = BtnBahan
@@ -567,6 +635,7 @@ local function loadMainHub()
 	BahanText.TextXAlignment = Enum.TextXAlignment.Left
 	BahanText.Font = Enum.Font.GothamBold
 	BahanText.TextSize = 16
+	BahanText.ZIndex = 6
 
 	local BahanDesc = Instance.new("TextLabel")
 	BahanDesc.Parent = BtnBahan
@@ -578,14 +647,17 @@ local function loadMainHub()
 	BahanDesc.TextXAlignment = Enum.TextXAlignment.Left
 	BahanDesc.Font = Enum.Font.Gotham
 	BahanDesc.TextSize = 12
+	BahanDesc.ZIndex = 6
 
 	local BtnRS = Instance.new("TextButton")
 	BtnRS.Parent = TPContent
 	BtnRS.Size = UDim2.new(1,-20,0,70)
 	BtnRS.Position = UDim2.new(0,10,0,100)
 	BtnRS.BackgroundColor3 = Color3.fromRGB(70,50,50)
+	BtnRS.BackgroundTransparency = 0
 	BtnRS.Text = ""
 	BtnRS.BorderSizePixel = 0
+	BtnRS.ZIndex = 5
 
 	local BtnRSCorner = Instance.new("UICorner")
 	BtnRSCorner.Parent = BtnRS
@@ -600,6 +672,7 @@ local function loadMainHub()
 	RSIcon.TextSize = 30
 	RSIcon.Font = Enum.Font.GothamBold
 	RSIcon.TextColor3 = Color3.fromRGB(255,255,255)
+	RSIcon.ZIndex = 6
 
 	local RSText = Instance.new("TextLabel")
 	RSText.Parent = BtnRS
@@ -611,6 +684,7 @@ local function loadMainHub()
 	RSText.TextXAlignment = Enum.TextXAlignment.Left
 	RSText.Font = Enum.Font.GothamBold
 	RSText.TextSize = 16
+	RSText.ZIndex = 6
 
 	local RSDesc = Instance.new("TextLabel")
 	RSDesc.Parent = BtnRS
@@ -622,6 +696,7 @@ local function loadMainHub()
 	RSDesc.TextXAlignment = Enum.TextXAlignment.Left
 	RSDesc.Font = Enum.Font.Gotham
 	RSDesc.TextSize = 12
+	RSDesc.ZIndex = 6
 
 	-- MS LOOP CONTENT
 	local MSLoopTitle = Instance.new("TextLabel")
@@ -634,16 +709,19 @@ local function loadMainHub()
 	MSLoopTitle.TextXAlignment = Enum.TextXAlignment.Left
 	MSLoopTitle.Font = Enum.Font.GothamBold
 	MSLoopTitle.TextSize = 16
+	MSLoopTitle.ZIndex = 5
 
 	local MSLoopStatus = Instance.new("TextLabel")
 	MSLoopStatus.Parent = MSLoopContent
 	MSLoopStatus.Size = UDim2.new(1,-20,0,40)
 	MSLoopStatus.Position = UDim2.new(0,10,0,45)
 	MSLoopStatus.BackgroundColor3 = Color3.fromRGB(40,40,50)
+	MSLoopStatus.BackgroundTransparency = 0
 	MSLoopStatus.Text = "⏹️ LOOP STOPPED"
 	MSLoopStatus.TextColor3 = Color3.fromRGB(255,100,100)
 	MSLoopStatus.Font = Enum.Font.GothamBold
 	MSLoopStatus.TextSize = 16
+	MSLoopStatus.ZIndex = 5
 
 	local MSLoopStatusCorner = Instance.new("UICorner")
 	MSLoopStatusCorner.Parent = MSLoopStatus
@@ -659,6 +737,7 @@ local function loadMainHub()
 	MSLoopStepLabel.TextXAlignment = Enum.TextXAlignment.Left
 	MSLoopStepLabel.Font = Enum.Font.Gotham
 	MSLoopStepLabel.TextSize = 14
+	MSLoopStepLabel.ZIndex = 5
 
 	local MSLoopTimer = Instance.new("TextLabel")
 	MSLoopTimer.Parent = MSLoopContent
@@ -670,6 +749,7 @@ local function loadMainHub()
 	MSLoopTimer.TextXAlignment = Enum.TextXAlignment.Left
 	MSLoopTimer.Font = Enum.Font.Gotham
 	MSLoopTimer.TextSize = 14
+	MSLoopTimer.ZIndex = 5
 
 	-- Tool Status
 	local ToolStatus = Instance.new("TextLabel")
@@ -682,6 +762,7 @@ local function loadMainHub()
 	ToolStatus.TextXAlignment = Enum.TextXAlignment.Left
 	ToolStatus.Font = Enum.Font.GothamBold
 	ToolStatus.TextSize = 14
+	ToolStatus.ZIndex = 5
 
 	-- Informasi Jeda
 	local JedaInfo = Instance.new("TextLabel")
@@ -694,16 +775,19 @@ local function loadMainHub()
 	JedaInfo.TextXAlignment = Enum.TextXAlignment.Left
 	JedaInfo.Font = Enum.Font.Gotham
 	JedaInfo.TextSize = 12
+	JedaInfo.ZIndex = 5
 
 	local MSLoopStartBtn = Instance.new("TextButton")
 	MSLoopStartBtn.Parent = MSLoopContent
 	MSLoopStartBtn.Size = UDim2.new(0.5,-15,0,45)
 	MSLoopStartBtn.Position = UDim2.new(0,10,0,205)
 	MSLoopStartBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
+	MSLoopStartBtn.BackgroundTransparency = 0
 	MSLoopStartBtn.Text = "▶️ START LOOP"
 	MSLoopStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	MSLoopStartBtn.Font = Enum.Font.GothamBold
 	MSLoopStartBtn.TextSize = 16
+	MSLoopStartBtn.ZIndex = 5
 
 	local MSLoopStartCorner = Instance.new("UICorner")
 	MSLoopStartCorner.Parent = MSLoopStartBtn
@@ -714,10 +798,12 @@ local function loadMainHub()
 	MSLoopStopBtn.Size = UDim2.new(0.5,-15,0,45)
 	MSLoopStopBtn.Position = UDim2.new(0.5,5,0,205)
 	MSLoopStopBtn.BackgroundColor3 = Color3.fromRGB(150,50,50)
+	MSLoopStopBtn.BackgroundTransparency = 0
 	MSLoopStopBtn.Text = "⏹️ STOP LOOP"
 	MSLoopStopBtn.TextColor3 = Color3.fromRGB(255,255,255)
 	MSLoopStopBtn.Font = Enum.Font.GothamBold
 	MSLoopStopBtn.TextSize = 16
+	MSLoopStopBtn.ZIndex = 5
 
 	local MSLoopStopCorner = Instance.new("UICorner")
 	MSLoopStopCorner.Parent = MSLoopStopBtn

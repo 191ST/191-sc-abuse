@@ -631,13 +631,13 @@ local MSLoopStopCorner = Instance.new("UICorner")
 MSLoopStopCorner.Parent = MSLoopStopBtn
 MSLoopStopCorner.CornerRadius = UDim.new(0,8)
 
--- ========== AUTO BUY DENGAN RECORD SUPER MUDAH ==========
+-- ========== AUTO BUY DENGAN RECORD AREA ==========
 local AutoBuyTitle = Instance.new("TextLabel")
 AutoBuyTitle.Parent = AutoBuyContent
 AutoBuyTitle.Size = UDim2.new(1,-20,0,30)
 AutoBuyTitle.Position = UDim2.new(0,10,0,10)
 AutoBuyTitle.BackgroundTransparency = 1
-AutoBuyTitle.Text = "💰 AUTO BUY (RECORD MANUAL)"
+AutoBuyTitle.Text = "💰 AUTO BUY (RECORD AREA)"
 AutoBuyTitle.TextColor3 = Color3.fromRGB(255,200,100)
 AutoBuyTitle.TextXAlignment = Enum.TextXAlignment.Left
 AutoBuyTitle.Font = Enum.Font.GothamBold
@@ -649,7 +649,7 @@ AutoBuyInfo.Parent = AutoBuyContent
 AutoBuyInfo.Size = UDim2.new(1,-20,0,30)
 AutoBuyInfo.Position = UDim2.new(0,10,0,45)
 AutoBuyInfo.BackgroundColor3 = Color3.fromRGB(50,50,60)
-AutoBuyInfo.Text = "📌 CARA: Klik RECORD, lalu klik 3 tombol di shop"
+AutoBuyInfo.Text = "📌 CARA: Klik RECORD, lalu klik AREA tombol di shop"
 AutoBuyInfo.TextColor3 = Color3.fromRGB(255,255,255)
 AutoBuyInfo.Font = Enum.Font.Gotham
 AutoBuyInfo.TextSize = 12
@@ -817,7 +817,7 @@ local StopBuyBtnCorner = Instance.new("UICorner")
 StopBuyBtnCorner.Parent = StopBuyBtn
 StopBuyBtnCorner.CornerRadius = UDim.new(0,8)
 
--- ========== RECORD SECTION ==========
+-- ========== RECORD SECTION (AREA) ==========
 local RecordFrame = Instance.new("Frame")
 RecordFrame.Parent = AutoBuyContent
 RecordFrame.Size = UDim2.new(1,-20,0,150)
@@ -835,7 +835,7 @@ RecordTitle.Parent = RecordFrame
 RecordTitle.Size = UDim2.new(1,0,0,25)
 RecordTitle.Position = UDim2.new(0,10,0,5)
 RecordTitle.BackgroundTransparency = 1
-RecordTitle.Text = "📹 RECORD MANUAL"
+RecordTitle.Text = "📹 RECORD AREA"
 RecordTitle.TextColor3 = Color3.fromRGB(255,200,100)
 RecordTitle.TextXAlignment = Enum.TextXAlignment.Left
 RecordTitle.Font = Enum.Font.GothamBold
@@ -853,13 +853,13 @@ RecordStatus.TextXAlignment = Enum.TextXAlignment.Left
 RecordStatus.Font = Enum.Font.GothamBold
 RecordStatus.TextSize = 14
 
--- List record dengan checkbox
+-- List record
 local RecordList = Instance.new("TextLabel")
 RecordList.Parent = RecordFrame
 RecordList.Size = UDim2.new(1,0,0,50)
 RecordList.Position = UDim2.new(0,10,0,50)
 RecordList.BackgroundTransparency = 1
-RecordList.Text = "⬜ WATER (belum)\n⬜ SUGAR (belum)\n⬜ GELATIN (belum)"
+RecordList.Text = "⬜ WATER (area belum)\n⬜ SUGAR (area belum)\n⬜ GELATIN (area belum)"
 RecordList.TextColor3 = Color3.fromRGB(180,180,180)
 RecordList.TextXAlignment = Enum.TextXAlignment.Left
 RecordList.TextYAlignment = Enum.TextYAlignment.Top
@@ -868,7 +868,7 @@ RecordList.TextSize = 14
 RecordList.RichText = true
 RecordList.TextWrapped = true
 
--- Tombol Record BESAR
+-- Tombol Record
 local RecordBtn = Instance.new("TextButton")
 RecordBtn.Parent = RecordFrame
 RecordBtn.Size = UDim2.new(0.7,-20,0,40)
@@ -898,7 +898,7 @@ local ResetRecordCorner = Instance.new("UICorner")
 ResetRecordCorner.Parent = ResetRecordBtn
 ResetRecordCorner.CornerRadius = UDim.new(0,8)
 
--- ========== LOGIC RECORD ==========
+-- ========== LOGIC RECORD AREA ==========
 local recordMode = false
 local recordedPositions = {
     water = nil,
@@ -910,21 +910,21 @@ local recordedPositions = {
 function updateRecordList()
     local text = ""
     if recordedPositions.water then
-        text = text .. "✅ WATER (" .. recordedPositions.water.x .. "," .. recordedPositions.water.y .. ")\n"
+        text = text .. "✅ WATER (X:" .. recordedPositions.water.x .. " Y:" .. recordedPositions.water.y .. ")\n"
     else
-        text = text .. "⬜ WATER (belum)\n"
+        text = text .. "⬜ WATER (area belum)\n"
     end
     
     if recordedPositions.sugar then
-        text = text .. "✅ SUGAR (" .. recordedPositions.sugar.x .. "," .. recordedPositions.sugar.y .. ")\n"
+        text = text .. "✅ SUGAR (X:" .. recordedPositions.sugar.x .. " Y:" .. recordedPositions.sugar.y .. ")\n"
     else
-        text = text .. "⬜ SUGAR (belum)\n"
+        text = text .. "⬜ SUGAR (area belum)\n"
     end
     
     if recordedPositions.gelatin then
-        text = text .. "✅ GELATIN (" .. recordedPositions.gelatin.x .. "," .. recordedPositions.gelatin.y .. ")"
+        text = text .. "✅ GELATIN (X:" .. recordedPositions.gelatin.x .. " Y:" .. recordedPositions.gelatin.y .. ")"
     else
-        text = text .. "⬜ GELATIN (belum)"
+        text = text .. "⬜ GELATIN (area belum)"
     end
     
     RecordList.Text = text
@@ -932,11 +932,22 @@ end
 
 -- Fungsi klik di posisi
 function clickAtPosition(x, y)
-    VirtualInputManager:SendMouseMoveEvent(x, y, game)
-    task.wait(0.1)
-    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
-    task.wait(0.1)
-    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
+    -- Method 1: VirtualInputManager
+    pcall(function()
+        VirtualInputManager:SendMouseMoveEvent(x, y, game)
+        task.wait(0.1)
+        VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
+        task.wait(0.1)
+        VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
+    end)
+    
+    -- Method 2: Fire event kalo ada object
+    pcall(function()
+        local object = game:GetService("GuiService"):GetGuiObjectAtPosition(x, y)
+        if object and (object:IsA("TextButton") or object:IsA("ImageButton")) then
+            object:Fire("MouseButton1Click")
+        end
+    end)
 end
 
 -- Mulai record
@@ -944,10 +955,11 @@ RecordBtn.MouseButton1Click:Connect(function()
     recordMode = true
     recordedPositions = {water = nil, sugar = nil, gelatin = nil}
     updateRecordList()
-    RecordStatus.Text = "🔴 RECORDING... Klik WATER"
+    RecordStatus.Text = "🔴 RECORDING... Klik AREA WATER"
     RecordStatus.TextColor3 = Color3.fromRGB(255,255,0)
-    AutoBuyStatus.Text = "🎥 Klik tombol WATER di shop!"
+    AutoBuyStatus.Text = "🎥 Klik AREA WATER di shop!"
     AutoBuyStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    print("🎥 MODE RECORD AKTIF - Klik AREA WATER")
 end)
 
 -- Reset record
@@ -959,9 +971,10 @@ ResetRecordBtn.MouseButton1Click:Connect(function()
     RecordStatus.TextColor3 = Color3.fromRGB(255,100,100)
     AutoBuyStatus.Text = "⏹️ STOPPED"
     AutoBuyStatus.TextColor3 = Color3.fromRGB(255,100,100)
+    print("🔄 RECORD DI-RESET")
 end)
 
--- Deteksi klik saat record mode
+-- Deteksi SEMUA klik saat record mode
 UIS.InputBegan:Connect(function(input, gp)
     if gp then return end
     if recordMode and input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -969,21 +982,23 @@ UIS.InputBegan:Connect(function(input, gp)
         local x = math.floor(mousePos.X)
         local y = math.floor(mousePos.Y)
         
-        -- Kasih notifikasi kalo ke detect
-        print("🗲 KLIK TERDETEKSI di:", x, y)
+        -- Notifikasi di console
+        print("📍 KLIK AREA TERDETEKSI di X:" .. x .. " Y:" .. y)
         
         if not recordedPositions.water then
             recordedPositions.water = {x = x, y = y}
             updateRecordList()
-            RecordStatus.Text = "🔴 RECORDING... Klik SUGAR"
-            AutoBuyStatus.Text = "✅ WATER saved! Klik SUGAR"
-            print("✅ WATER TERSIMPAN!")
+            RecordStatus.Text = "🔴 RECORDING... Klik AREA SUGAR"
+            AutoBuyStatus.Text = "✅ AREA WATER saved! Klik AREA SUGAR"
+            AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
+            print("✅ AREA WATER TERSIMPAN!")
         elseif not recordedPositions.sugar then
             recordedPositions.sugar = {x = x, y = y}
             updateRecordList()
-            RecordStatus.Text = "🔴 RECORDING... Klik GELATIN"
-            AutoBuyStatus.Text = "✅ SUGAR saved! Klik GELATIN"
-            print("✅ SUGAR TERSIMPAN!")
+            RecordStatus.Text = "🔴 RECORDING... Klik AREA GELATIN"
+            AutoBuyStatus.Text = "✅ AREA SUGAR saved! Klik AREA GELATIN"
+            AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
+            print("✅ AREA SUGAR TERSIMPAN!")
         elseif not recordedPositions.gelatin then
             recordedPositions.gelatin = {x = x, y = y}
             updateRecordList()
@@ -992,21 +1007,21 @@ UIS.InputBegan:Connect(function(input, gp)
             AutoBuyStatus.Text = "✅ Record selesai! Klik START"
             AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
             recordMode = false
-            print("✅ GELATIN TERSIMPAN! RECORD SELESAI!")
+            print("✅ AREA GELATIN TERSIMPAN! RECORD SELESAI!")
         end
     end
 end)
 
--- START AUTO BUY
+-- START AUTO BUY (pake record area)
 function startAutoBuyRecord()
     if autoBuyRunning then 
         AutoBuyStatus.Text = "⚠️ Auto Buy sudah berjalan!"
         return 
     end
     
-    -- Cek apakah semua posisi sudah direcord
+    -- Cek apakah semua area sudah direcord
     if not recordedPositions.water or not recordedPositions.sugar or not recordedPositions.gelatin then
-        AutoBuyStatus.Text = "❌ Record belum lengkap!"
+        AutoBuyStatus.Text = "❌ Record area belum lengkap!"
         return
     end
     
@@ -1071,7 +1086,6 @@ AutoBuyBtn.MouseButton1Click:Connect(function()
         task.spawn(startAutoBuyRecord) 
     end
 end)
-
 -- ============================================================
 
 -- Variables

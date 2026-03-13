@@ -100,7 +100,7 @@ task.spawn(function()
     end
 end)
 
--- Tab Buttons - SEKARANG 4 TAB (TP, MS AUTO, AUTO BUY, MS SAFETY)
+-- Tab Buttons
 local TabFrame = Instance.new("Frame")
 TabFrame.Parent = Frame
 TabFrame.Size = UDim2.new(1,0,0,40)
@@ -153,7 +153,7 @@ local AutoBuyTabCorner = Instance.new("UICorner")
 AutoBuyTabCorner.Parent = AutoBuyTabBtn
 AutoBuyTabCorner.CornerRadius = UDim.new(0,8)
 
--- ========== [DYRON] TAB MS SAFETY BARU ==========
+-- MS Safety Tab Button
 local MSSafetyTabBtn = Instance.new("TextButton")
 MSSafetyTabBtn.Parent = TabFrame
 MSSafetyTabBtn.Size = UDim2.new(0.25,-2,1,-8)
@@ -206,9 +206,9 @@ AutoBuyContent.Size = UDim2.new(1,0,1,0)
 AutoBuyContent.BackgroundTransparency = 1
 AutoBuyContent.Visible = false
 AutoBuyContent.ScrollBarThickness = 6
-AutoBuyContent.CanvasSize = UDim2.new(0,0,0,550)
+AutoBuyContent.CanvasSize = UDim2.new(0,0,0,500)
 
--- ========== [DYRON] MS SAFETY TAB CONTENT ==========
+-- MS Safety Tab Content
 local MSSafetyContent = Instance.new("ScrollingFrame")
 MSSafetyContent.Parent = Content
 MSSafetyContent.Size = UDim2.new(1,0,1,0)
@@ -241,7 +241,7 @@ MSSafetyDesc.TextXAlignment = Enum.TextXAlignment.Left
 MSSafetyDesc.Font = Enum.Font.Gotham
 MSSafetyDesc.TextSize = 14
 
--- ===== BLINK KE BAWAH =====
+-- BLINK KE BAWAH
 local BlinkDownFrame = Instance.new("Frame")
 BlinkDownFrame.Parent = MSSafetyContent
 BlinkDownFrame.Size = UDim2.new(1,-20,0,80)
@@ -276,7 +276,7 @@ BlinkDownTitle.TextXAlignment = Enum.TextXAlignment.Left
 BlinkDownTitle.Font = Enum.Font.GothamBold
 BlinkDownTitle.TextSize = 18
 
--- Description (4 STUDS)
+-- Description
 local BlinkDownDesc = Instance.new("TextLabel")
 BlinkDownDesc.Parent = BlinkDownFrame
 BlinkDownDesc.Size = UDim2.new(1,-120,0,20)
@@ -303,7 +303,7 @@ local BlinkDownBtnCorner = Instance.new("UICorner")
 BlinkDownBtnCorner.Parent = BlinkDownBtn
 BlinkDownBtnCorner.CornerRadius = UDim.new(0,8)
 
--- ===== BLINK MAJU (DEPAN) =====
+-- BLINK MAJU
 local BlinkMajuFrame = Instance.new("Frame")
 BlinkMajuFrame.Parent = MSSafetyContent
 BlinkMajuFrame.Size = UDim2.new(1,-20,0,80)
@@ -365,7 +365,7 @@ local BlinkMajuBtnCorner = Instance.new("UICorner")
 BlinkMajuBtnCorner.Parent = BlinkMajuBtn
 BlinkMajuBtnCorner.CornerRadius = UDim.new(0,8)
 
--- ===== BLINK MUNDUR (BELAKANG) =====
+-- BLINK MUNDUR
 local BlinkMundurFrame = Instance.new("Frame")
 BlinkMundurFrame.Parent = MSSafetyContent
 BlinkMundurFrame.Size = UDim2.new(1,-20,0,80)
@@ -441,8 +441,6 @@ BlinkStatus.TextSize = 14
 local BlinkStatusCorner = Instance.new("UICorner")
 BlinkStatusCorner.Parent = BlinkStatus
 BlinkStatusCorner.CornerRadius = UDim.new(0,8)
-
--- ====================================================
 
 -- TP Buttons
 local BtnBahan = Instance.new("TextButton")
@@ -633,7 +631,7 @@ local MSLoopStopCorner = Instance.new("UICorner")
 MSLoopStopCorner.Parent = MSLoopStopBtn
 MSLoopStopCorner.CornerRadius = UDim.new(0,8)
 
--- AUTO BUY CONTENT
+-- ========== AUTO BUY CONTENT DENGAN RECORD ==========
 local AutoBuyTitle = Instance.new("TextLabel")
 AutoBuyTitle.Parent = AutoBuyContent
 AutoBuyTitle.Size = UDim2.new(1,-20,0,30)
@@ -651,7 +649,7 @@ AutoBuyInfo.Parent = AutoBuyContent
 AutoBuyInfo.Size = UDim2.new(1,-20,0,30)
 AutoBuyInfo.Position = UDim2.new(0,10,0,45)
 AutoBuyInfo.BackgroundColor3 = Color3.fromRGB(50,50,60)
-AutoBuyInfo.Text = "📌 Klik RECORD lalu klik tombol di shop"
+AutoBuyInfo.Text = "📌 Klik RECORD lalu klik 3 tombol di shop"
 AutoBuyInfo.TextColor3 = Color3.fromRGB(255,255,255)
 AutoBuyInfo.Font = Enum.Font.Gotham
 AutoBuyInfo.TextSize = 12
@@ -688,7 +686,7 @@ local SliderBgCorner = Instance.new("UICorner")
 SliderBgCorner.Parent = SliderBg
 SliderBgCorner.CornerRadius = UDim.new(0,8)
 
--- Slider Fill (PUTIH)
+-- Slider Fill
 local SliderFill = Instance.new("Frame")
 SliderFill.Parent = SliderBg
 SliderFill.Size = UDim2.new(0.5,0,1,0)
@@ -699,7 +697,7 @@ local SliderFillCorner = Instance.new("UICorner")
 SliderFillCorner.Parent = SliderFill
 SliderFillCorner.CornerRadius = UDim.new(0,8)
 
--- Slider Button (PUTIH)
+-- Slider Button
 local SliderButton = Instance.new("TextButton")
 SliderButton.Parent = SliderBg
 SliderButton.Size = UDim2.new(0,20,0,20)
@@ -819,10 +817,10 @@ local StopBuyBtnCorner = Instance.new("UICorner")
 StopBuyBtnCorner.Parent = StopBuyBtn
 StopBuyBtnCorner.CornerRadius = UDim.new(0,8)
 
--- ========== [DYRON] RECORD MANUAL BUTTONS ==========
+-- ========== RECORD SECTION ==========
 local RecordFrame = Instance.new("Frame")
 RecordFrame.Parent = AutoBuyContent
-RecordFrame.Size = UDim2.new(1,-20,0,100)
+RecordFrame.Size = UDim2.new(1,-20,0,140)
 RecordFrame.Position = UDim2.new(0,10,0,330)
 RecordFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
 RecordFrame.BorderSizePixel = 0
@@ -849,17 +847,32 @@ RecordStatus.Parent = RecordFrame
 RecordStatus.Size = UDim2.new(1,0,0,20)
 RecordStatus.Position = UDim2.new(0,10,0,30)
 RecordStatus.BackgroundTransparency = 1
-RecordStatus.Text = "Belum record"
-RecordStatus.TextColor3 = Color3.fromRGB(180,180,180)
+RecordStatus.Text = "⏳ Belum record"
+RecordStatus.TextColor3 = Color3.fromRGB(255,100,100)
 RecordStatus.TextXAlignment = Enum.TextXAlignment.Left
 RecordStatus.Font = Enum.Font.Gotham
 RecordStatus.TextSize = 12
+
+-- List record
+local RecordList = Instance.new("TextLabel")
+RecordList.Parent = RecordFrame
+RecordList.Size = UDim2.new(1,0,0,40)
+RecordList.Position = UDim2.new(0,10,0,50)
+RecordList.BackgroundTransparency = 1
+RecordList.Text = "❌ WATER\n❌ SUGAR\n❌ GELATIN"
+RecordList.TextColor3 = Color3.fromRGB(180,180,180)
+RecordList.TextXAlignment = Enum.TextXAlignment.Left
+RecordList.TextYAlignment = Enum.TextYAlignment.Top
+RecordList.Font = Enum.Font.Gotham
+RecordList.TextSize = 12
+RecordList.RichText = true
+RecordList.TextWrapped = true
 
 -- Tombol Record
 local RecordBtn = Instance.new("TextButton")
 RecordBtn.Parent = RecordFrame
 RecordBtn.Size = UDim2.new(0.7,-20,0,30)
-RecordBtn.Position = UDim2.new(0,10,0,55)
+RecordBtn.Position = UDim2.new(0,10,0,95)
 RecordBtn.BackgroundColor3 = Color3.fromRGB(200,100,0)
 RecordBtn.Text = "🔴 MULAI RECORD"
 RecordBtn.TextColor3 = Color3.fromRGB(255,255,255)
@@ -874,24 +887,48 @@ RecordBtnCorner.CornerRadius = UDim.new(0,8)
 local ResetRecordBtn = Instance.new("TextButton")
 ResetRecordBtn.Parent = RecordFrame
 ResetRecordBtn.Size = UDim2.new(0.25,-10,0,30)
-ResetRecordBtn.Position = UDim2.new(0.75,0,0,55)
+ResetRecordBtn.Position = UDim2.new(0.75,0,0,95)
 ResetRecordBtn.BackgroundColor3 = Color3.fromRGB(150,50,50)
-ResetRecordBtn.Text = "↺"
+ResetRecordBtn.Text = "↺ RESET"
 ResetRecordBtn.TextColor3 = Color3.fromRGB(255,255,255)
 ResetRecordBtn.Font = Enum.Font.GothamBold
-ResetRecordBtn.TextSize = 20
+ResetRecordBtn.TextSize = 10
 
 local ResetRecordCorner = Instance.new("UICorner")
 ResetRecordCorner.Parent = ResetRecordBtn
 ResetRecordCorner.CornerRadius = UDim.new(0,8)
 
--- ========== [DYRON] LOGIC RECORD ==========
+-- ========== LOGIC RECORD ==========
 local recordMode = false
 local recordedPositions = {
     water = nil,
     sugar = nil,
     gelatin = nil
 }
+
+-- Update tampilan list record
+function updateRecordList()
+    local text = ""
+    if recordedPositions.water then
+        text = text .. "✅ WATER (" .. recordedPositions.water.x .. "," .. recordedPositions.water.y .. ")\n"
+    else
+        text = text .. "❌ WATER\n"
+    end
+    
+    if recordedPositions.sugar then
+        text = text .. "✅ SUGAR (" .. recordedPositions.sugar.x .. "," .. recordedPositions.sugar.y .. ")\n"
+    else
+        text = text .. "❌ SUGAR\n"
+    end
+    
+    if recordedPositions.gelatin then
+        text = text .. "✅ GELATIN (" .. recordedPositions.gelatin.x .. "," .. recordedPositions.gelatin.y .. ")"
+    else
+        text = text .. "❌ GELATIN"
+    end
+    
+    RecordList.Text = text
+end
 
 -- Fungsi klik di posisi
 function clickAtPosition(x, y)
@@ -906,9 +943,10 @@ end
 RecordBtn.MouseButton1Click:Connect(function()
     recordMode = true
     recordedPositions = {water = nil, sugar = nil, gelatin = nil}
-    RecordStatus.Text = "📹 Klik tombol WATER di shop..."
+    updateRecordList()
+    RecordStatus.Text = "🔴 RECORDING... Klik WATER"
     RecordStatus.TextColor3 = Color3.fromRGB(255,255,0)
-    AutoBuyStatus.Text = "🎥 Mode record: Klik WATER"
+    AutoBuyStatus.Text = "🎥 Mode record: Klik WATER di shop"
     AutoBuyStatus.TextColor3 = Color3.fromRGB(255,255,0)
 end)
 
@@ -916,8 +954,9 @@ end)
 ResetRecordBtn.MouseButton1Click:Connect(function()
     recordMode = false
     recordedPositions = {water = nil, sugar = nil, gelatin = nil}
-    RecordStatus.Text = "Record direset"
-    RecordStatus.TextColor3 = Color3.fromRGB(180,180,180)
+    updateRecordList()
+    RecordStatus.Text = "⏳ Record direset"
+    RecordStatus.TextColor3 = Color3.fromRGB(255,100,100)
     AutoBuyStatus.Text = "⏹️ STOPPED"
     AutoBuyStatus.TextColor3 = Color3.fromRGB(255,100,100)
 end)
@@ -932,19 +971,21 @@ UIS.InputBegan:Connect(function(input, gp)
         
         if not recordedPositions.water then
             recordedPositions.water = {x = x, y = y}
-            RecordStatus.Text = "✅ WATER tersimpan! Klik SUGAR..."
+            updateRecordList()
+            RecordStatus.Text = "🔴 RECORDING... Klik SUGAR"
             AutoBuyStatus.Text = "✅ WATER saved. Klik SUGAR"
-            RecordStatus.TextColor3 = Color3.fromRGB(100,255,100)
         elseif not recordedPositions.sugar then
             recordedPositions.sugar = {x = x, y = y}
-            RecordStatus.Text = "✅ SUGAR tersimpan! Klik GELATIN..."
+            updateRecordList()
+            RecordStatus.Text = "🔴 RECORDING... Klik GELATIN"
             AutoBuyStatus.Text = "✅ SUGAR saved. Klik GELATIN"
-            RecordStatus.TextColor3 = Color3.fromRGB(100,255,100)
         elseif not recordedPositions.gelatin then
             recordedPositions.gelatin = {x = x, y = y}
-            RecordStatus.Text = "✅ SEMUA TERSIMPAN! Siap auto buy"
-            AutoBuyStatus.Text = "✅ Record selesai! Klik START"
+            updateRecordList()
+            RecordStatus.Text = "✅ RECORD SELESAI!"
             RecordStatus.TextColor3 = Color3.fromRGB(100,255,100)
+            AutoBuyStatus.Text = "✅ Record selesai! Klik START"
+            AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
             recordMode = false
         end
     end
@@ -1018,7 +1059,7 @@ function startAutoBuyRecord()
     end
 end
 
--- Ganti koneksi tombol START ke fungsi record
+-- Ganti koneksi tombol START
 AutoBuyBtn.MouseButton1Click:Connect(function() 
     if not autoBuyRunning then 
         task.spawn(startAutoBuyRecord) 
@@ -1245,6 +1286,83 @@ end)
 StopBuyBtn.MouseButton1Click:Connect(stopAutoBuy)
 
 -- ========== [DYRON] CONNECT BUTTONS MS SAFETY ==========
+function blinkDown()
+    local character = player.Character
+    if not character then 
+        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    BlinkStatus.Text = "⬇️ Blink ke bawah 4 studs..."
+    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    
+    local blinkDistance = 4
+    hrp.CFrame = hrp.CFrame * CFrame.new(0, -blinkDistance, 0)
+    
+    BlinkStatus.Text = "✅ Sudah pindah 4 studs ke bawah!"
+    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+end
+
+function blinkMaju()
+    local character = player.Character
+    if not character then 
+        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    BlinkStatus.Text = "⬆️ Blink maju 5 studs..."
+    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    
+    local blinkDistance = 5
+    local lookVector = hrp.CFrame.LookVector
+    hrp.CFrame = hrp.CFrame + (lookVector * blinkDistance)
+    
+    BlinkStatus.Text = "✅ Sudah maju 5 studs!"
+    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+end
+
+function blinkMundur()
+    local character = player.Character
+    if not character then 
+        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        return 
+    end
+    
+    BlinkStatus.Text = "⬇️ Blink mundur 5 studs..."
+    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    
+    local blinkDistance = 5
+    local lookVector = hrp.CFrame.LookVector
+    hrp.CFrame = hrp.CFrame - (lookVector * blinkDistance)
+    
+    BlinkStatus.Text = "✅ Sudah mundur 5 studs!"
+    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+end
+
 BlinkDownBtn.MouseButton1Click:Connect(blinkDown)
 BlinkMajuBtn.MouseButton1Click:Connect(blinkMaju)
 BlinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
@@ -1268,7 +1386,7 @@ UIS.InputChanged:Connect(function(i)
     end
 end)
 
--- Tab Switching (SEKARANG 4 TAB)
+-- Tab Switching
 TPTabBtn.MouseButton1Click:Connect(function()
     TPContent.Visible = true; MSLoopContent.Visible = false; AutoBuyContent.Visible = false; MSSafetyContent.Visible = false
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)

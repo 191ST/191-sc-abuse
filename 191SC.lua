@@ -206,7 +206,7 @@ AutoBuyContent.Size = UDim2.new(1,0,1,0)
 AutoBuyContent.BackgroundTransparency = 1
 AutoBuyContent.Visible = false
 AutoBuyContent.ScrollBarThickness = 6
-AutoBuyContent.CanvasSize = UDim2.new(0,0,0,500)
+AutoBuyContent.CanvasSize = UDim2.new(0,0,0,550)
 
 -- ========== [DYRON] MS SAFETY TAB CONTENT ==========
 local MSSafetyContent = Instance.new("ScrollingFrame")
@@ -639,7 +639,7 @@ AutoBuyTitle.Parent = AutoBuyContent
 AutoBuyTitle.Size = UDim2.new(1,-20,0,30)
 AutoBuyTitle.Position = UDim2.new(0,10,0,10)
 AutoBuyTitle.BackgroundTransparency = 1
-AutoBuyTitle.Text = "💰 AUTO BUY (WATER → SUGAR → GELATIN)"
+AutoBuyTitle.Text = "💰 AUTO BUY (RECORD MANUAL)"
 AutoBuyTitle.TextColor3 = Color3.fromRGB(255,200,100)
 AutoBuyTitle.TextXAlignment = Enum.TextXAlignment.Left
 AutoBuyTitle.Font = Enum.Font.GothamBold
@@ -651,7 +651,7 @@ AutoBuyInfo.Parent = AutoBuyContent
 AutoBuyInfo.Size = UDim2.new(1,-20,0,30)
 AutoBuyInfo.Position = UDim2.new(0,10,0,45)
 AutoBuyInfo.BackgroundColor3 = Color3.fromRGB(50,50,60)
-AutoBuyInfo.Text = "📌 Support ImageButton | Cari: WATER, SUGAR, GELATIN"
+AutoBuyInfo.Text = "📌 Klik RECORD lalu klik tombol di shop"
 AutoBuyInfo.TextColor3 = Color3.fromRGB(255,255,255)
 AutoBuyInfo.Font = Enum.Font.Gotham
 AutoBuyInfo.TextSize = 12
@@ -819,133 +819,81 @@ local StopBuyBtnCorner = Instance.new("UICorner")
 StopBuyBtnCorner.Parent = StopBuyBtn
 StopBuyBtnCorner.CornerRadius = UDim.new(0,8)
 
--- Variables
-local loopRunning = false
-local autoBuyRunning = false
-local targetAmount = 50
-local waterCount = 0
-local sugarCount = 0
-local gelatinCount = 0
+-- ========== [DYRON] RECORD MANUAL BUTTONS ==========
+local RecordFrame = Instance.new("Frame")
+RecordFrame.Parent = AutoBuyContent
+RecordFrame.Size = UDim2.new(1,-20,0,100)
+RecordFrame.Position = UDim2.new(0,10,0,330)
+RecordFrame.BackgroundColor3 = Color3.fromRGB(35,35,45)
+RecordFrame.BorderSizePixel = 0
 
--- Tool functions
-function findTool(toolName)
-    if not player.Character then return nil end
-    for _, child in pairs(player.Character:GetChildren()) do
-        if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
-            return child
-        end
-    end
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, child in pairs(backpack:GetChildren()) do
-            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
-                return child
-            end
-        end
-    end
-    return nil
-end
+local RecordCorner = Instance.new("UICorner")
+RecordCorner.Parent = RecordFrame
+RecordCorner.CornerRadius = UDim.new(0,10)
 
-function equipTool(tool)
-    if not tool or not player.Character then return false end
-    if tool.Parent == player.Character then return true end
-    if tool.Parent == player:FindFirstChild("Backpack") then
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid:EquipTool(tool)
-            task.wait(0.2)
-            return tool.Parent == player.Character
-        end
-    end
-    return false
-end
+-- Title Record
+local RecordTitle = Instance.new("TextLabel")
+RecordTitle.Parent = RecordFrame
+RecordTitle.Size = UDim2.new(1,0,0,25)
+RecordTitle.Position = UDim2.new(0,10,0,5)
+RecordTitle.BackgroundTransparency = 1
+RecordTitle.Text = "📹 RECORD MANUAL"
+RecordTitle.TextColor3 = Color3.fromRGB(255,200,100)
+RecordTitle.TextXAlignment = Enum.TextXAlignment.Left
+RecordTitle.Font = Enum.Font.GothamBold
+RecordTitle.TextSize = 16
 
-function pressE()
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-    task.wait(0.1)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-end
+-- Status Record
+local RecordStatus = Instance.new("TextLabel")
+RecordStatus.Parent = RecordFrame
+RecordStatus.Size = UDim2.new(1,0,0,20)
+RecordStatus.Position = UDim2.new(0,10,0,30)
+RecordStatus.BackgroundTransparency = 1
+RecordStatus.Text = "Belum record"
+RecordStatus.TextColor3 = Color3.fromRGB(180,180,180)
+RecordStatus.TextXAlignment = Enum.TextXAlignment.Left
+RecordStatus.Font = Enum.Font.Gotham
+RecordStatus.TextSize = 12
 
--- ========== [DYRON] FUNGSI BLINK - TURUN 4 STUDS, MAJU/MUNDUR 5 STUDS ==========
-function blinkDown()
-    local character = player.Character
-    if not character then 
-        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
-        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
-        return 
-    end
-    
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then 
-        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
-        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
-        return 
-    end
-    
-    BlinkStatus.Text = "⬇️ Blink ke bawah 4 studs..."
-    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
-    
-    local blinkDistance = 4
-    hrp.CFrame = hrp.CFrame * CFrame.new(0, -blinkDistance, 0)
-    
-    BlinkStatus.Text = "✅ Sudah pindah 4 studs ke bawah!"
-    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
-end
+-- Tombol Record
+local RecordBtn = Instance.new("TextButton")
+RecordBtn.Parent = RecordFrame
+RecordBtn.Size = UDim2.new(0.7,-20,0,30)
+RecordBtn.Position = UDim2.new(0,10,0,55)
+RecordBtn.BackgroundColor3 = Color3.fromRGB(200,100,0)
+RecordBtn.Text = "🔴 MULAI RECORD"
+RecordBtn.TextColor3 = Color3.fromRGB(255,255,255)
+RecordBtn.Font = Enum.Font.GothamBold
+RecordBtn.TextSize = 12
 
-function blinkMaju()
-    local character = player.Character
-    if not character then 
-        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
-        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
-        return 
-    end
-    
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then 
-        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
-        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
-        return 
-    end
-    
-    BlinkStatus.Text = "⬆️ Blink maju 5 studs..."
-    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
-    
-    local blinkDistance = 5
-    local lookVector = hrp.CFrame.LookVector
-    hrp.CFrame = hrp.CFrame + (lookVector * blinkDistance)
-    
-    BlinkStatus.Text = "✅ Sudah maju 5 studs!"
-    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
-end
+local RecordBtnCorner = Instance.new("UICorner")
+RecordBtnCorner.Parent = RecordBtn
+RecordBtnCorner.CornerRadius = UDim.new(0,8)
 
-function blinkMundur()
-    local character = player.Character
-    if not character then 
-        BlinkStatus.Text = "❌ ERROR: Character tidak ditemukan!"
-        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
-        return 
-    end
-    
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then 
-        BlinkStatus.Text = "❌ ERROR: HumanoidRootPart tidak ditemukan!"
-        BlinkStatus.TextColor3 = Color3.fromRGB(255,100,100)
-        return 
-    end
-    
-    BlinkStatus.Text = "⬇️ Blink mundur 5 studs..."
-    BlinkStatus.TextColor3 = Color3.fromRGB(255,255,0)
-    
-    local blinkDistance = 5
-    local lookVector = hrp.CFrame.LookVector
-    hrp.CFrame = hrp.CFrame - (lookVector * blinkDistance)
-    
-    BlinkStatus.Text = "✅ Sudah mundur 5 studs!"
-    BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
-end
--- ========================================================
+-- Tombol Reset Record
+local ResetRecordBtn = Instance.new("TextButton")
+ResetRecordBtn.Parent = RecordFrame
+ResetRecordBtn.Size = UDim2.new(0.25,-10,0,30)
+ResetRecordBtn.Position = UDim2.new(0.75,0,0,55)
+ResetRecordBtn.BackgroundColor3 = Color3.fromRGB(150,50,50)
+ResetRecordBtn.Text = "↺"
+ResetRecordBtn.TextColor3 = Color3.fromRGB(255,255,255)
+ResetRecordBtn.Font = Enum.Font.GothamBold
+ResetRecordBtn.TextSize = 20
 
--- ========== [DYRON] AUTO BUY FIX - SUPPORT IMAGE BUTTON ==========
+local ResetRecordCorner = Instance.new("UICorner")
+ResetRecordCorner.Parent = ResetRecordBtn
+ResetRecordCorner.CornerRadius = UDim.new(0,8)
+
+-- ========== [DYRON] LOGIC RECORD ==========
+local recordMode = false
+local recordedPositions = {
+    water = nil,
+    sugar = nil,
+    gelatin = nil
+}
+
+-- Fungsi klik di posisi
 function clickAtPosition(x, y)
     VirtualInputManager:SendMouseMoveEvent(x, y, game)
     task.wait(0.1)
@@ -954,75 +902,65 @@ function clickAtPosition(x, y)
     VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
 end
 
-function findAllButtons()
-    local buttons = {}
-    
-    -- Cari di PlayerGui
-    for _, gui in pairs(player.PlayerGui:GetChildren()) do
-        if gui:IsA("ScreenGui") then
-            for _, obj in pairs(gui:GetDescendants()) do
-                if obj:IsA("TextButton") or obj:IsA("ImageButton") then
-                    table.insert(buttons, obj)
-                end
-            end
-        end
-    end
-    
-    -- Cari di CoreGui
-    for _, gui in pairs(game:GetService("CoreGui"):GetChildren()) do
-        if gui:IsA("ScreenGui") then
-            for _, obj in pairs(gui:GetDescendants()) do
-                if obj:IsA("TextButton") or obj:IsA("ImageButton") then
-                    table.insert(buttons, obj)
-                end
-            end
-        end
-    end
-    
-    return buttons
-end
+-- Mulai record
+RecordBtn.MouseButton1Click:Connect(function()
+    recordMode = true
+    recordedPositions = {water = nil, sugar = nil, gelatin = nil}
+    RecordStatus.Text = "📹 Klik tombol WATER di shop..."
+    RecordStatus.TextColor3 = Color3.fromRGB(255,255,0)
+    AutoBuyStatus.Text = "🎥 Mode record: Klik WATER"
+    AutoBuyStatus.TextColor3 = Color3.fromRGB(255,255,0)
+end)
 
-function findButtonByText(text)
-    local allButtons = findAllButtons()
-    local searchUpper = string.upper(text)
-    
-    for _, button in pairs(allButtons) do
-        -- Cek di Text (untuk TextButton)
-        local btnText = string.upper(button.Text or "")
-        if string.find(btnText, searchUpper) then
-            return button
-        end
+-- Reset record
+ResetRecordBtn.MouseButton1Click:Connect(function()
+    recordMode = false
+    recordedPositions = {water = nil, sugar = nil, gelatin = nil}
+    RecordStatus.Text = "Record direset"
+    RecordStatus.TextColor3 = Color3.fromRGB(180,180,180)
+    AutoBuyStatus.Text = "⏹️ STOPPED"
+    AutoBuyStatus.TextColor3 = Color3.fromRGB(255,100,100)
+end)
+
+-- Deteksi klik saat record mode
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if recordMode and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mousePos = UIS:GetMouseLocation()
+        local x = math.floor(mousePos.X)
+        local y = math.floor(mousePos.Y)
         
-        -- Cek di Name (untuk ImageButton yang mungkin punya nama)
-        local btnName = string.upper(button.Name or "")
-        if string.find(btnName, searchUpper) then
-            return button
-        end
-        
-        -- Cek di ToolTip (kadang ada tooltip)
-        local tooltip = string.upper(button.ToolTip or "")
-        if string.find(tooltip, searchUpper) then
-            return button
-        end
-        
-        -- Cek di child objects (mungkin ada TextLabel di dalam button)
-        for _, child in pairs(button:GetChildren()) do
-            if child:IsA("TextLabel") or child:IsA("TextButton") then
-                local childText = string.upper(child.Text or "")
-                if string.find(childText, searchUpper) then
-                    return button
-                end
-            end
+        if not recordedPositions.water then
+            recordedPositions.water = {x = x, y = y}
+            RecordStatus.Text = "✅ WATER tersimpan! Klik SUGAR..."
+            AutoBuyStatus.Text = "✅ WATER saved. Klik SUGAR"
+            RecordStatus.TextColor3 = Color3.fromRGB(100,255,100)
+        elseif not recordedPositions.sugar then
+            recordedPositions.sugar = {x = x, y = y}
+            RecordStatus.Text = "✅ SUGAR tersimpan! Klik GELATIN..."
+            AutoBuyStatus.Text = "✅ SUGAR saved. Klik GELATIN"
+            RecordStatus.TextColor3 = Color3.fromRGB(100,255,100)
+        elseif not recordedPositions.gelatin then
+            recordedPositions.gelatin = {x = x, y = y}
+            RecordStatus.Text = "✅ SEMUA TERSIMPAN! Siap auto buy"
+            AutoBuyStatus.Text = "✅ Record selesai! Klik START"
+            RecordStatus.TextColor3 = Color3.fromRGB(100,255,100)
+            recordMode = false
         end
     end
-    
-    return nil
-end
+end)
 
-function startAutoBuy()
+-- START AUTO BUY (pake record)
+function startAutoBuyRecord()
     if autoBuyRunning then 
         AutoBuyStatus.Text = "⚠️ Auto Buy sudah berjalan!"
         return 
+    end
+    
+    -- Cek apakah semua posisi sudah direcord
+    if not recordedPositions.water or not recordedPositions.sugar or not recordedPositions.gelatin then
+        AutoBuyStatus.Text = "❌ Record belum lengkap!"
+        return
     end
     
     -- Reset counter
@@ -1031,72 +969,19 @@ function startAutoBuy()
     gelatinCount = 0
     updateProgress()
     
-    AutoBuyStatus.Text = "🔍 Mencari tombol-tombol (support image)..."
-    AutoBuyStatus.TextColor3 = Color3.fromRGB(255,255,0)
-    task.wait(0.5)
-    
-    -- Cari semua tombol dengan berbagai pattern
-    local waterBtn = findButtonByText("WATER") or findButtonByText("$20")
-    local sugarBtn = findButtonByText("SUGAR") or findButtonByText("$100") or findButtonByText("BLOCK")
-    local gelatinBtn = findButtonByText("GELATIN") or findButtonByText("$70")
-    
-    -- Debug: kasih tau tombol apa yang ditemukan
-    local debugMsg = ""
-    if waterBtn then debugMsg = debugMsg .. " WATER✓" end
-    if sugarBtn then debugMsg = debugMsg .. " SUGAR✓" end
-    if gelatinBtn then debugMsg = debugMsg .. " GELATIN✓" end
-    
-    AutoBuyStatus.Text = "🔍 Ditemukan:" .. debugMsg
-    task.wait(1)
-    
-    -- Cek apakah semua tombol ditemukan
-    if not waterBtn then
-        AutoBuyStatus.Text = "❌ Tombol WATER tidak ditemukan!"
-        return
-    end
-    
-    if not sugarBtn then
-        AutoBuyStatus.Text = "❌ Tombol SUGAR tidak ditemukan!"
-        return
-    end
-    
-    if not gelatinBtn then
-        AutoBuyStatus.Text = "❌ Tombol GELATIN tidak ditemukan!"
-        return
-    end
-    
-    -- Dapatkan posisi tombol
-    local waterPos = waterBtn.AbsolutePosition
-    local waterSize = waterBtn.AbsoluteSize
-    local waterX = waterPos.X + waterSize.X/2
-    local waterY = waterPos.Y + waterSize.Y/2
-    
-    local sugarPos = sugarBtn.AbsolutePosition
-    local sugarSize = sugarBtn.AbsoluteSize
-    local sugarX = sugarPos.X + sugarSize.X/2
-    local sugarY = sugarPos.Y + sugarSize.Y/2
-    
-    local gelatinPos = gelatinBtn.AbsolutePosition
-    local gelatinSize = gelatinBtn.AbsoluteSize
-    local gelatinX = gelatinPos.X + gelatinSize.X/2
-    local gelatinY = gelatinPos.Y + gelatinSize.Y/2
-    
-    -- Konfirmasi
-    AutoBuyStatus.Text = "✅ Tombol ditemukan! Memulai auto buy..."
-    AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
-    task.wait(1)
-    
     autoBuyRunning = true
+    AutoBuyStatus.Text = "💰 AUTO BUY RUNNING"
+    AutoBuyStatus.TextColor3 = Color3.fromRGB(100,255,100)
     
-    -- Loop beli berurutan
+    -- Loop beli
     while autoBuyRunning and (waterCount < targetAmount or sugarCount < targetAmount or gelatinCount < targetAmount) do
         -- WATER
         if autoBuyRunning and waterCount < targetAmount then
             AutoBuyStatus.Text = "💧 WATER " .. (waterCount + 1) .. "/" .. targetAmount
-            clickAtPosition(waterX, waterY)
+            clickAtPosition(recordedPositions.water.x, recordedPositions.water.y)
             waterCount = waterCount + 1
             updateProgress()
-            task.wait(0.3)
+            task.wait(0.4)
         end
         
         if not autoBuyRunning then break end
@@ -1104,10 +989,10 @@ function startAutoBuy()
         -- SUGAR
         if autoBuyRunning and sugarCount < targetAmount then
             AutoBuyStatus.Text = "🍬 SUGAR " .. (sugarCount + 1) .. "/" .. targetAmount
-            clickAtPosition(sugarX, sugarY)
+            clickAtPosition(recordedPositions.sugar.x, recordedPositions.sugar.y)
             sugarCount = sugarCount + 1
             updateProgress()
-            task.wait(0.3)
+            task.wait(0.4)
         end
         
         if not autoBuyRunning then break end
@@ -1115,13 +1000,11 @@ function startAutoBuy()
         -- GELATIN
         if autoBuyRunning and gelatinCount < targetAmount then
             AutoBuyStatus.Text = "🧪 GELATIN " .. (gelatinCount + 1) .. "/" .. targetAmount
-            clickAtPosition(gelatinX, gelatinY)
+            clickAtPosition(recordedPositions.gelatin.x, recordedPositions.gelatin.y)
             gelatinCount = gelatinCount + 1
             updateProgress()
-            task.wait(0.3)
+            task.wait(0.4)
         end
-        
-        AutoBuyStatus.Text = string.format("✅ W:%d S:%d G:%d", waterCount, sugarCount, gelatinCount)
     end
     
     autoBuyRunning = false
@@ -1134,6 +1017,13 @@ function startAutoBuy()
         AutoBuyStatus.TextColor3 = Color3.fromRGB(255,100,100)
     end
 end
+
+-- Ganti koneksi tombol START ke fungsi record
+AutoBuyBtn.MouseButton1Click:Connect(function() 
+    if not autoBuyRunning then 
+        task.spawn(startAutoBuyRecord) 
+    end
+end)
 -- ============================================================
 
 function updateProgress()
@@ -1278,6 +1168,45 @@ function startMSLoop()
     ToolStatus.Text = "Tool: -"
 end
 
+-- Tool functions
+function findTool(toolName)
+    if not player.Character then return nil end
+    for _, child in pairs(player.Character:GetChildren()) do
+        if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
+            return child
+        end
+    end
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, child in pairs(backpack:GetChildren()) do
+            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
+                return child
+            end
+        end
+    end
+    return nil
+end
+
+function equipTool(tool)
+    if not tool or not player.Character then return false end
+    if tool.Parent == player.Character then return true end
+    if tool.Parent == player:FindFirstChild("Backpack") then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:EquipTool(tool)
+            task.wait(0.2)
+            return tool.Parent == player.Character
+        end
+    end
+    return false
+end
+
+function pressE()
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
 function stopAutoBuy()
     if autoBuyRunning then
         autoBuyRunning = false
@@ -1311,12 +1240,6 @@ end)
 
 MSLoopStopBtn.MouseButton1Click:Connect(function()
     loopRunning = false
-end)
-
-AutoBuyBtn.MouseButton1Click:Connect(function() 
-    if not autoBuyRunning then 
-        task.spawn(startAutoBuy) 
-    end
 end)
 
 StopBuyBtn.MouseButton1Click:Connect(stopAutoBuy)

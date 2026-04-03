@@ -5,124 +5,63 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- ========== BYPASS LIMIT SPEED & ANTI-TELEPORT ==========
-local function bypassAllLimits()
-    -- Override WalkSpeed ke nilai sangat tinggi
-    local function setMaxSpeed(character)
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = 1000
-            -- Cegah agar tidak bisa diubah oleh script lain
-            humanoid:SetAttribute("OriginalSpeed", 1000)
-        end
-    end
-    
-    -- Mencegah teleport balik dengan memonitor posisi
-    local lastPosition = nil
-    local teleportDetected = false
-    local antiTeleportConnection
-    
-    -- Fungsi untuk memaksa posisi tetap
-    local function forcePosition(character, targetPos)
-        local hrp = character and character:FindFirstChild("HumanoidRootPart")
-        if hrp and targetPos then
-            hrp.CFrame = CFrame.new(targetPos)
-            -- Freeze sebentar agar tidak langsung di-revert
-            hrp.Anchored = true
-            task.wait(0.1)
-            hrp.Anchored = false
-        end
-    end
-    
-    -- Loop untuk mempertahankan posisi setelah teleport
-    antiTeleportConnection = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if not character then return end
-        
+-- ========== BYPASS LIMIT SPEED (TANPA FREEZE) ==========
+local function bypassSpeedLimit()
+    local character = player.Character
+    if character then
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
-            -- Paksa WalkSpeed tinggi
-            if humanoid.WalkSpeed < 100 then
-                humanoid.WalkSpeed = 1000
-            end
-            
-            -- Set JumpPower tinggi juga
-            if humanoid.JumpPower < 100 then
-                humanoid.JumpPower = 200
-            end
+            -- Set ke 23 (aman tidak freeze)
+            humanoid.WalkSpeed = 23
+            -- Mencegah script lain mengubah
+            humanoid:SetAttribute("OriginalSpeed", 23)
         end
-        
-        -- Cegah anti-teleport dengan mempertahankan posisi yang diinginkan
-        if teleportDetected and lastPosition then
-            local hrp = character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local distance = (hrp.Position - lastPosition).Magnitude
-                -- Jika jarak terlalu jauh dari target (diteleport balik), kembalikan ke target
-                if distance > 10 then
-                    hrp.CFrame = CFrame.new(lastPosition)
-                    -- Tambahkan efek visual untuk menandakan bypass berhasil
-                    local part = Instance.new("Part")
-                    part.Size = Vector3.new(3, 1, 3)
-                    part.Position = lastPosition
-                    part.Anchored = true
-                    part.CanCollide = false
-                    part.BrickColor = BrickColor.new("Bright green")
-                    part.Parent = workspace
-                    game:GetService("Debris"):AddItem(part, 0.5)
-                end
+    end
+    
+    -- Monitor dan pertahankan speed 23
+    local speedConnection = RunService.Heartbeat:Connect(function()
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.WalkSpeed ~= 23 then
+                hum.WalkSpeed = 23
             end
         end
     end)
     
-    -- Hook ke teleport function
-    local originalTeleport = nil
-    local function setupTeleportHook()
-        -- Override CFrame assignment untuk mencegah revert
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local mt = getrawmetatable(hrp)
-            if mt then
-                local oldIndex = mt.__index
-                local oldNewIndex = mt.__newindex
-                
-                -- Hook CFrame assignment
-                mt.__newindex = function(self, key, value)
-                    if key == "CFrame" then
-                        -- Simpan posisi yang diinginkan
-                        lastPosition = value.Position
-                        teleportDetected = true
-                        -- Reset timer setelah teleport
-                        task.spawn(function()
-                            task.wait(0.5)
-                            teleportDetected = false
-                            lastPosition = nil
-                        end)
-                    end
-                    return oldNewIndex(self, key, value)
-                end
-                
-                setrawmetatable(hrp, mt)
-            end
-        end
-    end
-    
-    -- Terapkan ke karakter awal dan saat respawn
+    -- Untuk karakter baru
     player.CharacterAdded:Connect(function(character)
         task.wait(0.5)
-        setMaxSpeed(character)
-        setupTeleportHook()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 23
+        end
     end)
     
-    if player.Character then
-        setMaxSpeed(player.Character)
-        setupTeleportHook()
-    end
-    
-    return antiTeleportConnection
+    return speedConnection
 end
 
--- Jalankan bypass agresif
-local antiTeleportBypass = bypassAllLimits()
+-- ========== RESPAWN CUSTOM ==========
+local RESPAWN_POINT = CFrame.new(729.86, 3.71, 444.46) * CFrame.Angles(-3.14, 0.01, -3.14)
+
+local function setupCustomRespawn()
+    -- Deteksi kematian
+    player.CharacterAdded:Connect(function(character)
+        task.wait(0.1)
+        -- Teleport ke titik respawn custom
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Anchored = true
+            hrp.CFrame = RESPAWN_POINT
+            task.wait(0.05)
+            hrp.Anchored = false
+        end
+    end)
+end
+
+-- Jalankan bypass speed dan custom respawn
+local speedBypass = bypassSpeedLimit()
+setupCustomRespawn()
 
 -- ========== AMBIL REMOTE EVENTS ==========
 local remotes = ReplicatedStorage:FindFirstChild("RemoteEvents")
@@ -228,7 +167,7 @@ local billboardMessages = {
     {text = "Discord.gg/h5CWN2sP4y", color = Color3.fromRGB(100,200,255)},
     {text = "Saran? ke dc ajaa", color = Color3.fromRGB(255,255,100)},
     {text = "Bug? lapor di dc", color = Color3.fromRGB(255,150,200)},
-    {text = "⚡ ANTI-TP ACTIVE", color = Color3.fromRGB(100,255,100)}
+    {text = "⚡ SPEED 23 | CUSTOM RESPAWN", color = Color3.fromRGB(100,255,100)}
 }
 local currentBillboard = 1
 
@@ -357,7 +296,7 @@ AutoSellContent.Visible = false
 AutoSellContent.ScrollBarThickness = 4
 AutoSellContent.CanvasSize = UDim2.new(0,0,0,220)
 
--- ========== SEMUA LOKASI TELEPORT (SAMA PERSIS PATSTORE) ==========
+-- ========== SEMUA LOKASI TELEPORT ==========
 local LOCATIONS = {
     {name = "🏪 Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75), desc = "Dealer Mobil"},
     {name = "🍬 NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548), desc = "Tempat Jual/Beli MS"},
@@ -372,7 +311,7 @@ local LOCATIONS = {
     {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan"},
 }
 
--- ========== TP FUNCTION DENGAN BYPASS LEBIH KERAS ==========
+-- ========== TP FUNCTION INSTAN (SAMA KAYA TP MOTOR) ==========
 local function moveVehicle(vehicle, targetPos)
     local anchor = vehicle.PrimaryPart
         or vehicle:FindFirstChildOfClass("VehicleSeat")
@@ -414,16 +353,11 @@ local function moveVehicle(vehicle, targetPos)
     end
 end
 
-local function stepTeleport(targetPos)
+-- TP INSTAN tanpa kendaraan (sama cepatnya dengan tp motor)
+local function instantTeleport(targetPos)
     local character = player.Character
     local hum = character and character:FindFirstChildOfClass("Humanoid")
     if not character or not hum then return end
-    
-    -- Matikan dulu physics sementara
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.Anchored = true
-    end
     
     local seatPart = hum.SeatPart
     if seatPart then
@@ -432,27 +366,26 @@ local function stepTeleport(targetPos)
             moveVehicle(vehicle, targetPos)
         end
     else
-        -- Jika tidak naik kendaraan, pindah langsung
+        -- TP tanpa kendaraan: anchor, pindah, un-anchor (sama kaya tp motor)
+        local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
+            -- Anchor dulu
+            hrp.Anchored = true
+            
+            -- Pindah instan
             hrp.CFrame = CFrame.new(targetPos)
-        end
-    end
-    
-    -- Nyalakan lagi physics setelah teleport
-    task.wait(0.1)
-    if hrp then
-        hrp.Anchored = false
-    end
-    
-    -- Paksa posisi beberapa kali untuk mencegah revert
-    task.spawn(function()
-        for i = 1, 5 do
+            
+            -- Tunggu sebentar
             task.wait(0.05)
-            if hrp then
-                hrp.CFrame = CFrame.new(targetPos)
-            end
+            
+            -- Un-anchor
+            hrp.Anchored = false
+            
+            -- Reset velocity biar gak flying
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
         end
-    end)
+    end
 end
 
 -- Buat semua button TP
@@ -514,7 +447,7 @@ for i, loc in ipairs(LOCATIONS) do
     
     tpButtons[i] = btn
     btn.MouseButton1Click:Connect(function()
-        stepTeleport(loc.pos)
+        instantTeleport(loc.pos)
     end)
 end
 
@@ -1233,7 +1166,7 @@ local function startMSLoop()
     end)
 end
 
--- ========== AUTO BUY FUNCTIONS (FIX - PAKAI DELAY YANG BENAR) ==========
+-- ========== AUTO BUY FUNCTIONS ==========
 local autoBuyRunning = false
 local currentBuyAmount = 10
 local autoBuyTotalBought = 0
@@ -1276,7 +1209,6 @@ local function startAutoBuy()
             BuyStatusValue.Text = "🛒 Membeli " .. item.display .. " x" .. amount
             BuyStatusValue.TextColor3 = Color3.fromRGB(255,255,100)
             
-            -- Beli satu per satu dengan delay yang cukup
             for i = 1, amount do
                 if not autoBuyRunning then break end
                 
@@ -1286,12 +1218,9 @@ local function startAutoBuy()
                 
                 autoBuyTotalBought = autoBuyTotalBought + 1
                 BuyTotalLabel.Text = "Total: " .. autoBuyTotalBought .. " item"
-                
-                -- DELAY YANG LEBIH LAMA (0.5 detik) AGAR TIDAK DIANGGAP SPAM
                 task.wait(0.5)
             end
             
-            -- Jeda antar item berbeda
             task.wait(0.8)
         end
         
@@ -1318,7 +1247,6 @@ end
 -- ========== SLIDER AUTO BUY ==========
 local isDraggingSlider = false
 
--- Mouse down di slider
 JumlahSliderBg.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         isDraggingSlider = true
@@ -1331,7 +1259,6 @@ JumlahSliderBg.InputBegan:Connect(function(input)
     end
 end)
 
--- Mouse move saat drag
 UIS.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement and isDraggingSlider then
         local mousePos = input.Position.X
@@ -1348,7 +1275,6 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- Mouse up (berhenti drag)
 UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         isDraggingSlider = false
@@ -1360,7 +1286,10 @@ local function blinkAtas()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
+        hrp.Anchored = true
         hrp.CFrame = hrp.CFrame * CFrame.new(0, 2, 0)
+        task.wait(0.05)
+        hrp.Anchored = false
         BlinkStatus.Text = "✅ Naik 2 studs!"
         BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
         task.wait(1)
@@ -1373,7 +1302,10 @@ local function blinkDown()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
+        hrp.Anchored = true
         hrp.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
+        task.wait(0.05)
+        hrp.Anchored = false
         BlinkStatus.Text = "✅ Turun 4 studs!"
         BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
         task.wait(1)
@@ -1386,7 +1318,10 @@ local function blinkMaju()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
+        hrp.Anchored = true
         hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 5
+        task.wait(0.05)
+        hrp.Anchored = false
         BlinkStatus.Text = "✅ Maju 5 studs!"
         BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
         task.wait(1)
@@ -1399,7 +1334,10 @@ local function blinkMundur()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
+        hrp.Anchored = true
         hrp.CFrame = hrp.CFrame - hrp.CFrame.LookVector * 5
+        task.wait(0.05)
+        hrp.Anchored = false
         BlinkStatus.Text = "✅ Mundur 5 studs!"
         BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
         task.wait(1)
@@ -1478,22 +1416,19 @@ CloseBtn.MouseButton1Click:Connect(function()
     if autoSellRunning then stopAutoSell() end
     if loopRunning then loopRunning = false end
     if autoBuyRunning then stopAutoBuy() end
-    if antiTeleportBypass then antiTeleportBypass:Disconnect() end
+    if speedBypass then speedBypass:Disconnect() end
     ScreenGui:Destroy()
 end)
 
--- MS Loop Buttons
 MSLoopStartBtn.MouseButton1Click:Connect(function()
     if not loopRunning then task.spawn(startMSLoop) end
 end)
 MSLoopStopBtn.MouseButton1Click:Connect(function() loopRunning = false end)
 RefreshBtn.MouseButton1Click:Connect(updateBuyIndicators)
 
--- Auto Buy Buttons
 BuyStartBtn.MouseButton1Click:Connect(startAutoBuy)
 BuyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
 
--- Auto Sell Buttons
 AutoSellStartBtn.MouseButton1Click:Connect(startAutoSell)
 AutoSellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
@@ -1674,14 +1609,14 @@ task.spawn(function()
     end
 end)
 
--- Notifikasi bypass berhasil
+-- Notifikasi
 task.wait(2)
 local notif = Instance.new("TextLabel")
 notif.Parent = player.PlayerGui
-notif.Size = UDim2.new(0, 300, 0, 35)
-notif.Position = UDim2.new(1, -310, 1, -45)
+notif.Size = UDim2.new(0, 280, 0, 35)
+notif.Position = UDim2.new(1, -290, 1, -45)
 notif.BackgroundColor3 = Color3.fromRGB(30,30,40)
-notif.Text = "⚡ ANTI-TELEPORT & SPEED BYPASS ACTIVE"
+notif.Text = "⚡ SPEED 23 | CUSTOM RESPAWN ACTIVE"
 notif.TextColor3 = Color3.fromRGB(100,255,100)
 notif.TextSize = 11
 notif.Font = Enum.Font.GothamBold

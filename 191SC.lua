@@ -5,50 +5,25 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- ========== BYPASS LIMIT SPEED (TANPA FREEZE) ==========
-local function bypassSpeedLimit()
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            -- Set ke 23 (aman tidak freeze)
-            humanoid.WalkSpeed = 23
-            -- Mencegah script lain mengubah
-            humanoid:SetAttribute("OriginalSpeed", 23)
-        end
-    end
-    
-    -- Monitor dan pertahankan speed 23
-    local speedConnection = RunService.Heartbeat:Connect(function()
-        local char = player.Character
-        if char then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum and hum.WalkSpeed ~= 23 then
-                hum.WalkSpeed = 23
-            end
-        end
-    end)
-    
-    -- Untuk karakter baru
+-- ========== BYPASS LIMIT SPEED (MAX 23, TIDAK MEMAKSA) ==========
+local function setupSpeedLimit()
+    -- Hanya mempertahankan max speed 23, tidak memaksa ke 23 terus
     player.CharacterAdded:Connect(function(character)
         task.wait(0.5)
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
-            humanoid.WalkSpeed = 23
+            -- Set max speed ke 23 (default game mungkin lebih rendah)
+            humanoid.WalkSpeed = math.min(humanoid.WalkSpeed, 23)
         end
     end)
-    
-    return speedConnection
 end
 
 -- ========== RESPAWN CUSTOM ==========
 local RESPAWN_POINT = CFrame.new(729.86, 3.71, 444.46) * CFrame.Angles(-3.14, 0.01, -3.14)
 
 local function setupCustomRespawn()
-    -- Deteksi kematian
     player.CharacterAdded:Connect(function(character)
         task.wait(0.1)
-        -- Teleport ke titik respawn custom
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
             hrp.Anchored = true
@@ -59,8 +34,7 @@ local function setupCustomRespawn()
     end)
 end
 
--- Jalankan bypass speed dan custom respawn
-local speedBypass = bypassSpeedLimit()
+setupSpeedLimit()
 setupCustomRespawn()
 
 -- ========== AMBIL REMOTE EVENTS ==========
@@ -167,7 +141,7 @@ local billboardMessages = {
     {text = "Discord.gg/h5CWN2sP4y", color = Color3.fromRGB(100,200,255)},
     {text = "Saran? ke dc ajaa", color = Color3.fromRGB(255,255,100)},
     {text = "Bug? lapor di dc", color = Color3.fromRGB(255,150,200)},
-    {text = "⚡ SPEED 23 | CUSTOM RESPAWN", color = Color3.fromRGB(100,255,100)}
+    {text = "⚡ TP VEHICLE MODE | CUSTOM RESPAWN", color = Color3.fromRGB(100,255,100)}
 }
 local currentBillboard = 1
 
@@ -311,7 +285,7 @@ local LOCATIONS = {
     {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan"},
 }
 
--- ========== TP FUNCTION INSTAN (SAMA KAYA TP MOTOR) ==========
+-- ========== TP FUNCTION YANG AMAN (PAKE VEHICLE DUMMY) ==========
 local function moveVehicle(vehicle, targetPos)
     local anchor = vehicle.PrimaryPart
         or vehicle:FindFirstChildOfClass("VehicleSeat")
@@ -353,39 +327,86 @@ local function moveVehicle(vehicle, targetPos)
     end
 end
 
--- TP INSTAN tanpa kendaraan (sama cepatnya dengan tp motor)
+-- TP INSTAN TANPA BALIK LAGI KE TEMPAT AWAL
 local function instantTeleport(targetPos)
     local character = player.Character
     local hum = character and character:FindFirstChildOfClass("Humanoid")
     if not character or not hum then return end
     
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    -- Cek apakah lagi naik kendaraan
     local seatPart = hum.SeatPart
     if seatPart then
+        -- Lagi naik kendaraan, teleport vehicle (AMAN, limit speed ga berlaku)
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
             moveVehicle(vehicle, targetPos)
         end
-    else
-        -- TP tanpa kendaraan: anchor, pindah, un-anchor (sama kaya tp motor)
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            -- Anchor dulu
-            hrp.Anchored = true
-            
-            -- Pindah instan
-            hrp.CFrame = CFrame.new(targetPos)
-            
-            -- Tunggu sebentar
-            task.wait(0.05)
-            
-            -- Un-anchor
-            hrp.Anchored = false
-            
-            -- Reset velocity biar gak flying
-            hrp.AssemblyLinearVelocity = Vector3.zero
-            hrp.AssemblyAngularVelocity = Vector3.zero
+        return
+    end
+    
+    -- ========== TIDAK LAGI NAIK KENDARAAN ==========
+    -- Buat vehicle dummy sementara biar limit speed tidak berlaku
+    
+    -- Matikan dulu physics biar ga flying
+    hrp.Anchored = true
+    
+    -- Buat dummy vehicle
+    local dummyVehicle = Instance.new("Model")
+    dummyVehicle.Name = "DummyVehicle_TP"
+    
+    local vehicleSeat = Instance.new("VehicleSeat")
+    vehicleSeat.Size = Vector3.new(4, 1, 4)
+    vehicleSeat.Parent = dummyVehicle
+    vehicleSeat.CanCollide = false
+    vehicleSeat.Transparency = 1
+    vehicleSeat.CFrame = hrp.CFrame
+    
+    dummyVehicle.Parent = workspace
+    
+    -- Paksa duduk di vehicle seat
+    hum.Sit = true
+    task.wait(0.05)
+    hum.SeatPart = vehicleSeat
+    
+    -- Teleport vehicle (yang sekarang membawa player)
+    -- Freeze
+    for _, p in ipairs(dummyVehicle:GetDescendants()) do
+        if p:IsA("BasePart") then
+            p.Anchored = true
+            p.AssemblyLinearVelocity = Vector3.zero
+            p.AssemblyAngularVelocity = Vector3.zero
         end
     end
+    
+    -- Pindahkan
+    vehicleSeat.CFrame = CFrame.new(targetPos + Vector3.new(0, 0.5, 0))
+    
+    task.wait(0.05)
+    
+    -- Unfreeze
+    for _, p in ipairs(dummyVehicle:GetDescendants()) do
+        if p:IsA("BasePart") then
+            p.Anchored = false
+        end
+    end
+    
+    task.wait(0.1)
+    
+    -- Turun dari vehicle dummy
+    hum.Sit = false
+    hum.SeatPart = nil
+    
+    -- Hapus dummy vehicle
+    dummyVehicle:Destroy()
+    
+    -- Un-anchor hrp
+    task.wait(0.05)
+    hrp.Anchored = false
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
 end
 
 -- Buat semua button TP
@@ -451,7 +472,7 @@ for i, loc in ipairs(LOCATIONS) do
     end)
 end
 
--- ========== MS LOOP CONTENT ==========
+-- ========== MS LOOP CONTENT (SAMA SEPERTI SEBELUMNYA) ==========
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-16,0,25)
@@ -1416,7 +1437,6 @@ CloseBtn.MouseButton1Click:Connect(function()
     if autoSellRunning then stopAutoSell() end
     if loopRunning then loopRunning = false end
     if autoBuyRunning then stopAutoBuy() end
-    if speedBypass then speedBypass:Disconnect() end
     ScreenGui:Destroy()
 end)
 
@@ -1613,12 +1633,12 @@ end)
 task.wait(2)
 local notif = Instance.new("TextLabel")
 notif.Parent = player.PlayerGui
-notif.Size = UDim2.new(0, 280, 0, 35)
-notif.Position = UDim2.new(1, -290, 1, -45)
+notif.Size = UDim2.new(0, 320, 0, 35)
+notif.Position = UDim2.new(1, -330, 1, -45)
 notif.BackgroundColor3 = Color3.fromRGB(30,30,40)
-notif.Text = "⚡ SPEED 23 | CUSTOM RESPAWN ACTIVE"
+notif.Text = "⚡ TP VEHICLE MODE | CUSTOM RESPAWN | SPEED 23"
 notif.TextColor3 = Color3.fromRGB(100,255,100)
-notif.TextSize = 11
+notif.TextSize = 10
 notif.Font = Enum.Font.GothamBold
 local notifCorner = Instance.new("UICorner")
 notifCorner.Parent = notif

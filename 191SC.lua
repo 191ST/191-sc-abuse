@@ -332,7 +332,7 @@ local function stepTeleport(targetPos)
     end
 end
 
--- ========== TELEPORT TO SAFE ZONE (DENGAN ANCHOR/UNANCHOR) ==========
+-- ========== TELEPORT TO SAFE ZONE ==========
 local function teleportToSafeZone()
     local character = player.Character
     local hum = character and character:FindFirstChildOfClass("Humanoid")
@@ -358,7 +358,7 @@ local function teleportToSafeZone()
     return false
 end
 
-local function teleportToPosition(targetPos)
+local function teleportToPosition(targetCFrame)
     local character = player.Character
     local hum = character and character:FindFirstChildOfClass("Humanoid")
     if not character or not hum then return false end
@@ -367,14 +367,14 @@ local function teleportToPosition(targetPos)
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            moveVehicle(vehicle, CFrame.new(targetPos))
+            moveVehicle(vehicle, targetCFrame)
             return true
         end
     else
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
             hrp.Anchored = true
-            hrp.CFrame = CFrame.new(targetPos)
+            hrp.CFrame = targetCFrame
             task.wait(0.05)
             hrp.Anchored = false
             return true
@@ -384,13 +384,30 @@ local function teleportToPosition(targetPos)
 end
 
 -- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
-local lastHealth = 100
+local hpMonitoringActive = false
 local isInSafeZone = false
 local originalPosition = nil
-local hpMonitoringActive = false
 local safeZoneTimerThread = nil
+local currentHumanoid = nil
+local lastHealthPercent = 100
 
--- Variabel untuk menyimpan posisi sebelum masuk safe zone
+-- Reset saat karakter ganti
+local function onCharacterAdded(character)
+    currentHumanoid = character:WaitForChild("Humanoid")
+    lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
+    isInSafeZone = false
+    originalPosition = nil
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
+        safeZoneTimerThread = nil
+    end
+end
+
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+player.CharacterAdded:Connect(onCharacterAdded)
+
 local function saveOriginalPosition()
     local character = player.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -403,25 +420,7 @@ end
 
 local function teleportBackToOriginal()
     if originalPosition then
-        local character = player.Character
-        local hum = character and character:FindFirstChildOfClass("Humanoid")
-        if character and hum then
-            local seatPart = hum.SeatPart
-            if seatPart then
-                local vehicle = seatPart:FindFirstAncestorOfClass("Model")
-                if vehicle then
-                    moveVehicle(vehicle, originalPosition)
-                end
-            else
-                local hrp = character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.Anchored = true
-                    hrp.CFrame = originalPosition
-                    task.wait(0.05)
-                    hrp.Anchored = false
-                end
-            end
-        end
+        teleportToPosition(originalPosition)
         originalPosition = nil
     end
     isInSafeZone = false
@@ -442,45 +441,52 @@ local function startSafeZoneTimer()
 end
 
 local function checkHealthAndTeleport()
-    local character = player.Character
-    if not character or not hpMonitoringActive then return end
+    if not hpMonitoringActive then return end
+    if not currentHumanoid or currentHumanoid.Parent == nil then
+        local character = player.Character
+        if character then
+            currentHumanoid = character:FindFirstChildOfClass("Humanoid")
+        end
+        if not currentHumanoid then return end
+    end
     
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-    
-    local currentHealth = humanoid.Health
-    local maxHealth = humanoid.MaxHealth
+    local currentHealth = currentHumanoid.Health
+    local maxHealth = currentHumanoid.MaxHealth
     
     if maxHealth > 0 then
-        local healthPercent = (currentHealth / maxHealth) * 100
+        local currentPercent = (currentHealth / maxHealth) * 100
+        local percentDropped = lastHealthPercent - currentPercent
         
-        -- Jika HP berkurang 1% atau lebih dari sebelumnya
-        if currentHealth < lastHealth - (maxHealth * 0.01) then
-            if not isInSafeZone then
-                -- Simpan posisi original
-                saveOriginalPosition()
-                
-                -- Teleport ke safe zone
-                if teleportToSafeZone() then
-                    isInSafeZone = true
-                    -- Mulai timer 8 detik
-                    startSafeZoneTimer()
-                end
+        -- Jika HP turun minimal 1% (atau lebih)
+        if percentDropped >= 1 and not isInSafeZone then
+            -- Simpan posisi original
+            saveOriginalPosition()
+            
+            -- Teleport ke safe zone
+            if teleportToSafeZone() then
+                isInSafeZone = true
+                -- Mulai timer 8 detik
+                startSafeZoneTimer()
             end
         end
         
-        lastHealth = currentHealth
+        lastHealthPercent = currentPercent
     end
 end
 
 local function startHPMonitoring()
     if hpMonitoringActive then return end
     hpMonitoringActive = true
-    lastHealth = 100
     isInSafeZone = false
     originalPosition = nil
     
-    -- Reset safe zone timer jika ada
+    -- Reset last health percent
+    if currentHumanoid then
+        lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
+    else
+        lastHealthPercent = 100
+    end
+    
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
         safeZoneTimerThread = nil
@@ -489,7 +495,7 @@ local function startHPMonitoring()
     task.spawn(function()
         while hpMonitoringActive do
             checkHealthAndTeleport()
-            task.wait(0.5)
+            task.wait(0.3) -- Check every 0.3 seconds for faster response
         end
     end)
 end
@@ -497,13 +503,11 @@ end
 local function stopHPMonitoring()
     hpMonitoringActive = false
     
-    -- Matikan timer jika ada
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
         safeZoneTimerThread = nil
     end
     
-    -- Jika sedang di safe zone, teleport balik
     if isInSafeZone then
         teleportBackToOriginal()
     end
@@ -705,8 +709,8 @@ HPSafeStatus.Parent = MSLoopContent
 HPSafeStatus.Size = UDim2.new(1,-16,0,20)
 HPSafeStatus.Position = UDim2.new(0,8,0,276)
 HPSafeStatus.BackgroundTransparency = 1
-HPSafeStatus.Text = "🛡️ HP SAFE: ACTIVE"
-HPSafeStatus.TextColor3 = Color3.fromRGB(100,255,100)
+HPSafeStatus.Text = "🛡️ HP SAFE: INACTIVE"
+HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
 HPSafeStatus.TextXAlignment = Enum.TextXAlignment.Left
 HPSafeStatus.Font = Enum.Font.GothamBold
 HPSafeStatus.TextSize = 10

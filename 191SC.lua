@@ -127,7 +127,7 @@ local billboardMessages = {
     {text = "Discord.gg/h5CWN2sP4y", color = Color3.fromRGB(100,200,255)},
     {text = "Saran? ke dc ajaa", color = Color3.fromRGB(255,255,100)},
     {text = "Bug? lapor di dc", color = Color3.fromRGB(255,150,200)},
-    {text = "✨ CUSTOM RESPAWN ACTIVE", color = Color3.fromRGB(100,255,100)}
+    {text = "dibuat ama jeje ganteng", color = Color3.fromRGB(100,255,100)}
 }
 local currentBillboard = 1
 
@@ -271,15 +271,15 @@ local LOCATIONS = {
     {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan"},
 }
 
--- ========== TP FUNCTION ==========
-local function moveVehicle(vehicle, targetPos)
+-- ========== SAFE ZONE COORDINATE ==========
+local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
+
+-- ========== TP FUNCTION (ANCHOR/UNANCHOR) ==========
+local function moveVehicle(vehicle, targetCFrame)
     local anchor = vehicle.PrimaryPart
         or vehicle:FindFirstChildOfClass("VehicleSeat")
         or vehicle:FindFirstChildOfClass("BasePart")
     if not anchor then return end
-    
-    local spawnPos = targetPos + Vector3.new(0,0.5,0)
-    local newCF = CFrame.new(spawnPos, spawnPos + Vector3.new(0,0,1))
     
     for _,p in ipairs(vehicle:GetDescendants()) do
         if p:IsA("BasePart") then
@@ -293,9 +293,9 @@ local function moveVehicle(vehicle, targetPos)
     task.wait(0.05)
     
     if vehicle.PrimaryPart then
-        vehicle:SetPrimaryPartCFrame(newCF)
+        vehicle:SetPrimaryPartCFrame(targetCFrame)
     else
-        anchor.CFrame = newCF
+        anchor.CFrame = targetCFrame
     end
     task.wait(0.05)
     
@@ -319,14 +319,197 @@ local function stepTeleport(targetPos)
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            moveVehicle(vehicle, targetPos)
+            moveVehicle(vehicle, CFrame.new(targetPos))
         end
     else
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
+            hrp.Anchored = true
             hrp.CFrame = CFrame.new(targetPos)
+            task.wait(0.05)
+            hrp.Anchored = false
         end
     end
+end
+
+-- ========== TELEPORT TO SAFE ZONE (DENGAN ANCHOR/UNANCHOR) ==========
+local function teleportToSafeZone()
+    local character = player.Character
+    local hum = character and character:FindFirstChildOfClass("Humanoid")
+    if not character or not hum then return false end
+    
+    local seatPart = hum.SeatPart
+    if seatPart then
+        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
+        if vehicle then
+            moveVehicle(vehicle, SAFE_ZONE_CFRAME)
+            return true
+        end
+    else
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Anchored = true
+            hrp.CFrame = SAFE_ZONE_CFRAME
+            task.wait(0.05)
+            hrp.Anchored = false
+            return true
+        end
+    end
+    return false
+end
+
+local function teleportToPosition(targetPos)
+    local character = player.Character
+    local hum = character and character:FindFirstChildOfClass("Humanoid")
+    if not character or not hum then return false end
+    
+    local seatPart = hum.SeatPart
+    if seatPart then
+        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
+        if vehicle then
+            moveVehicle(vehicle, CFrame.new(targetPos))
+            return true
+        end
+    else
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Anchored = true
+            hrp.CFrame = CFrame.new(targetPos)
+            task.wait(0.05)
+            hrp.Anchored = false
+            return true
+        end
+    end
+    return false
+end
+
+-- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
+local lastHealth = 100
+local isInSafeZone = false
+local originalPosition = nil
+local hpMonitoringActive = false
+local safeZoneTimerThread = nil
+
+-- Variabel untuk menyimpan posisi sebelum masuk safe zone
+local function saveOriginalPosition()
+    local character = player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        originalPosition = hrp.CFrame
+        return true
+    end
+    return false
+end
+
+local function teleportBackToOriginal()
+    if originalPosition then
+        local character = player.Character
+        local hum = character and character:FindFirstChildOfClass("Humanoid")
+        if character and hum then
+            local seatPart = hum.SeatPart
+            if seatPart then
+                local vehicle = seatPart:FindFirstAncestorOfClass("Model")
+                if vehicle then
+                    moveVehicle(vehicle, originalPosition)
+                end
+            else
+                local hrp = character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    hrp.Anchored = true
+                    hrp.CFrame = originalPosition
+                    task.wait(0.05)
+                    hrp.Anchored = false
+                end
+            end
+        end
+        originalPosition = nil
+    end
+    isInSafeZone = false
+end
+
+local function startSafeZoneTimer()
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
+    end
+    
+    safeZoneTimerThread = task.spawn(function()
+        task.wait(8)
+        if isInSafeZone and hpMonitoringActive then
+            teleportBackToOriginal()
+        end
+        safeZoneTimerThread = nil
+    end)
+end
+
+local function checkHealthAndTeleport()
+    local character = player.Character
+    if not character or not hpMonitoringActive then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    local currentHealth = humanoid.Health
+    local maxHealth = humanoid.MaxHealth
+    
+    if maxHealth > 0 then
+        local healthPercent = (currentHealth / maxHealth) * 100
+        
+        -- Jika HP berkurang 1% atau lebih dari sebelumnya
+        if currentHealth < lastHealth - (maxHealth * 0.01) then
+            if not isInSafeZone then
+                -- Simpan posisi original
+                saveOriginalPosition()
+                
+                -- Teleport ke safe zone
+                if teleportToSafeZone() then
+                    isInSafeZone = true
+                    -- Mulai timer 8 detik
+                    startSafeZoneTimer()
+                end
+            end
+        end
+        
+        lastHealth = currentHealth
+    end
+end
+
+local function startHPMonitoring()
+    if hpMonitoringActive then return end
+    hpMonitoringActive = true
+    lastHealth = 100
+    isInSafeZone = false
+    originalPosition = nil
+    
+    -- Reset safe zone timer jika ada
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
+        safeZoneTimerThread = nil
+    end
+    
+    task.spawn(function()
+        while hpMonitoringActive do
+            checkHealthAndTeleport()
+            task.wait(0.5)
+        end
+    end)
+end
+
+local function stopHPMonitoring()
+    hpMonitoringActive = false
+    
+    -- Matikan timer jika ada
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
+        safeZoneTimerThread = nil
+    end
+    
+    -- Jika sedang di safe zone, teleport balik
+    if isInSafeZone then
+        teleportBackToOriginal()
+    end
+    
+    isInSafeZone = false
+    originalPosition = nil
 end
 
 -- Buat semua button TP
@@ -516,10 +699,22 @@ ToolStatus.TextXAlignment = Enum.TextXAlignment.Left
 ToolStatus.Font = Enum.Font.GothamBold
 ToolStatus.TextSize = 10
 
+-- HP SAFE STATUS INDICATOR
+local HPSafeStatus = Instance.new("TextLabel")
+HPSafeStatus.Parent = MSLoopContent
+HPSafeStatus.Size = UDim2.new(1,-16,0,20)
+HPSafeStatus.Position = UDim2.new(0,8,0,276)
+HPSafeStatus.BackgroundTransparency = 1
+HPSafeStatus.Text = "🛡️ HP SAFE: ACTIVE"
+HPSafeStatus.TextColor3 = Color3.fromRGB(100,255,100)
+HPSafeStatus.TextXAlignment = Enum.TextXAlignment.Left
+HPSafeStatus.Font = Enum.Font.GothamBold
+HPSafeStatus.TextSize = 10
+
 local MSLoopStartBtn = Instance.new("TextButton")
 MSLoopStartBtn.Parent = MSLoopContent
 MSLoopStartBtn.Size = UDim2.new(0.5,-8,0,36)
-MSLoopStartBtn.Position = UDim2.new(0,8,0,280)
+MSLoopStartBtn.Position = UDim2.new(0,8,0,300)
 MSLoopStartBtn.BackgroundColor3 = Color3.fromRGB(50,150,50)
 MSLoopStartBtn.Text = "▶️ START"
 MSLoopStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
@@ -532,7 +727,7 @@ MSLoopStartCorner.CornerRadius = UDim.new(0,6)
 local MSLoopStopBtn = Instance.new("TextButton")
 MSLoopStopBtn.Parent = MSLoopContent
 MSLoopStopBtn.Size = UDim2.new(0.5,-8,0,36)
-MSLoopStopBtn.Position = UDim2.new(0.5,4,0,280)
+MSLoopStopBtn.Position = UDim2.new(0.5,4,0,300)
 MSLoopStopBtn.BackgroundColor3 = Color3.fromRGB(150,50,50)
 MSLoopStopBtn.Text = "⏹️ STOP"
 MSLoopStopBtn.TextColor3 = Color3.fromRGB(255,255,255)
@@ -545,7 +740,7 @@ MSLoopStopCorner.CornerRadius = UDim.new(0,6)
 local RefreshBtn = Instance.new("TextButton")
 RefreshBtn.Parent = MSLoopContent
 RefreshBtn.Size = UDim2.new(1,-16,0,28)
-RefreshBtn.Position = UDim2.new(0,8,0,322)
+RefreshBtn.Position = UDim2.new(0,8,0,342)
 RefreshBtn.BackgroundColor3 = Color3.fromRGB(60,60,80)
 RefreshBtn.Text = "🔄 REFRESH"
 RefreshBtn.TextColor3 = Color3.fromRGB(200,200,255)
@@ -1014,6 +1209,11 @@ local function startMSLoop()
     loopRunning = true
     MSLoopStatus.Text = "▶️ LOOP RUNNING"
     MSLoopStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    HPSafeStatus.Text = "🛡️ HP SAFE: ACTIVE"
+    HPSafeStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    
+    -- START HP MONITORING
+    startHPMonitoring()
     
     task.spawn(function()
         while loopRunning do
@@ -1103,7 +1303,12 @@ local function startMSLoop()
         MSLoopStepLabel.Text = "Step: Stopped"
         MSLoopTimer.Text = "Timer: 0s"
         ToolStatus.Text = "Tool: -"
+        HPSafeStatus.Text = "🛡️ HP SAFE: INACTIVE"
+        HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
         updateBuyIndicators()
+        
+        -- STOP HP MONITORING
+        stopHPMonitoring()
     end)
 end
 
@@ -1343,7 +1548,10 @@ createBlinkButton(MSSafetyContent, "⬅️ BLINK MUNDUR", "Mundur 5 studs", Colo
 -- ========== CONNECT BUTTONS ==========
 CloseBtn.MouseButton1Click:Connect(function()
     if autoSellRunning then stopAutoSell() end
-    if loopRunning then loopRunning = false end
+    if loopRunning then 
+        loopRunning = false
+        stopHPMonitoring()
+    end
     if autoBuyRunning then stopAutoBuy() end
     ScreenGui:Destroy()
 end)
@@ -1351,7 +1559,10 @@ end)
 MSLoopStartBtn.MouseButton1Click:Connect(function()
     if not loopRunning then task.spawn(startMSLoop) end
 end)
-MSLoopStopBtn.MouseButton1Click:Connect(function() loopRunning = false end)
+MSLoopStopBtn.MouseButton1Click:Connect(function() 
+    loopRunning = false
+    stopHPMonitoring()
+end)
 RefreshBtn.MouseButton1Click:Connect(updateBuyIndicators)
 
 BuyStartBtn.MouseButton1Click:Connect(startAutoBuy)

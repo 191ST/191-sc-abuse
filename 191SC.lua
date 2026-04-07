@@ -313,7 +313,61 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FUNGSI TELEPORT YANG BENAR (TIDAK FREEZE) ==========
+-- ========== FUNGSI FREEZE DAN UNFREEZE ==========
+local frozenParts = {}
+local frozenVehicles = {}
+
+local function freezeCharacterAndVehicle()
+    local character = player.Character
+    if not character then return end
+    
+    -- Freeze semua part di karakter
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and not part.Anchored then
+            table.insert(frozenParts, part)
+            part.Anchored = true
+            pcall(function()
+                part.AssemblyLinearVelocity = Vector3.zero
+                part.AssemblyAngularVelocity = Vector3.zero
+            end)
+        end
+    end
+    
+    -- Freeze kendaraan jika sedang berkendara
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    if hum and hum.SeatPart then
+        local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
+        if vehicle then
+            for _, part in ipairs(vehicle:GetDescendants()) do
+                if part:IsA("BasePart") and not part.Anchored then
+                    table.insert(frozenVehicles, part)
+                    part.Anchored = true
+                    pcall(function()
+                        part.AssemblyLinearVelocity = Vector3.zero
+                        part.AssemblyAngularVelocity = Vector3.zero
+                    end)
+                end
+            end
+        end
+    end
+end
+
+local function unfreezeCharacterAndVehicle()
+    for _, part in ipairs(frozenParts) do
+        if part and part.Parent then
+            part.Anchored = false
+        end
+    end
+    for _, part in ipairs(frozenVehicles) do
+        if part and part.Parent then
+            part.Anchored = false
+        end
+    end
+    frozenParts = {}
+    frozenVehicles = {}
+end
+
+-- ========== FUNGSI TELEPORT DENGAN FREEZE ==========
 local function teleportToPosition(targetCFrame)
     local character = player.Character
     if not character then return false end
@@ -325,22 +379,7 @@ local function teleportToPosition(targetCFrame)
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            -- Simpan semua parts yang akan diunanchor nanti
-            local anchoredParts = {}
-            for _, part in ipairs(vehicle:GetDescendants()) do
-                if part:IsA("BasePart") and part.Anchored then
-                    table.insert(anchoredParts, part)
-                    part.Anchored = false
-                end
-                pcall(function()
-                    part.AssemblyLinearVelocity = Vector3.zero
-                    part.AssemblyAngularVelocity = Vector3.zero
-                end)
-            end
-            
-            task.wait(0.05)
-            
-            -- Teleport vehicle
+            -- Teleport vehicle tanpa mengubah anchor
             if vehicle.PrimaryPart then
                 vehicle:SetPrimaryPartCFrame(targetCFrame)
             else
@@ -349,30 +388,18 @@ local function teleportToPosition(targetCFrame)
                     anchor.CFrame = targetCFrame
                 end
             end
-            
-            task.wait(0.05)
-            
-            -- Kembalikan anchor ke keadaan semula
-            for _, part in ipairs(anchoredParts) do
-                if part and part.Parent then
-                    part.Anchored = true
-                end
-            end
-            
-            return true
         end
     else
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
-            local wasAnchored = hrp.Anchored
-            hrp.Anchored = true
             hrp.CFrame = targetCFrame
-            task.wait(0.05)
-            hrp.Anchored = wasAnchored
-            return true
         end
     end
-    return false
+    
+    -- FREEZE setelah teleport
+    freezeCharacterAndVehicle()
+    
+    return true
 end
 
 -- Fungsi teleport dari Vector3
@@ -383,7 +410,7 @@ end
 -- ========== SAFE ZONE COORDINATE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
--- ========== TELEPORT TO SAFE ZONE (TIDAK FREEZE) ==========
+-- ========== TELEPORT TO SAFE ZONE ==========
 local function teleportToSafeZone()
     local character = player.Character
     if not character then return false end
@@ -395,20 +422,6 @@ local function teleportToSafeZone()
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            local anchoredParts = {}
-            for _, part in ipairs(vehicle:GetDescendants()) do
-                if part:IsA("BasePart") and part.Anchored then
-                    table.insert(anchoredParts, part)
-                    part.Anchored = false
-                end
-                pcall(function()
-                    part.AssemblyLinearVelocity = Vector3.zero
-                    part.AssemblyAngularVelocity = Vector3.zero
-                end)
-            end
-            
-            task.wait(0.05)
-            
             if vehicle.PrimaryPart then
                 vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
             else
@@ -417,38 +430,28 @@ local function teleportToSafeZone()
                     anchor.CFrame = SAFE_ZONE_CFRAME
                 end
             end
-            
-            task.wait(0.05)
-            
-            for _, part in ipairs(anchoredParts) do
-                if part and part.Parent then
-                    part.Anchored = true
-                end
-            end
-            
-            return true
         end
     else
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
-            local wasAnchored = hrp.Anchored
-            hrp.Anchored = true
             hrp.CFrame = SAFE_ZONE_CFRAME
-            task.wait(0.05)
-            hrp.Anchored = wasAnchored
-            return true
         end
     end
-    return false
+    
+    -- FREEZE setelah teleport ke safe zone
+    freezeCharacterAndVehicle()
+    
+    return true
 end
 
--- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
+-- ========== HP MONITORING & AUTO UNFREEZE ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalPosition = nil
 local safeZoneTimerThread = nil
 local currentHumanoid = nil
 local lastHealthPercent = 100
+local healthCheckConnection = nil
 
 local function onCharacterAdded(character)
     currentHumanoid = character:WaitForChild("Humanoid")
@@ -459,6 +462,8 @@ local function onCharacterAdded(character)
         task.cancel(safeZoneTimerThread)
         safeZoneTimerThread = nil
     end
+    -- Unfreeze saat karakter baru
+    unfreezeCharacterAndVehicle()
 end
 
 if player.Character then
@@ -478,10 +483,36 @@ end
 
 local function teleportBackToOriginal()
     if originalPosition then
-        teleportToPosition(originalPosition)
+        local character = player.Character
+        if character then
+            local hum = character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                local seatPart = hum.SeatPart
+                if seatPart then
+                    local vehicle = seatPart:FindFirstAncestorOfClass("Model")
+                    if vehicle then
+                        if vehicle.PrimaryPart then
+                            vehicle:SetPrimaryPartCFrame(originalPosition)
+                        else
+                            local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
+                            if anchor then
+                                anchor.CFrame = originalPosition
+                            end
+                        end
+                    end
+                else
+                    local hrp = character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        hrp.CFrame = originalPosition
+                    end
+                end
+            end
+        end
         originalPosition = nil
     end
     isInSafeZone = false
+    -- FREEZE lagi setelah kembali
+    freezeCharacterAndVehicle()
 end
 
 local function startSafeZoneTimer()
@@ -498,7 +529,7 @@ local function startSafeZoneTimer()
     end)
 end
 
-local function checkHealthAndTeleport()
+local function checkHealthAndUnfreeze()
     if not hpMonitoringActive then return end
     if not currentHumanoid or currentHumanoid.Parent == nil then
         local character = player.Character
@@ -513,13 +544,15 @@ local function checkHealthAndTeleport()
     
     if maxHealth > 0 then
         local currentPercent = (currentHealth / maxHealth) * 100
-        local percentDropped = lastHealthPercent - currentPercent
         
-        if percentDropped >= 1 and not isInSafeZone then
-            saveOriginalPosition()
-            if teleportToSafeZone() then
-                isInSafeZone = true
-                startSafeZoneTimer()
+        -- Jika HP turun (karena kena hit)
+        if currentPercent < lastHealthPercent then
+            -- UNFREEZE karena kena hit
+            unfreezeCharacterAndVehicle()
+            
+            -- Jika sedang dalam safe zone, teleport balik
+            if isInSafeZone then
+                teleportBackToOriginal()
             end
         end
         
@@ -544,10 +577,11 @@ local function startHPMonitoring()
         safeZoneTimerThread = nil
     end
     
+    -- Monitoring untuk deteksi kena hit
     task.spawn(function()
         while hpMonitoringActive do
-            checkHealthAndTeleport()
-            task.wait(0.3)
+            checkHealthAndUnfreeze()
+            task.wait(0.1)
         end
     end)
 end
@@ -566,6 +600,7 @@ local function stopHPMonitoring()
     
     isInSafeZone = false
     originalPosition = nil
+    unfreezeCharacterAndVehicle()
 end
 
 -- Buat semua button TP

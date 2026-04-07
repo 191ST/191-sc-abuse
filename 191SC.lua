@@ -218,7 +218,7 @@ TPContent.Size = UDim2.new(1,0,1,0)
 TPContent.BackgroundTransparency = 1
 TPContent.Visible = true
 TPContent.ScrollBarThickness = 4
-TPContent.CanvasSize = UDim2.new(0,0,0,650)
+TPContent.CanvasSize = UDim2.new(0,0,0,850)
 
 -- MS Loop Tab Content
 local MSLoopContent = Instance.new("ScrollingFrame")
@@ -258,17 +258,17 @@ AutoSellContent.CanvasSize = UDim2.new(0,0,0,220)
 
 -- ========== SEMUA LOKASI TELEPORT ==========
 local LOCATIONS = {
-    {name = "🏪 Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75), desc = "Dealer Mobil"},
-    {name = "🍬 NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548), desc = "Tempat Jual/Beli MS"},
+    {name = "🏪 Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75), desc = "Dealer Mobil", hasSub = false},
+    {name = "🍬 NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548), desc = "Tempat Jual/Beli MS", hasSub = false},
     {name = "🏠 Apart 1",         pos = Vector3.new(1137.992, 9.932, 449.753), desc = "Apartemen 1", hasSub = true, apartIndex = 1},
     {name = "🏠 Apart 2",         pos = Vector3.new(1139.174, 9.932, 420.556), desc = "Apartemen 2", hasSub = true, apartIndex = 2},
     {name = "🏠 Apart 3",         pos = Vector3.new(984.856, 9.932, 247.280), desc = "Apartemen 3", hasSub = true, apartIndex = 3},
     {name = "🏠 Apart 4",         pos = Vector3.new(988.311, 9.932, 221.664), desc = "Apartemen 4", hasSub = true, apartIndex = 4},
     {name = "🏠 Apart 5",         pos = Vector3.new(923.954, 9.932, 42.202), desc = "Apartemen 5", hasSub = true, apartIndex = 5},
     {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928), desc = "Apartemen 6", hasSub = true, apartIndex = 6},
-    {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77), desc = "Casino"},
-    {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76), desc = "Rumah Sakit"},
-    {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan"},
+    {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77), desc = "Casino", hasSub = false},
+    {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76), desc = "Rumah Sakit", hasSub = false},
+    {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan", hasSub = false},
 }
 
 -- ========== SUB LOCATIONS UNTUK APARTEMEN ==========
@@ -299,98 +299,66 @@ local APART_SUB_LOCATIONS = {
     },
 }
 
--- ========== SUB MENU DROPDOWN ==========
-local activeDropdown = nil
+-- ========== VARIABLE UNTUK MENYIMPAN SUB BUTTON ==========
+local activeSubButtons = {}
+local activeApartIndex = nil
 
-local function createDropdown(parentBtn, apartIndex)
-    if activeDropdown then
-        activeDropdown:Destroy()
-        activeDropdown = nil
-    end
-    
-    -- Hitung posisi dropdown (tepat di bawah button)
-    local btnPos = parentBtn.AbsolutePosition
-    local btnSize = parentBtn.AbsoluteSize
-    local dropdownY = btnPos.Y + btnSize.Y
-    
-    local dropdown = Instance.new("Frame")
-    dropdown.Parent = TPContent
-    dropdown.Size = UDim2.new(0, btnSize.X - 16, 0, 70)
-    dropdown.Position = UDim2.new(0, btnPos.X - TPContent.AbsolutePosition.X + 8, 0, dropdownY - TPContent.AbsolutePosition.Y)
-    dropdown.BackgroundColor3 = Color3.fromRGB(30,35,50)
-    dropdown.BackgroundTransparency = 0
-    dropdown.ZIndex = 10
-    dropdown.BorderSizePixel = 0
-    
-    local dropdownCorner = Instance.new("UICorner")
-    dropdownCorner.Parent = dropdown
-    dropdownCorner.CornerRadius = UDim.new(0, 8)
-    
-    local dropdownStroke = Instance.new("UIStroke")
-    dropdownStroke.Parent = dropdown
-    dropdownStroke.Color = Color3.fromRGB(100,150,255)
-    dropdownStroke.Thickness = 1
-    
-    local layout = Instance.new("UIListLayout")
-    layout.Parent = dropdown
-    layout.Padding = UDim.new(0, 4)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    
-    local padding = Instance.new("UIPadding")
-    padding.Parent = dropdown
-    padding.PaddingTop = UDim.new(0, 6)
-    padding.PaddingBottom = UDim.new(0, 6)
-    padding.PaddingLeft = UDim.new(0, 8)
-    padding.PaddingRight = UDim.new(0, 8)
-    
-    for _, sub in ipairs(APART_SUB_LOCATIONS[apartIndex]) do
-        local btn = Instance.new("TextButton")
-        btn.Parent = dropdown
-        btn.Size = UDim2.new(1, 0, 0, 30)
-        btn.BackgroundColor3 = Color3.fromRGB(45,50,70)
-        btn.Text = sub.name
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.TextSize = 11
-        btn.Font = Enum.Font.GothamBold
-        btn.BorderSizePixel = 0
-        
-        local btnCorner = Instance.new("UICorner")
-        btnCorner.Parent = btn
-        btnCorner.CornerRadius = UDim.new(0, 6)
-        
-        -- Hover effect
-        btn.MouseEnter:Connect(function()
-            btn.BackgroundColor3 = Color3.fromRGB(70,80,120)
-        end)
-        btn.MouseLeave:Connect(function()
-            btn.BackgroundColor3 = Color3.fromRGB(45,50,70)
-        end)
-        
-        btn.MouseButton1Click:Connect(function()
-            teleportToPositionCFrame(sub.pos)
-            dropdown:Destroy()
-            activeDropdown = nil
-        end)
-    end
-    
-    activeDropdown = dropdown
-    
-    -- Close dropdown ketika klik di luar
-    local function closeDropdownOnClick(input)
-        if activeDropdown and input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local mousePos = UIS:GetMouseLocation()
-            local dropdownPos = dropdown.AbsolutePosition
-            local dropdownSize = dropdown.AbsoluteSize
-            if not (mousePos.X >= dropdownPos.X and mousePos.X <= dropdownPos.X + dropdownSize.X and
-                   mousePos.Y >= dropdownPos.Y and mousePos.Y <= dropdownPos.Y + dropdownSize.Y) then
-                dropdown:Destroy()
-                activeDropdown = nil
-                UIS.InputBegan:Disconnect(closeDropdownConnection)
-            end
+-- Fungsi untuk menghapus semua sub button yang aktif
+local function clearSubButtons()
+    for _, btn in pairs(activeSubButtons) do
+        if btn and btn.Parent then
+            btn:Destroy()
         end
     end
+    activeSubButtons = {}
+    activeApartIndex = nil
+end
+
+-- Fungsi membuat sub button di bawah button apartemen
+local function createSubButtons(parentBtn, apartIndex, layoutOrder)
+    clearSubButtons()
+    activeApartIndex = apartIndex
     
-    local closeDropdownConnection = UIS.InputBegan:Connect(closeDropdownOnClick)
+    local btnPos = parentBtn.AbsolutePosition
+    local contentPos = TPContent.AbsolutePosition
+    local scrollY = TPContent.CanvasPosition.Y
+    
+    local startY = layoutOrder * 61 + 55 + 6 -- 61 adalah tinggi button + margin
+    
+    for i, sub in ipairs(APART_SUB_LOCATIONS[apartIndex]) do
+        local subBtn = Instance.new("TextButton")
+        subBtn.Parent = TPContent
+        subBtn.Size = UDim2.new(1, 0, 0, 40)
+        subBtn.Position = UDim2.new(0, 8, 0, startY + (i - 1) * 46)
+        subBtn.BackgroundColor3 = Color3.fromRGB(60, 70, 100)
+        subBtn.Text = sub.name
+        subBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        subBtn.TextSize = 13
+        subBtn.Font = Enum.Font.GothamBold
+        subBtn.BorderSizePixel = 0
+        
+        local subCorner = Instance.new("UICorner")
+        subCorner.Parent = subBtn
+        subCorner.CornerRadius = UDim.new(0, 8)
+        
+        -- Hover effect
+        subBtn.MouseEnter:Connect(function()
+            subBtn.BackgroundColor3 = Color3.fromRGB(80, 90, 130)
+        end)
+        subBtn.MouseLeave:Connect(function()
+            subBtn.BackgroundColor3 = Color3.fromRGB(60, 70, 100)
+        end)
+        
+        subBtn.MouseButton1Click:Connect(function()
+            teleportToPositionCFrame(sub.pos)
+            clearSubButtons()
+        end)
+        
+        table.insert(activeSubButtons, subBtn)
+    end
+    
+    -- Update canvas size karena ada button baru
+    TPContent.CanvasSize = UDim2.new(0, 0, 0, 850 + #activeSubButtons * 46)
 end
 
 -- ========== SAFE ZONE COORDINATE ==========
@@ -517,7 +485,6 @@ local safeZoneTimerThread = nil
 local currentHumanoid = nil
 local lastHealthPercent = 100
 
--- Reset saat karakter ganti
 local function onCharacterAdded(character)
     currentHumanoid = character:WaitForChild("Humanoid")
     lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
@@ -648,6 +615,10 @@ tpPadding.PaddingLeft = UDim.new(0, 8)
 tpPadding.PaddingRight = UDim.new(0, 8)
 tpPadding.PaddingTop = UDim.new(0, 6)
 
+tpLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    TPContent.CanvasSize = UDim2.new(0, 0, 0, tpLayout.AbsoluteContentSize.Y + 20)
+end)
+
 local tpButtons = {}
 for i, loc in ipairs(LOCATIONS) do
     local btn = Instance.new("TextButton")
@@ -696,17 +667,37 @@ for i, loc in ipairs(LOCATIONS) do
     tpButtons[i] = btn
     
     if loc.hasSub then
-        -- Untuk apartemen, klik button utama akan menampilkan dropdown
         btn.MouseButton1Click:Connect(function()
-            createDropdown(btn, loc.apartIndex)
+            if activeApartIndex == loc.apartIndex then
+                clearSubButtons()
+            else
+                createSubButtons(btn, loc.apartIndex, i)
+            end
         end)
     else
-        -- Untuk lokasi biasa, langsung teleport
         btn.MouseButton1Click:Connect(function()
+            clearSubButtons()
             stepTeleport(loc.pos)
         end)
     end
 end
+
+-- Klik di luar untuk menutup sub buttons
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mousePos = UIS:GetMouseLocation()
+        local tpContentPos = TPContent.AbsolutePosition
+        local tpContentSize = TPContent.AbsoluteSize
+        
+        local isInTPContent = (mousePos.X >= tpContentPos.X and mousePos.X <= tpContentPos.X + tpContentSize.X and
+                               mousePos.Y >= tpContentPos.Y and mousePos.Y <= tpContentPos.Y + tpContentSize.Y)
+        
+        if not isInTPContent then
+            clearSubButtons()
+        end
+    end
+end)
 
 -- ========== MS LOOP CONTENT (SAMA SEPERTI SEBELUMNYA) ==========
 local MSLoopTitle = Instance.new("TextLabel")
@@ -1709,6 +1700,7 @@ TPTabBtn.MouseButton1Click:Connect(function()
     AutoBuyContent.Visible = false
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = false
+    clearSubButtons()
     
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
@@ -1729,6 +1721,7 @@ MSLoopTabBtn.MouseButton1Click:Connect(function()
     AutoBuyContent.Visible = false
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = false
+    clearSubButtons()
     
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
@@ -1750,6 +1743,7 @@ AutoBuyTabBtn.MouseButton1Click:Connect(function()
     AutoBuyContent.Visible = true
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = false
+    clearSubButtons()
     
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
@@ -1771,6 +1765,7 @@ MSSafetyTabBtn.MouseButton1Click:Connect(function()
     AutoBuyContent.Visible = false
     MSSafetyContent.Visible = true
     AutoSellContent.Visible = false
+    clearSubButtons()
     
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
@@ -1791,6 +1786,7 @@ AutoSellTabBtn.MouseButton1Click:Connect(function()
     AutoBuyContent.Visible = false
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = true
+    clearSubButtons()
     
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)

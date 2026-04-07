@@ -313,7 +313,7 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- Fungsi teleport dengan anchor/unanchor
+-- ========== FUNGSI TELEPORT YANG BENAR (TIDAK FREEZE) ==========
 local function teleportToPosition(targetCFrame)
     local character = player.Character
     if not character then return false end
@@ -325,18 +325,19 @@ local function teleportToPosition(targetCFrame)
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            -- Anchor semua part di vehicle
-            local parts = {}
-            for _, p in ipairs(vehicle:GetDescendants()) do
-                if p:IsA("BasePart") then
-                    table.insert(parts, p)
-                    pcall(function()
-                        p.AssemblyLinearVelocity = Vector3.zero
-                        p.AssemblyAngularVelocity = Vector3.zero
-                        p.Anchored = true
-                    end)
+            -- Simpan semua parts yang akan diunanchor nanti
+            local anchoredParts = {}
+            for _, part in ipairs(vehicle:GetDescendants()) do
+                if part:IsA("BasePart") and part.Anchored then
+                    table.insert(anchoredParts, part)
+                    part.Anchored = false
                 end
+                pcall(function()
+                    part.AssemblyLinearVelocity = Vector3.zero
+                    part.AssemblyAngularVelocity = Vector3.zero
+                end)
             end
+            
             task.wait(0.05)
             
             -- Teleport vehicle
@@ -348,25 +349,26 @@ local function teleportToPosition(targetCFrame)
                     anchor.CFrame = targetCFrame
                 end
             end
+            
             task.wait(0.05)
             
-            -- Unanchor semua part
-            for _, p in ipairs(parts) do
-                pcall(function()
-                    p.Anchored = false
-                    p.AssemblyLinearVelocity = Vector3.zero
-                    p.AssemblyAngularVelocity = Vector3.zero
-                end)
+            -- Kembalikan anchor ke keadaan semula
+            for _, part in ipairs(anchoredParts) do
+                if part and part.Parent then
+                    part.Anchored = true
+                end
             end
+            
             return true
         end
     else
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
+            local wasAnchored = hrp.Anchored
             hrp.Anchored = true
             hrp.CFrame = targetCFrame
             task.wait(0.05)
-            hrp.Anchored = false
+            hrp.Anchored = wasAnchored
             return true
         end
     end
@@ -381,7 +383,7 @@ end
 -- ========== SAFE ZONE COORDINATE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
--- ========== TELEPORT TO SAFE ZONE ==========
+-- ========== TELEPORT TO SAFE ZONE (TIDAK FREEZE) ==========
 local function teleportToSafeZone()
     local character = player.Character
     if not character then return false end
@@ -393,17 +395,18 @@ local function teleportToSafeZone()
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            local parts = {}
-            for _, p in ipairs(vehicle:GetDescendants()) do
-                if p:IsA("BasePart") then
-                    table.insert(parts, p)
-                    pcall(function()
-                        p.AssemblyLinearVelocity = Vector3.zero
-                        p.AssemblyAngularVelocity = Vector3.zero
-                        p.Anchored = true
-                    end)
+            local anchoredParts = {}
+            for _, part in ipairs(vehicle:GetDescendants()) do
+                if part:IsA("BasePart") and part.Anchored then
+                    table.insert(anchoredParts, part)
+                    part.Anchored = false
                 end
+                pcall(function()
+                    part.AssemblyLinearVelocity = Vector3.zero
+                    part.AssemblyAngularVelocity = Vector3.zero
+                end)
             end
+            
             task.wait(0.05)
             
             if vehicle.PrimaryPart then
@@ -414,24 +417,25 @@ local function teleportToSafeZone()
                     anchor.CFrame = SAFE_ZONE_CFRAME
                 end
             end
+            
             task.wait(0.05)
             
-            for _, p in ipairs(parts) do
-                pcall(function()
-                    p.Anchored = false
-                    p.AssemblyLinearVelocity = Vector3.zero
-                    p.AssemblyAngularVelocity = Vector3.zero
-                end)
+            for _, part in ipairs(anchoredParts) do
+                if part and part.Parent then
+                    part.Anchored = true
+                end
             end
+            
             return true
         end
     else
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
+            local wasAnchored = hrp.Anchored
             hrp.Anchored = true
             hrp.CFrame = SAFE_ZONE_CFRAME
             task.wait(0.05)
-            hrp.Anchored = false
+            hrp.Anchored = wasAnchored
             return true
         end
     end

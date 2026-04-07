@@ -260,12 +260,12 @@ AutoSellContent.CanvasSize = UDim2.new(0,0,0,220)
 local LOCATIONS = {
     {name = "🏪 Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75), desc = "Dealer Mobil"},
     {name = "🍬 NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548), desc = "Tempat Jual/Beli MS"},
-    {name = "🏠 Apart 1",         pos = Vector3.new(1137.992, 9.932, 449.753), desc = "Apartemen 1", hasSub = true},
-    {name = "🏠 Apart 2",         pos = Vector3.new(1139.174, 9.932, 420.556), desc = "Apartemen 2", hasSub = true},
-    {name = "🏠 Apart 3",         pos = Vector3.new(984.856, 9.932, 247.280), desc = "Apartemen 3", hasSub = true},
-    {name = "🏠 Apart 4",         pos = Vector3.new(988.311, 9.932, 221.664), desc = "Apartemen 4", hasSub = true},
-    {name = "🏠 Apart 5",         pos = Vector3.new(923.954, 9.932, 42.202), desc = "Apartemen 5", hasSub = true},
-    {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928), desc = "Apartemen 6", hasSub = true},
+    {name = "🏠 Apart 1",         pos = Vector3.new(1137.992, 9.932, 449.753), desc = "Apartemen 1", hasSub = true, apartIndex = 1},
+    {name = "🏠 Apart 2",         pos = Vector3.new(1139.174, 9.932, 420.556), desc = "Apartemen 2", hasSub = true, apartIndex = 2},
+    {name = "🏠 Apart 3",         pos = Vector3.new(984.856, 9.932, 247.280), desc = "Apartemen 3", hasSub = true, apartIndex = 3},
+    {name = "🏠 Apart 4",         pos = Vector3.new(988.311, 9.932, 221.664), desc = "Apartemen 4", hasSub = true, apartIndex = 4},
+    {name = "🏠 Apart 5",         pos = Vector3.new(923.954, 9.932, 42.202), desc = "Apartemen 5", hasSub = true, apartIndex = 5},
+    {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928), desc = "Apartemen 6", hasSub = true, apartIndex = 6},
     {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77), desc = "Casino"},
     {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76), desc = "Rumah Sakit"},
     {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan"},
@@ -274,54 +274,61 @@ local LOCATIONS = {
 -- ========== SUB LOCATIONS UNTUK APARTEMEN ==========
 local APART_SUB_LOCATIONS = {
     [1] = {
-        {name = "Goto Apart 1 (Atas Pot)", pos = CFrame.new(1145.73, 7.23, 449.67) * CFrame.Angles(-3.14, -0.01, -3.14)},
-        {name = "Goto Apart 1 (Bawah Pot)", pos = CFrame.new(1137.992, 9.932, 449.753)},
+        {name = "APART 1", pos = CFrame.new(1137.992, 9.932, 449.753)},
+        {name = "APART 1 BAWAH POT", pos = CFrame.new(1145.73, 7.23, 449.67) * CFrame.Angles(-3.14, -0.01, -3.14)},
     },
     [2] = {
-        {name = "Goto Apart 2 (Atas Pot)", pos = CFrame.new(1144.98, 7.23, 420.40) * CFrame.Angles(-3.14, 0.00, 3.14)},
-        {name = "Goto Apart 2 (Bawah Pot)", pos = CFrame.new(1139.174, 9.932, 420.556)},
+        {name = "APART 2", pos = CFrame.new(1139.174, 9.932, 420.556)},
+        {name = "APART 2 BAWAH POT", pos = CFrame.new(1144.98, 7.23, 420.40) * CFrame.Angles(-3.14, 0.00, 3.14)},
     },
     [3] = {
-        {name = "Goto Apart 3 (Atas Pot)", pos = CFrame.new(982.20, 7.23, 249.93) * CFrame.Angles(0.00, -0.02, -0.00)},
-        {name = "Goto Apart 3 (Bawah Pot)", pos = CFrame.new(984.856, 9.932, 247.280)},
+        {name = "APART 3", pos = CFrame.new(984.856, 9.932, 247.280)},
+        {name = "APART 3 BAWAH POT", pos = CFrame.new(982.20, 7.23, 249.93) * CFrame.Angles(0.00, -0.02, -0.00)},
     },
     [4] = {
-        {name = "Goto Apart 4 (Atas Pot)", pos = CFrame.new(981.78, 7.23, 221.41) * CFrame.Angles(-0.00, 0.03, -0.00)},
-        {name = "Goto Apart 4 (Bawah Pot)", pos = CFrame.new(988.311, 9.932, 221.664)},
+        {name = "APART 4", pos = CFrame.new(988.311, 9.932, 221.664)},
+        {name = "APART 4 BAWAH POT", pos = CFrame.new(981.78, 7.23, 221.41) * CFrame.Angles(-0.00, 0.03, -0.00)},
     },
     [5] = {
-        {name = "Goto Apart 5 (Atas Pot)", pos = CFrame.new(924.34, 7.23, 36.52) * CFrame.Angles(-3.14, -1.53, -3.14)},
-        {name = "Goto Apart 5 (Bawah Pot)", pos = CFrame.new(923.954, 9.932, 42.202)},
+        {name = "APART 5", pos = CFrame.new(923.954, 9.932, 42.202)},
+        {name = "APART 5 BAWAH POT", pos = CFrame.new(924.34, 7.23, 36.52) * CFrame.Angles(-3.14, -1.53, -3.14)},
     },
     [6] = {
-        {name = "Goto Apart 6 (Atas Pot)", pos = CFrame.new(896.02, 7.23, 36.70) * CFrame.Angles(0.00, -1.55, 0.00)},
-        {name = "Goto Apart 6 (Bawah Pot)", pos = CFrame.new(895.721, 9.932, 41.928)},
+        {name = "APART 6", pos = CFrame.new(895.721, 9.932, 41.928)},
+        {name = "APART 6 BAWAH POT", pos = CFrame.new(896.02, 7.23, 36.70) * CFrame.Angles(0.00, -1.55, 0.00)},
     },
 }
 
 -- ========== SUB MENU DROPDOWN ==========
 local activeDropdown = nil
 
-local function createDropdown(parent, apartIndex, buttonPos)
+local function createDropdown(parentBtn, apartIndex)
     if activeDropdown then
         activeDropdown:Destroy()
         activeDropdown = nil
     end
     
+    -- Hitung posisi dropdown (tepat di bawah button)
+    local btnPos = parentBtn.AbsolutePosition
+    local btnSize = parentBtn.AbsoluteSize
+    local dropdownY = btnPos.Y + btnSize.Y
+    
     local dropdown = Instance.new("Frame")
-    dropdown.Parent = parent.Parent
-    dropdown.Size = UDim2.new(0, 180, 0, 70)
-    dropdown.Position = UDim2.new(0, buttonPos.X + 10, 0, buttonPos.Y - 30)
-    dropdown.BackgroundColor3 = Color3.fromRGB(20,20,30)
-    dropdown.BackgroundTransparency = 0.05
+    dropdown.Parent = TPContent
+    dropdown.Size = UDim2.new(0, btnSize.X - 16, 0, 70)
+    dropdown.Position = UDim2.new(0, btnPos.X - TPContent.AbsolutePosition.X + 8, 0, dropdownY - TPContent.AbsolutePosition.Y)
+    dropdown.BackgroundColor3 = Color3.fromRGB(30,35,50)
+    dropdown.BackgroundTransparency = 0
     dropdown.ZIndex = 10
+    dropdown.BorderSizePixel = 0
+    
     local dropdownCorner = Instance.new("UICorner")
     dropdownCorner.Parent = dropdown
     dropdownCorner.CornerRadius = UDim.new(0, 8)
     
     local dropdownStroke = Instance.new("UIStroke")
     dropdownStroke.Parent = dropdown
-    dropdownStroke.Color = Color3.fromRGB(80,80,100)
+    dropdownStroke.Color = Color3.fromRGB(100,150,255)
     dropdownStroke.Thickness = 1
     
     local layout = Instance.new("UIListLayout")
@@ -333,21 +340,31 @@ local function createDropdown(parent, apartIndex, buttonPos)
     padding.Parent = dropdown
     padding.PaddingTop = UDim.new(0, 6)
     padding.PaddingBottom = UDim.new(0, 6)
-    padding.PaddingLeft = UDim.new(0, 6)
-    padding.PaddingRight = UDim.new(0, 6)
+    padding.PaddingLeft = UDim.new(0, 8)
+    padding.PaddingRight = UDim.new(0, 8)
     
     for _, sub in ipairs(APART_SUB_LOCATIONS[apartIndex]) do
         local btn = Instance.new("TextButton")
         btn.Parent = dropdown
-        btn.Size = UDim2.new(1, 0, 0, 28)
-        btn.BackgroundColor3 = Color3.fromRGB(50,50,70)
+        btn.Size = UDim2.new(1, 0, 0, 30)
+        btn.BackgroundColor3 = Color3.fromRGB(45,50,70)
         btn.Text = sub.name
         btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.TextSize = 10
+        btn.TextSize = 11
         btn.Font = Enum.Font.GothamBold
+        btn.BorderSizePixel = 0
+        
         local btnCorner = Instance.new("UICorner")
         btnCorner.Parent = btn
-        btnCorner.CornerRadius = UDim.new(0, 4)
+        btnCorner.CornerRadius = UDim.new(0, 6)
+        
+        -- Hover effect
+        btn.MouseEnter:Connect(function()
+            btn.BackgroundColor3 = Color3.fromRGB(70,80,120)
+        end)
+        btn.MouseLeave:Connect(function()
+            btn.BackgroundColor3 = Color3.fromRGB(45,50,70)
+        end)
         
         btn.MouseButton1Click:Connect(function()
             teleportToPositionCFrame(sub.pos)
@@ -358,6 +375,7 @@ local function createDropdown(parent, apartIndex, buttonPos)
     
     activeDropdown = dropdown
     
+    -- Close dropdown ketika klik di luar
     local function closeDropdownOnClick(input)
         if activeDropdown and input.UserInputType == Enum.UserInputType.MouseButton1 then
             local mousePos = UIS:GetMouseLocation()
@@ -675,41 +693,22 @@ for i, loc in ipairs(LOCATIONS) do
     desc.Font = Enum.Font.Gotham
     desc.TextSize = 10
     
+    tpButtons[i] = btn
+    
     if loc.hasSub then
-        local subBtn = Instance.new("TextButton")
-        subBtn.Parent = btn
-        subBtn.Size = UDim2.new(0, 50, 0, 30)
-        subBtn.Position = UDim2.new(1, -56, 0.5, -15)
-        subBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 150)
-        subBtn.Text = "▼"
-        subBtn.TextColor3 = Color3.fromRGB(255,255,255)
-        subBtn.TextSize = 14
-        subBtn.Font = Enum.Font.GothamBold
-        local subCorner = Instance.new("UICorner")
-        subCorner.Parent = subBtn
-        subCorner.CornerRadius = UDim.new(0, 6)
-        
-        local apartIndex = i - 2
-        if apartIndex >= 1 and apartIndex <= 6 then
-            subBtn.MouseButton1Click:Connect(function(clickInput)
-                local pos = subBtn.AbsolutePosition
-                createDropdown(btn, apartIndex, Vector2.new(pos.X + subBtn.AbsoluteSize.X / 2, pos.Y + subBtn.AbsoluteSize.Y))
-            end)
-        end
-        
-        tpButtons[i] = btn
+        -- Untuk apartemen, klik button utama akan menampilkan dropdown
         btn.MouseButton1Click:Connect(function()
-            stepTeleport(loc.pos)
+            createDropdown(btn, loc.apartIndex)
         end)
     else
-        tpButtons[i] = btn
+        -- Untuk lokasi biasa, langsung teleport
         btn.MouseButton1Click:Connect(function()
             stepTeleport(loc.pos)
         end)
     end
 end
 
--- ========== MS LOOP CONTENT ==========
+-- ========== MS LOOP CONTENT (SAMA SEPERTI SEBELUMNYA) ==========
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-16,0,25)

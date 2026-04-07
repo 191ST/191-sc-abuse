@@ -268,7 +268,6 @@ local LOCATIONS = {
     {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928), desc = "Apartemen 6", hasSub = true, apartIndex = 6},
     {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77), desc = "Casino", hasSub = false},
     {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76), desc = "Rumah Sakit", hasSub = false},
-    {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan", hasSub = false},
 }
 
 -- ========== SUB LOCATIONS UNTUK APARTEMEN ==========
@@ -314,124 +313,51 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- Fungsi membuat sub button di bawah button apartemen
-local function createSubButtons(parentBtn, apartIndex, layoutOrder)
-    clearSubButtons()
-    activeApartIndex = apartIndex
-    
-    local btnPos = parentBtn.AbsolutePosition
-    local contentPos = TPContent.AbsolutePosition
-    local scrollY = TPContent.CanvasPosition.Y
-    
-    local startY = layoutOrder * 61 + 55 + 6 -- 61 adalah tinggi button + margin
-    
-    for i, sub in ipairs(APART_SUB_LOCATIONS[apartIndex]) do
-        local subBtn = Instance.new("TextButton")
-        subBtn.Parent = TPContent
-        subBtn.Size = UDim2.new(1, 0, 0, 40)
-        subBtn.Position = UDim2.new(0, 8, 0, startY + (i - 1) * 46)
-        subBtn.BackgroundColor3 = Color3.fromRGB(60, 70, 100)
-        subBtn.Text = sub.name
-        subBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        subBtn.TextSize = 13
-        subBtn.Font = Enum.Font.GothamBold
-        subBtn.BorderSizePixel = 0
-        
-        local subCorner = Instance.new("UICorner")
-        subCorner.Parent = subBtn
-        subCorner.CornerRadius = UDim.new(0, 8)
-        
-        -- Hover effect
-        subBtn.MouseEnter:Connect(function()
-            subBtn.BackgroundColor3 = Color3.fromRGB(80, 90, 130)
-        end)
-        subBtn.MouseLeave:Connect(function()
-            subBtn.BackgroundColor3 = Color3.fromRGB(60, 70, 100)
-        end)
-        
-        subBtn.MouseButton1Click:Connect(function()
-            teleportToPositionCFrame(sub.pos)
-            clearSubButtons()
-        end)
-        
-        table.insert(activeSubButtons, subBtn)
-    end
-    
-    -- Update canvas size karena ada button baru
-    TPContent.CanvasSize = UDim2.new(0, 0, 0, 850 + #activeSubButtons * 46)
-end
-
--- ========== SAFE ZONE COORDINATE ==========
-local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
-
--- ========== TP FUNCTION (ANCHOR/UNANCHOR) ==========
-local function moveVehicle(vehicle, targetCFrame)
-    local anchor = vehicle.PrimaryPart
-        or vehicle:FindFirstChildOfClass("VehicleSeat")
-        or vehicle:FindFirstChildOfClass("BasePart")
-    if not anchor then return end
-    
-    for _,p in ipairs(vehicle:GetDescendants()) do
-        if p:IsA("BasePart") then
-            pcall(function()
-                p.AssemblyLinearVelocity  = Vector3.zero
-                p.AssemblyAngularVelocity = Vector3.zero
-                p.Anchored = true
-            end)
-        end
-    end
-    task.wait(0.05)
-    
-    if vehicle.PrimaryPart then
-        vehicle:SetPrimaryPartCFrame(targetCFrame)
-    else
-        anchor.CFrame = targetCFrame
-    end
-    task.wait(0.05)
-    
-    for _,p in ipairs(vehicle:GetDescendants()) do
-        if p:IsA("BasePart") then
-            pcall(function()
-                p.Anchored = false
-                p.AssemblyLinearVelocity  = Vector3.zero
-                p.AssemblyAngularVelocity = Vector3.zero
-            end)
-        end
-    end
-end
-
-local function stepTeleport(targetPos)
+-- Fungsi teleport dengan anchor/unanchor
+local function teleportToPosition(targetCFrame)
     local character = player.Character
-    local hum = character and character:FindFirstChildOfClass("Humanoid")
-    if not character or not hum then return end
+    if not character then return false end
+    
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
     
     local seatPart = hum.SeatPart
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            moveVehicle(vehicle, CFrame.new(targetPos))
-        end
-    else
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Anchored = true
-            hrp.CFrame = CFrame.new(targetPos)
+            -- Anchor semua part di vehicle
+            local parts = {}
+            for _, p in ipairs(vehicle:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    table.insert(parts, p)
+                    pcall(function()
+                        p.AssemblyLinearVelocity = Vector3.zero
+                        p.AssemblyAngularVelocity = Vector3.zero
+                        p.Anchored = true
+                    end)
+                end
+            end
             task.wait(0.05)
-            hrp.Anchored = false
-        end
-    end
-end
-
-local function teleportToPositionCFrame(targetCFrame)
-    local character = player.Character
-    local hum = character and character:FindFirstChildOfClass("Humanoid")
-    if not character or not hum then return false end
-    
-    local seatPart = hum.SeatPart
-    if seatPart then
-        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
-        if vehicle then
-            moveVehicle(vehicle, targetCFrame)
+            
+            -- Teleport vehicle
+            if vehicle.PrimaryPart then
+                vehicle:SetPrimaryPartCFrame(targetCFrame)
+            else
+                local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
+                if anchor then
+                    anchor.CFrame = targetCFrame
+                end
+            end
+            task.wait(0.05)
+            
+            -- Unanchor semua part
+            for _, p in ipairs(parts) do
+                pcall(function()
+                    p.Anchored = false
+                    p.AssemblyLinearVelocity = Vector3.zero
+                    p.AssemblyAngularVelocity = Vector3.zero
+                end)
+            end
             return true
         end
     else
@@ -447,17 +373,56 @@ local function teleportToPositionCFrame(targetCFrame)
     return false
 end
 
+-- Fungsi teleport dari Vector3
+local function teleportToVector3(targetPos)
+    return teleportToPosition(CFrame.new(targetPos))
+end
+
+-- ========== SAFE ZONE COORDINATE ==========
+local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
+
 -- ========== TELEPORT TO SAFE ZONE ==========
 local function teleportToSafeZone()
     local character = player.Character
-    local hum = character and character:FindFirstChildOfClass("Humanoid")
-    if not character or not hum then return false end
+    if not character then return false end
+    
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
     
     local seatPart = hum.SeatPart
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            moveVehicle(vehicle, SAFE_ZONE_CFRAME)
+            local parts = {}
+            for _, p in ipairs(vehicle:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    table.insert(parts, p)
+                    pcall(function()
+                        p.AssemblyLinearVelocity = Vector3.zero
+                        p.AssemblyAngularVelocity = Vector3.zero
+                        p.Anchored = true
+                    end)
+                end
+            end
+            task.wait(0.05)
+            
+            if vehicle.PrimaryPart then
+                vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
+            else
+                local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
+                if anchor then
+                    anchor.CFrame = SAFE_ZONE_CFRAME
+                end
+            end
+            task.wait(0.05)
+            
+            for _, p in ipairs(parts) do
+                pcall(function()
+                    p.Anchored = false
+                    p.AssemblyLinearVelocity = Vector3.zero
+                    p.AssemblyAngularVelocity = Vector3.zero
+                end)
+            end
             return true
         end
     else
@@ -471,10 +436,6 @@ local function teleportToSafeZone()
         end
     end
     return false
-end
-
-local function teleportToPosition(targetCFrame)
-    return teleportToPositionCFrame(targetCFrame)
 end
 
 -- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
@@ -619,7 +580,46 @@ tpLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TPContent.CanvasSize = UDim2.new(0, 0, 0, tpLayout.AbsoluteContentSize.Y + 20)
 end)
 
-local tpButtons = {}
+local function createSubButtons(parentBtn, apartIndex, layoutOrder)
+    clearSubButtons()
+    activeApartIndex = apartIndex
+    
+    local startY = layoutOrder * 61 + 55 + 6
+    
+    for i, sub in ipairs(APART_SUB_LOCATIONS[apartIndex]) do
+        local subBtn = Instance.new("TextButton")
+        subBtn.Parent = TPContent
+        subBtn.Size = UDim2.new(1, 0, 0, 40)
+        subBtn.Position = UDim2.new(0, 8, 0, startY + (i - 1) * 46)
+        subBtn.BackgroundColor3 = Color3.fromRGB(60, 70, 100)
+        subBtn.Text = sub.name
+        subBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        subBtn.TextSize = 13
+        subBtn.Font = Enum.Font.GothamBold
+        subBtn.BorderSizePixel = 0
+        
+        local subCorner = Instance.new("UICorner")
+        subCorner.Parent = subBtn
+        subCorner.CornerRadius = UDim.new(0, 8)
+        
+        subBtn.MouseEnter:Connect(function()
+            subBtn.BackgroundColor3 = Color3.fromRGB(80, 90, 130)
+        end)
+        subBtn.MouseLeave:Connect(function()
+            subBtn.BackgroundColor3 = Color3.fromRGB(60, 70, 100)
+        end)
+        
+        subBtn.MouseButton1Click:Connect(function()
+            teleportToPosition(sub.pos)
+            clearSubButtons()
+        end)
+        
+        table.insert(activeSubButtons, subBtn)
+    end
+    
+    TPContent.CanvasSize = UDim2.new(0, 0, 0, tpLayout.AbsoluteContentSize.Y + 20 + #activeSubButtons * 46)
+end
+
 for i, loc in ipairs(LOCATIONS) do
     local btn = Instance.new("TextButton")
     btn.Parent = TPContent
@@ -664,8 +664,6 @@ for i, loc in ipairs(LOCATIONS) do
     desc.Font = Enum.Font.Gotham
     desc.TextSize = 10
     
-    tpButtons[i] = btn
-    
     if loc.hasSub then
         btn.MouseButton1Click:Connect(function()
             if activeApartIndex == loc.apartIndex then
@@ -677,7 +675,7 @@ for i, loc in ipairs(LOCATIONS) do
     else
         btn.MouseButton1Click:Connect(function()
             clearSubButtons()
-            stepTeleport(loc.pos)
+            teleportToVector3(loc.pos)
         end)
     end
 end
@@ -699,7 +697,7 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ========== MS LOOP CONTENT (SAMA SEPERTI SEBELUMNYA) ==========
+-- ========== MS LOOP CONTENT ==========
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-16,0,25)

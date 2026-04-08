@@ -298,7 +298,7 @@ local APART_SUB_LOCATIONS = {
     },
 }
 
--- ========== VARIABLE UNTUK MENYIMPAN SUB BUTTON ==========
+-- ========== VARIABLE ==========
 local activeSubButtons = {}
 local activeApartIndex = nil
 
@@ -312,46 +312,57 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FUNGSI FREEZE KENDARAAN ==========
-local frozenVehicleParts = {}
+-- ========== FUNGSI FREEZE KENDARAAN (PAKAI LOOP, BUKAN ANCHOR) ==========
 local isVehicleFrozen = false
-local waitingForUnfreeze = false
+local frozenVehicleCFrame = nil
+local freezeConnection = nil
+local frozenVehicle = nil
 
-local function unfreezeVehicle()
-    if not isVehicleFrozen then return end
-    for _, part in ipairs(frozenVehicleParts) do
-        if part and part.Parent then
-            part.Anchored = false
-        end
+local function stopVehicleFreeze()
+    if freezeConnection then
+        freezeConnection:Disconnect()
+        freezeConnection = nil
     end
-    frozenVehicleParts = {}
     isVehicleFrozen = false
-    waitingForUnfreeze = false
+    frozenVehicleCFrame = nil
+    frozenVehicle = nil
 end
 
-local function freezeVehicle()
-    if isVehicleFrozen then return end
+local function startVehicleFreeze(vehicle, cframe)
+    stopVehicleFreeze()
+    frozenVehicle = vehicle
+    frozenVehicleCFrame = cframe
     
-    local character = player.Character
-    if not character then return end
-    
-    local hum = character:FindFirstChildOfClass("Humanoid")
-    if hum and hum.SeatPart then
-        local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
-        if vehicle then
-            for _, part in ipairs(vehicle:GetDescendants()) do
-                if part:IsA("BasePart") and not part.Anchored then
-                    table.insert(frozenVehicleParts, part)
-                    part.Anchored = true
+    -- Paksa posisi kendaraan setiap frame
+    freezeConnection = RunService.Heartbeat:Connect(function()
+        if frozenVehicle and frozenVehicle.Parent then
+            if frozenVehicle.PrimaryPart then
+                frozenVehicle:SetPrimaryPartCFrame(frozenVehicleCFrame)
+            else
+                local anchor = frozenVehicle:FindFirstChildOfClass("VehicleSeat") or frozenVehicle:FindFirstChildOfClass("BasePart")
+                if anchor then
+                    anchor.CFrame = frozenVehicleCFrame
+                end
+            end
+            -- Reset velocity
+            for _, part in ipairs(frozenVehicle:GetDescendants()) do
+                if part:IsA("BasePart") then
                     pcall(function()
                         part.AssemblyLinearVelocity = Vector3.zero
                         part.AssemblyAngularVelocity = Vector3.zero
                     end)
                 end
             end
+        else
+            stopVehicleFreeze()
         end
-    end
+    end)
+    
     isVehicleFrozen = true
+end
+
+local function unfreezeVehicle()
+    stopVehicleFreeze()
 end
 
 -- ========== FUNGSI TELEPORT ==========
@@ -377,17 +388,16 @@ local function teleportToPosition(targetCFrame, shouldFreeze)
                     anchor.CFrame = targetCFrame
                 end
             end
+            -- Freeze setelah teleport jika diminta
+            if shouldFreeze then
+                startVehicleFreeze(vehicle, targetCFrame)
+            end
         end
     else
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
             hrp.CFrame = targetCFrame
         end
-    end
-    
-    -- Freeze lagi jika diminta
-    if shouldFreeze then
-        freezeVehicle()
     end
     
     return true
@@ -397,10 +407,10 @@ local function teleportToVector3(targetPos, shouldFreeze)
     return teleportToPosition(CFrame.new(targetPos), shouldFreeze)
 end
 
--- ========== SAFE ZONE COORDINATE ==========
+-- ========== SAFE ZONE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
--- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
+-- ========== HP MONITORING ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalPosition = nil
@@ -668,7 +678,7 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ========== MS LOOP CONTENT (SAMA PERSIS SEPERTI SCRIPT AWAL) ==========
+-- ========== MS LOOP CONTENT ==========
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-16,0,25)
@@ -1310,7 +1320,7 @@ local loopRunning = false
 local function startMSLoop()
     if loopRunning then return end
     
-    -- HAPUS baris unfreezeVehicle() di sini! JANGAN unfreeze
+    -- TIDAK ADA unfreezeVehicle() di sini! Kendaraan tetap freeze jika sedang freeze
     
     loopRunning = true
     MSLoopStatus.Text = "▶️ LOOP RUNNING"
@@ -1657,6 +1667,7 @@ CloseBtn.MouseButton1Click:Connect(function()
         stopHPMonitoring()
     end
     if autoBuyRunning then stopAutoBuy() end
+    unfreezeVehicle()
     ScreenGui:Destroy()
 end)
 
@@ -1849,10 +1860,10 @@ task.spawn(function()
     while true do
         task.wait(0.5)
         if isVehicleFrozen then
-            VehicleFreezeStatus.Text = "🚗 VEHICLE FREEZE: ACTIVE"
+            VehicleFreezeStatus.Text = "RAWR"
             VehicleFreezeStatus.TextColor3 = Color3.fromRGB(255,100,100)
         else
-            VehicleFreezeStatus.Text = "🚗 VEHICLE FREEZE: INACTIVE"
+            VehicleFreezeStatus.Text = "RAWR"
             VehicleFreezeStatus.TextColor3 = Color3.fromRGB(100,255,100)
         end
     end

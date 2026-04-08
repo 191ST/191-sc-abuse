@@ -365,13 +365,14 @@ local function unfreezeVehicle()
 end
 
 -- ========== FUNGSI TELEPORT ==========
-local function teleportToPosition(targetCFrame, shouldFreeze)
+local function teleportToPosition(targetCFrame, shouldFreezeAfter)
     local character = player.Character
     if not character then return false end
     
     local hum = character:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
     
+    -- Selalu unfreeze dulu sebelum teleport
     unfreezeVehicle()
     
     local seatPart = hum.SeatPart
@@ -386,7 +387,8 @@ local function teleportToPosition(targetCFrame, shouldFreeze)
                     anchor.CFrame = targetCFrame
                 end
             end
-            if shouldFreeze then
+            -- Freeze setelah teleport jika diminta
+            if shouldFreezeAfter then
                 task.wait(0.1)
                 startVehicleFreeze(vehicle, targetCFrame)
             end
@@ -401,17 +403,18 @@ local function teleportToPosition(targetCFrame, shouldFreeze)
     return true
 end
 
-local function teleportToVector3(targetPos, shouldFreeze)
-    return teleportToPosition(CFrame.new(targetPos), shouldFreeze)
+local function teleportToVector3(targetPos, shouldFreezeAfter)
+    return teleportToPosition(CFrame.new(targetPos), shouldFreezeAfter)
 end
 
 -- ========== SAFE ZONE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
--- ========== HP MONITORING & AUTO SAFE TELEPORT (DIREWRITE) ==========
+-- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalPosition = nil
+local originalShouldFreeze = false  -- Menyimpan status freeze ASLI sebelum kena hit
 local safeZoneTimerThread = nil
 local currentHumanoid = nil
 local lastHealthPercent = 100
@@ -422,6 +425,7 @@ local function onCharacterAdded(character)
     lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
     isInSafeZone = false
     originalPosition = nil
+    originalShouldFreeze = false
     isWaitingForReturn = false
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
@@ -435,7 +439,7 @@ if player.Character then
 end
 player.CharacterAdded:Connect(onCharacterAdded)
 
--- Fungsi teleport ke safe zone (pakai teleportToPosition)
+-- Fungsi teleport ke safe zone (tanpa freeze)
 local function goToSafeZone()
     local character = player.Character
     if not character then return false end
@@ -443,27 +447,42 @@ local function goToSafeZone()
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
-    -- Simpan posisi original
+    -- Simpan posisi original dan status freeze asli
     originalPosition = hrp.CFrame
     
-    -- Teleport ke safe zone
-    teleportToPosition(SAFE_ZONE_CFRAME, false)
+    -- Teleport ke safe zone (tanpa freeze)
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    if hum and hum.SeatPart then
+        local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
+        if vehicle then
+            if vehicle.PrimaryPart then
+                vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
+            else
+                local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
+                if anchor then
+                    anchor.CFrame = SAFE_ZONE_CFRAME
+                end
+            end
+        end
+    else
+        hrp.CFrame = SAFE_ZONE_CFRAME
+    end
     
     isInSafeZone = true
     return true
 end
 
--- Fungsi kembali ke original
+-- Fungsi kembali ke original dengan freeze sesuai status asli
 local function goBackToOriginal()
     if originalPosition then
-        teleportToPosition(originalPosition, true)
+        -- Kembali ke posisi original, freeze jika asalnya dari bawah pot
+        teleportToPosition(originalPosition, originalShouldFreeze)
         originalPosition = nil
     end
     isInSafeZone = false
     isWaitingForReturn = false
 end
 
--- Timer 8 detik
 local function startReturnTimer()
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
@@ -478,7 +497,6 @@ local function startReturnTimer()
     end)
 end
 
--- Cek kesehatan
 local function checkHealthAndTeleport()
     if not hpMonitoringActive then return end
     if isWaitingForReturn then return end
@@ -500,6 +518,13 @@ local function checkHealthAndTeleport()
         
         -- Jika kena hit (HP turun)
         if currentPercent < lastHealthPercent then
+            -- UNFREEZE kendaraan dulu
+            unfreezeVehicle()
+            
+            -- Simpan status freeze asli (apakah dari bawah pot atau tidak)
+            originalShouldFreeze = isVehicleFrozen
+            
+            -- Teleport ke safe zone
             if goToSafeZone() then
                 isWaitingForReturn = true
                 startReturnTimer()
@@ -515,6 +540,7 @@ local function startHPMonitoring()
     hpMonitoringActive = true
     isInSafeZone = false
     originalPosition = nil
+    originalShouldFreeze = false
     isWaitingForReturn = false
     
     if currentHumanoid then
@@ -550,6 +576,7 @@ local function stopHPMonitoring()
     
     isInSafeZone = false
     originalPosition = nil
+    originalShouldFreeze = false
     isWaitingForReturn = false
 end
 
@@ -1332,6 +1359,9 @@ local loopRunning = false
 
 local function startMSLoop()
     if loopRunning then return end
+    
+    -- UNFREEZE kendaraan saat MS Loop mulai (biar MS Loop bisa jalan normal)
+    unfreezeVehicle()
     
     loopRunning = true
     MSLoopStatus.Text = "▶️ LOOP RUNNING"

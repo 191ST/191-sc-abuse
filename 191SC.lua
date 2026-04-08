@@ -301,17 +301,8 @@ local APART_SUB_LOCATIONS = {
 -- ========== VARIABLE ==========
 local activeSubButtons = {}
 local activeApartIndex = nil
-local anchoredParts = {}
-local isVehicleLocked = false
-local currentVehicle = nil
-local originalPositionBeforeHit = nil
-local originalShouldLock = false
-local isWaitingForReturn = false
-local hpMonitoringActive = false
-local currentHumanoid = nil
-local lastHealthPercent = 100
-local safeZoneTimerThread = nil
-local isInSafeZone = false
+local frozenParts = {}
+local isVehicleFrozen = false
 
 local function clearSubButtons()
     for _, btn in pairs(activeSubButtons) do
@@ -323,9 +314,9 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FUNGSI LOCK VEHICLE (ANCHOR) ==========
-local function lockVehicle()
-    if isVehicleLocked then return end
+-- ========== FUNGSI FREEZE KENDARAAN (HANYA KENDARAAN) ==========
+local function freezeVehicle()
+    if isVehicleFrozen then return end
     
     local character = player.Character
     if not character then return end
@@ -339,12 +330,10 @@ local function lockVehicle()
     local vehicle = seatPart:FindFirstAncestorOfClass("Model")
     if not vehicle then return end
     
-    currentVehicle = vehicle
-    anchoredParts = {}
-    
+    frozenParts = {}
     for _, part in ipairs(vehicle:GetDescendants()) do
         if part:IsA("BasePart") and not part.Anchored then
-            table.insert(anchoredParts, part)
+            table.insert(frozenParts, part)
             part.Anchored = true
             pcall(function()
                 part.AssemblyLinearVelocity = Vector3.zero
@@ -353,24 +342,23 @@ local function lockVehicle()
         end
     end
     
-    isVehicleLocked = true
+    isVehicleFrozen = true
 end
 
-local function unlockVehicle()
-    if not isVehicleLocked then return end
+local function unfreezeVehicle()
+    if not isVehicleFrozen then return end
     
-    for _, part in ipairs(anchoredParts) do
+    for _, part in ipairs(frozenParts) do
         if part and part.Parent then
             part.Anchored = false
         end
     end
     
-    anchoredParts = {}
-    isVehicleLocked = false
-    currentVehicle = nil
+    frozenParts = {}
+    isVehicleFrozen = false
 end
 
--- ========== FUNGSI TELEPORT (ANCHOR/UNANCHOR ORIGINAL) ==========
+-- ========== FUNGSI TELEPORT ==========
 local function moveVehicle(vehicle, targetCFrame)
     local anchor = vehicle.PrimaryPart or vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
     if not anchor then return end
@@ -404,13 +392,13 @@ local function moveVehicle(vehicle, targetCFrame)
     end
 end
 
-local function teleportToPosition(targetCFrame, shouldLockAfter)
+local function teleportToPosition(targetCFrame, shouldFreezeAfter)
     local character = player.Character
     local hum = character and character:FindFirstChildOfClass("Humanoid")
     if not character or not hum then return false end
     
-    -- Unlock dulu
-    unlockVehicle()
+    -- Unfreeze dulu
+    unfreezeVehicle()
     
     local seatPart = hum.SeatPart
     if seatPart then
@@ -428,35 +416,41 @@ local function teleportToPosition(targetCFrame, shouldLockAfter)
         end
     end
     
-    -- Lock lagi jika diminta
-    if shouldLockAfter then
+    if shouldFreezeAfter then
         task.wait(0.1)
-        lockVehicle()
+        freezeVehicle()
     end
     
     return true
 end
 
-local function teleportToVector3(targetPos, shouldLockAfter)
-    return teleportToPosition(CFrame.new(targetPos), shouldLockAfter)
+local function teleportToVector3(targetPos, shouldFreezeAfter)
+    return teleportToPosition(CFrame.new(targetPos), shouldFreezeAfter)
 end
 
 -- ========== SAFE ZONE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
 -- ========== HP MONITORING ==========
+local hpMonitoringActive = false
+local isInSafeZone = false
+local originalPosition = nil
+local safeZoneTimerThread = nil
+local currentHumanoid = nil
+local lastHealthPercent = 100
+local wasFrozen = false
+
 local function onCharacterAdded(character)
     currentHumanoid = character:WaitForChild("Humanoid")
     lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
     isInSafeZone = false
-    originalPositionBeforeHit = nil
-    originalShouldLock = false
-    isWaitingForReturn = false
+    originalPosition = nil
+    wasFrozen = false
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
         safeZoneTimerThread = nil
     end
-    unlockVehicle()
+    unfreezeVehicle()
 end
 
 if player.Character then
@@ -471,11 +465,14 @@ local function goToSafeZone()
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
-    originalPositionBeforeHit = hrp.CFrame
-    originalShouldLock = isVehicleLocked
+    -- Simpan posisi original dan status freeze
+    originalPosition = hrp.CFrame
+    wasFrozen = isVehicleFrozen
     
-    unlockVehicle()
+    -- Unfreeze kendaraan
+    unfreezeVehicle()
     
+    -- Teleport ke safe zone
     local hum = character:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then
         local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
@@ -494,12 +491,11 @@ local function goToSafeZone()
 end
 
 local function goBackToOriginal()
-    if originalPositionBeforeHit then
-        teleportToPosition(originalPositionBeforeHit, originalShouldLock)
-        originalPositionBeforeHit = nil
+    if originalPosition then
+        teleportToPosition(originalPosition, wasFrozen)
+        originalPosition = nil
     end
     isInSafeZone = false
-    isWaitingForReturn = false
 end
 
 local function startReturnTimer()
@@ -518,7 +514,6 @@ end
 
 local function checkHealthAndTeleport()
     if not hpMonitoringActive then return end
-    if isWaitingForReturn then return end
     if isInSafeZone then return end
     
     if not currentHumanoid or currentHumanoid.Parent == nil then
@@ -537,7 +532,6 @@ local function checkHealthAndTeleport()
         
         if currentPercent < lastHealthPercent then
             if goToSafeZone() then
-                isWaitingForReturn = true
                 startReturnTimer()
             end
         end
@@ -550,9 +544,8 @@ local function startHPMonitoring()
     if hpMonitoringActive then return end
     hpMonitoringActive = true
     isInSafeZone = false
-    originalPositionBeforeHit = nil
-    originalShouldLock = false
-    isWaitingForReturn = false
+    originalPosition = nil
+    wasFrozen = false
     
     if currentHumanoid then
         lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
@@ -568,7 +561,7 @@ local function startHPMonitoring()
     task.spawn(function()
         while hpMonitoringActive do
             checkHealthAndTeleport()
-            task.wait(0.1)
+            task.wait(0.05)
         end
     end)
 end
@@ -586,9 +579,8 @@ local function stopHPMonitoring()
     end
     
     isInSafeZone = false
-    originalPositionBeforeHit = nil
-    originalShouldLock = false
-    isWaitingForReturn = false
+    originalPosition = nil
+    wasFrozen = false
 end
 
 -- Buat semua button TP
@@ -729,7 +721,7 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ========== MS LOOP CONTENT (LANGSUNG COPY DARI SCRIPT YANG BERJALAN) ==========
+-- ========== MS LOOP CONTENT ==========
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-16,0,25)
@@ -864,16 +856,16 @@ HPSafeStatus.TextXAlignment = Enum.TextXAlignment.Left
 HPSafeStatus.Font = Enum.Font.GothamBold
 HPSafeStatus.TextSize = 10
 
-local VehicleLockStatus = Instance.new("TextLabel")
-VehicleLockStatus.Parent = MSLoopContent
-VehicleLockStatus.Size = UDim2.new(1,-16,0,20)
-VehicleLockStatus.Position = UDim2.new(0,8,0,296)
-VehicleLockStatus.BackgroundTransparency = 1
-VehicleLockStatus.Text = "🔒 VEHICLE LOCK: INACTIVE"
-VehicleLockStatus.TextColor3 = Color3.fromRGB(200,200,200)
-VehicleLockStatus.TextXAlignment = Enum.TextXAlignment.Left
-VehicleLockStatus.Font = Enum.Font.GothamBold
-VehicleLockStatus.TextSize = 10
+local FreezeStatus = Instance.new("TextLabel")
+FreezeStatus.Parent = MSLoopContent
+FreezeStatus.Size = UDim2.new(1,-16,0,20)
+FreezeStatus.Position = UDim2.new(0,8,0,296)
+FreezeStatus.BackgroundTransparency = 1
+FreezeStatus.Text = "❄️ VEHICLE FREEZE: INACTIVE"
+FreezeStatus.TextColor3 = Color3.fromRGB(200,200,200)
+FreezeStatus.TextXAlignment = Enum.TextXAlignment.Left
+FreezeStatus.Font = Enum.Font.GothamBold
+FreezeStatus.TextSize = 10
 
 local MSLoopStartBtn = Instance.new("TextButton")
 MSLoopStartBtn.Parent = MSLoopContent
@@ -1371,9 +1363,6 @@ local loopRunning = false
 local function startMSLoop()
     if loopRunning then return end
     
-    -- UNLOCK vehicle saat MS Loop mulai (biar bisa interaksi)
-    unlockVehicle()
-    
     loopRunning = true
     MSLoopStatus.Text = "▶️ LOOP RUNNING"
     MSLoopStatus.TextColor3 = Color3.fromRGB(100,255,100)
@@ -1474,10 +1463,7 @@ local function startMSLoop()
         HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
         updateBuyIndicators()
         
-        -- LOCK LAGI jika seharusnya freeze (dari bawah pot)
-        if originalShouldLock then
-            lockVehicle()
-        end
+        stopHPMonitoring()
     end)
 end
 
@@ -1722,7 +1708,7 @@ CloseBtn.MouseButton1Click:Connect(function()
     end
     if autoBuyRunning then stopAutoBuy() end
     stopHPMonitoring()
-    unlockVehicle()
+    unfreezeVehicle()
     ScreenGui:Destroy()
 end)
 
@@ -1916,12 +1902,12 @@ setBuyAmount(10)
 task.spawn(function()
     while true do
         task.wait(0.5)
-        if isVehicleLocked then
-            VehicleLockStatus.Text = "🔒 VEHICLE LOCK: ACTIVE"
-            VehicleLockStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        if isVehicleFrozen then
+            FreezeStatus.Text = "❄️ VEHICLE FREEZE: ACTIVE"
+            FreezeStatus.TextColor3 = Color3.fromRGB(255,100,100)
         else
-            VehicleLockStatus.Text = "🔓 VEHICLE LOCK: INACTIVE"
-            VehicleLockStatus.TextColor3 = Color3.fromRGB(100,255,100)
+            FreezeStatus.Text = "❄️ VEHICLE FREEZE: INACTIVE"
+            FreezeStatus.TextColor3 = Color3.fromRGB(100,255,100)
         end
     end
 end)

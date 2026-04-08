@@ -260,41 +260,41 @@ AutoSellContent.CanvasSize = UDim2.new(0,0,0,220)
 local LOCATIONS = {
     {name = "🏪 Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75), desc = "Dealer Mobil", hasSub = false},
     {name = "🍬 NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548), desc = "Tempat Jual/Beli MS", hasSub = false},
-    {name = "🏠 Apart 1",         pos = Vector3.new(1137.992, 9.932, 449.753), desc = "Apartemen 1", hasSub = true, apartIndex = 1},
-    {name = "🏠 Apart 2",         pos = Vector3.new(1139.174, 9.932, 420.556), desc = "Apartemen 2", hasSub = true, apartIndex = 2},
-    {name = "🏠 Apart 3",         pos = Vector3.new(984.856, 9.932, 247.280), desc = "Apartemen 3", hasSub = true, apartIndex = 3},
-    {name = "🏠 Apart 4",         pos = Vector3.new(988.311, 9.932, 221.664), desc = "Apartemen 4", hasSub = true, apartIndex = 4},
-    {name = "🏠 Apart 5",         pos = Vector3.new(923.954, 9.932, 42.202), desc = "Apartemen 5", hasSub = true, apartIndex = 5},
-    {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928), desc = "Apartemen 6", hasSub = true, apartIndex = 6},
+    {name = "🏠 Apart 1",         pos = Vector3.new(1137.992, 7.932, 449.753), desc = "Apartemen 1", hasSub = true, apartIndex = 1},
+    {name = "🏠 Apart 2",         pos = Vector3.new(1139.174, 7.932, 420.556), desc = "Apartemen 2", hasSub = true, apartIndex = 2},
+    {name = "🏠 Apart 3",         pos = Vector3.new(984.856, 7.932, 247.280), desc = "Apartemen 3", hasSub = true, apartIndex = 3},
+    {name = "🏠 Apart 4",         pos = Vector3.new(988.311, 7.932, 221.664), desc = "Apartemen 4", hasSub = true, apartIndex = 4},
+    {name = "🏠 Apart 5",         pos = Vector3.new(923.954, 7.932, 42.202), desc = "Apartemen 5", hasSub = true, apartIndex = 5},
+    {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 7.932, 41.928), desc = "Apartemen 6", hasSub = true, apartIndex = 6},
     {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77), desc = "Casino", hasSub = false},
     {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76), desc = "Rumah Sakit", hasSub = false},
 }
 
--- ========== SUB LOCATIONS UNTUK APARTEMEN ==========
+-- ========== SUB LOCATIONS UNTUK APARTEMEN (JUGA DI TURUNKAN 2 STUDS) ==========
 local APART_SUB_LOCATIONS = {
     [1] = {
-        {name = "APART 1", pos = CFrame.new(1137.992, 9.932, 449.753), freeze = false},
-        {name = "APART 1 BAWAH POT", pos = CFrame.new(1145.73, 7.23, 449.67) * CFrame.Angles(-3.14, -0.01, -3.14), freeze = true},
+        {name = "APART 1", pos = CFrame.new(1137.992, 7.932, 449.753), freeze = false},
+        {name = "APART 1 BAWAH POT", pos = CFrame.new(1145.73, 5.23, 449.67) * CFrame.Angles(-3.14, -0.01, -3.14), freeze = true},
     },
     [2] = {
-        {name = "APART 2", pos = CFrame.new(1139.174, 9.932, 420.556), freeze = false},
-        {name = "APART 2 BAWAH POT", pos = CFrame.new(1144.98, 7.23, 420.40) * CFrame.Angles(-3.14, 0.00, 3.14), freeze = true},
+        {name = "APART 2", pos = CFrame.new(1139.174, 7.932, 420.556), freeze = false},
+        {name = "APART 2 BAWAH POT", pos = CFrame.new(1144.98, 5.23, 420.40) * CFrame.Angles(-3.14, 0.00, 3.14), freeze = true},
     },
     [3] = {
-        {name = "APART 3", pos = CFrame.new(984.856, 9.932, 247.280), freeze = false},
-        {name = "APART 3 BAWAH POT", pos = CFrame.new(982.20, 7.23, 249.93) * CFrame.Angles(0.00, -0.02, -0.00), freeze = true},
+        {name = "APART 3", pos = CFrame.new(984.856, 7.932, 247.280), freeze = false},
+        {name = "APART 3 BAWAH POT", pos = CFrame.new(982.20, 5.23, 249.93) * CFrame.Angles(0.00, -0.02, -0.00), freeze = true},
     },
     [4] = {
-        {name = "APART 4", pos = CFrame.new(988.311, 9.932, 221.664), freeze = false},
-        {name = "APART 4 BAWAH POT", pos = CFrame.new(981.78, 7.23, 221.41) * CFrame.Angles(-0.00, 0.03, -0.00), freeze = true},
+        {name = "APART 4", pos = CFrame.new(988.311, 7.932, 221.664), freeze = false},
+        {name = "APART 4 BAWAH POT", pos = CFrame.new(981.78, 5.23, 221.41) * CFrame.Angles(-0.00, 0.03, -0.00), freeze = true},
     },
     [5] = {
-        {name = "APART 5", pos = CFrame.new(923.954, 9.932, 42.202), freeze = false},
-        {name = "APART 5 BAWAH POT", pos = CFrame.new(924.34, 7.23, 36.52) * CFrame.Angles(-3.14, -1.53, -3.14), freeze = true},
+        {name = "APART 5", pos = CFrame.new(923.954, 7.932, 42.202), freeze = false},
+        {name = "APART 5 BAWAH POT", pos = CFrame.new(924.34, 5.23, 36.52) * CFrame.Angles(-3.14, -1.53, -3.14), freeze = true},
     },
     [6] = {
-        {name = "APART 6", pos = CFrame.new(895.721, 9.932, 41.928), freeze = false},
-        {name = "APART 6 BAWAH POT", pos = CFrame.new(896.02, 7.23, 36.70) * CFrame.Angles(0.00, -1.55, 0.00), freeze = true},
+        {name = "APART 6", pos = CFrame.new(895.721, 7.932, 41.928), freeze = false},
+        {name = "APART 6 BAWAH POT", pos = CFrame.new(896.02, 5.23, 36.70) * CFrame.Angles(0.00, -1.55, 0.00), freeze = true},
     },
 }
 
@@ -541,12 +541,10 @@ local function createSubButtons(parentBtn, apartIndex, layoutOrder)
         end)
         
         subBtn.MouseButton1Click:Connect(function()
-            -- UNFREEZE dulu sebelum teleport (biar bisa gerak lagi kalo mau tp ke tempat lain)
             unfreezeCharacterAndVehicle()
             
             if sub.freeze then
                 teleportWithFreeze(sub.pos)
-                -- Start HP monitoring untuk deteksi kena hit
                 startHPMonitoring()
             else
                 teleportNormal(sub.pos)
@@ -762,13 +760,13 @@ ToolStatus.TextXAlignment = Enum.TextXAlignment.Left
 ToolStatus.Font = Enum.Font.GothamBold
 ToolStatus.TextSize = 10
 
--- HP SAFE STATUS INDICATOR (tidak dipakai untuk freeze, tapi tetap ada)
+-- HP SAFE STATUS INDICATOR
 local HPSafeStatus = Instance.new("TextLabel")
 HPSafeStatus.Parent = MSLoopContent
 HPSafeStatus.Size = UDim2.new(1,-16,0,20)
 HPSafeStatus.Position = UDim2.new(0,8,0,276)
 HPSafeStatus.BackgroundTransparency = 1
-HPSafeStatus.Text = "⚠️ FREEZE MODE: INACTIVE"
+HPSafeStatus.Text = "❄️ FREEZE MODE: INACTIVE"
 HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
 HPSafeStatus.TextXAlignment = Enum.TextXAlignment.Left
 HPSafeStatus.Font = Enum.Font.GothamBold
@@ -1803,7 +1801,7 @@ task.spawn(function()
             AutoSellInfo.Text = "Tools: " .. #getSellTools()
         end
         if isFrozen then
-            HPSafeStatus.Text = "❄️ FREEZE ACTIVE (Kena Hit untuk Unfreeze)"
+            HPSafeStatus.Text = "BWABWABWA"
             HPSafeStatus.TextColor3 = Color3.fromRGB(100,200,255)
         else
             HPSafeStatus.Text = "✅ NORMAL MODE"

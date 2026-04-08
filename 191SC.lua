@@ -263,27 +263,27 @@ local LOCATIONS = {
 local APART_SUB_LOCATIONS = {
     [1] = {
         {name = "APART 1", pos = CFrame.new(1137.992, 8.932, 449.753), freeze = false},
-        {name = "APART 1 BAWAH POT", pos = CFrame.new(1145.73, 6.23, 449.67) * CFrame.Angles(-3.14, -0.01, -3.14), freeze = true},
+        {name = "APART 1 BAWAH POT KADANG2 BUG", pos = CFrame.new(1145.73, 6.23, 449.67) * CFrame.Angles(-3.14, -0.01, -3.14), freeze = true},
     },
     [2] = {
         {name = "APART 2", pos = CFrame.new(1139.174, 8.932, 420.556), freeze = false},
-        {name = "APART 2 BAWAH POT", pos = CFrame.new(1144.98, 6.23, 420.40) * CFrame.Angles(-3.14, 0.00, 3.14), freeze = true},
+        {name = "APART 2 BAWAH POT KADANG2 BUG", pos = CFrame.new(1144.98, 6.23, 420.40) * CFrame.Angles(-3.14, 0.00, 3.14), freeze = true},
     },
     [3] = {
         {name = "APART 3", pos = CFrame.new(984.856, 8.932, 247.280), freeze = false},
-        {name = "APART 3 BAWAH POT", pos = CFrame.new(982.20, 6.23, 249.93) * CFrame.Angles(0.00, -0.02, -0.00), freeze = true},
+        {name = "APART 3 BAWAH POT KADANG2 BUG", pos = CFrame.new(982.20, 6.23, 249.93) * CFrame.Angles(0.00, -0.02, -0.00), freeze = true},
     },
     [4] = {
         {name = "APART 4", pos = CFrame.new(988.311, 8.932, 221.664), freeze = false},
-        {name = "APART 4 BAWAH POT", pos = CFrame.new(981.78, 6.23, 221.41) * CFrame.Angles(-0.00, 0.03, -0.00), freeze = true},
+        {name = "APART 4 BAWAH POT KADANG2 BUG", pos = CFrame.new(981.78, 6.23, 221.41) * CFrame.Angles(-0.00, 0.03, -0.00), freeze = true},
     },
     [5] = {
         {name = "APART 5", pos = CFrame.new(923.954, 8.932, 42.202), freeze = false},
-        {name = "APART 5 BAWAH POT", pos = CFrame.new(924.34, 6.23, 36.52) * CFrame.Angles(-3.14, -1.53, -3.14), freeze = true},
+        {name = "APART 5 BAWAH POT KADANG2 BUG", pos = CFrame.new(924.34, 6.23, 36.52) * CFrame.Angles(-3.14, -1.53, -3.14), freeze = true},
     },
     [6] = {
         {name = "APART 6", pos = CFrame.new(894.721, 8.932, 41.928), freeze = false},
-        {name = "APART 6 BAWAH POT", pos = CFrame.new(896.02, 6.23, 36.70) * CFrame.Angles(0.00, -1.55, 0.00), freeze = true},
+        {name = "APART 6 BAWAH POT KADANG2 BUG", pos = CFrame.new(896.02, 6.23, 36.70) * CFrame.Angles(0.00, -1.55, 0.00), freeze = true},
     },
 }
 

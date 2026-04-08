@@ -312,7 +312,7 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FUNGSI FREEZE KENDARAAN (PAKAI HEARTBEAT, TIDAK MENTAL) ==========
+-- ========== FUNGSI FREEZE KENDARAAN (PAKAI HEARTBEAT) ==========
 local isVehicleFrozen = false
 local frozenVehicleCFrame = nil
 local freezeConnection = nil
@@ -329,41 +329,30 @@ local function stopVehicleFreeze()
 end
 
 local function startVehicleFreeze(vehicle, cframe)
-    -- Hentikan freeze yang lama dulu
     stopVehicleFreeze()
     
     frozenVehicle = vehicle
     frozenVehicleCFrame = cframe
     
-    -- Paksa posisi kendaraan setiap frame
     freezeConnection = RunService.Heartbeat:Connect(function()
         if frozenVehicle and frozenVehicle.Parent then
-            -- Coba teleport kendaraan ke posisi freeze
-            local success = false
             if frozenVehicle.PrimaryPart then
                 frozenVehicle:SetPrimaryPartCFrame(frozenVehicleCFrame)
-                success = true
             else
                 local anchor = frozenVehicle:FindFirstChildOfClass("VehicleSeat") or frozenVehicle:FindFirstChildOfClass("BasePart")
                 if anchor then
                     anchor.CFrame = frozenVehicleCFrame
-                    success = true
                 end
             end
-            
-            -- Reset velocity semua part
-            if success then
-                for _, part in ipairs(frozenVehicle:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        pcall(function()
-                            part.AssemblyLinearVelocity = Vector3.zero
-                            part.AssemblyAngularVelocity = Vector3.zero
-                        end)
-                    end
+            for _, part in ipairs(frozenVehicle:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    pcall(function()
+                        part.AssemblyLinearVelocity = Vector3.zero
+                        part.AssemblyAngularVelocity = Vector3.zero
+                    end)
                 end
             end
         else
-            -- Vehicle hilang, stop freeze
             stopVehicleFreeze()
         end
     end)
@@ -383,14 +372,12 @@ local function teleportToPosition(targetCFrame, shouldFreeze)
     local hum = character:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
     
-    -- Unfreeze dulu sebelum teleport
     unfreezeVehicle()
     
     local seatPart = hum.SeatPart
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
-            -- Teleport vehicle
             if vehicle.PrimaryPart then
                 vehicle:SetPrimaryPartCFrame(targetCFrame)
             else
@@ -399,10 +386,7 @@ local function teleportToPosition(targetCFrame, shouldFreeze)
                     anchor.CFrame = targetCFrame
                 end
             end
-            
-            -- Freeze setelah teleport jika diminta
             if shouldFreeze then
-                -- Tunggu sebentar biar physics stabil
                 task.wait(0.1)
                 startVehicleFreeze(vehicle, targetCFrame)
             end
@@ -424,19 +408,21 @@ end
 -- ========== SAFE ZONE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
--- ========== HP MONITORING ==========
+-- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalPosition = nil
 local safeZoneTimerThread = nil
 local currentHumanoid = nil
 local lastHealthPercent = 100
+local isWaitingForReturn = false
 
 local function onCharacterAdded(character)
     currentHumanoid = character:WaitForChild("Humanoid")
     lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
     isInSafeZone = false
     originalPosition = nil
+    isWaitingForReturn = false
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
         safeZoneTimerThread = nil
@@ -449,25 +435,48 @@ if player.Character then
 end
 player.CharacterAdded:Connect(onCharacterAdded)
 
-local function saveOriginalPosition()
+local function teleportToSafeZoneAndSave()
     local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        originalPosition = hrp.CFrame
-        return true
+    if not character then return false end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    
+    -- Simpan posisi original
+    originalPosition = hrp.CFrame
+    
+    -- Teleport ke safe zone
+    local hum = character:FindFirstChildOfClass("Humanoid")
+    if hum and hum.SeatPart then
+        local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
+        if vehicle then
+            if vehicle.PrimaryPart then
+                vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
+            else
+                local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
+                if anchor then
+                    anchor.CFrame = SAFE_ZONE_CFRAME
+                end
+            end
+        end
+    else
+        hrp.CFrame = SAFE_ZONE_CFRAME
     end
-    return false
+    
+    isInSafeZone = true
+    return true
 end
 
-local function teleportBackToOriginal()
+local function returnToOriginalAndFreeze()
     if originalPosition then
         teleportToPosition(originalPosition, true)
         originalPosition = nil
     end
     isInSafeZone = false
+    isWaitingForReturn = false
 end
 
-local function startSafeZoneTimer()
+local function startReturnTimer()
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
     end
@@ -475,7 +484,7 @@ local function startSafeZoneTimer()
     safeZoneTimerThread = task.spawn(function()
         task.wait(8)
         if isInSafeZone and hpMonitoringActive then
-            teleportBackToOriginal()
+            returnToOriginalAndFreeze()
         end
         safeZoneTimerThread = nil
     end)
@@ -483,6 +492,7 @@ end
 
 local function checkHealthAndTeleport()
     if not hpMonitoringActive then return end
+    if isWaitingForReturn then return end
     if not currentHumanoid or currentHumanoid.Parent == nil then
         local character = player.Character
         if character then
@@ -498,13 +508,11 @@ local function checkHealthAndTeleport()
         local currentPercent = (currentHealth / maxHealth) * 100
         
         -- Jika kena hit (HP turun)
-        if currentPercent < lastHealthPercent then
-            -- UNFREEZE kendaraan
-            unfreezeVehicle()
-            
-            -- Jika sedang dalam safe zone, teleport balik
-            if isInSafeZone then
-                teleportBackToOriginal()
+        if currentPercent < lastHealthPercent and not isInSafeZone then
+            -- Teleport ke safe zone
+            if teleportToSafeZoneAndSave() then
+                isWaitingForReturn = true
+                startReturnTimer()
             end
         end
         
@@ -517,6 +525,7 @@ local function startHPMonitoring()
     hpMonitoringActive = true
     isInSafeZone = false
     originalPosition = nil
+    isWaitingForReturn = false
     
     if currentHumanoid then
         lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
@@ -546,12 +555,12 @@ local function stopHPMonitoring()
     end
     
     if isInSafeZone then
-        teleportBackToOriginal()
+        returnToOriginalAndFreeze()
     end
     
     isInSafeZone = false
     originalPosition = nil
-    -- HAPUS unfreezeVehicle() dari sini! Biar kendaraan tetap freeze
+    isWaitingForReturn = false
 end
 
 -- Buat semua button TP
@@ -1334,8 +1343,6 @@ local loopRunning = false
 local function startMSLoop()
     if loopRunning then return end
     
-    -- TIDAK ADA unfreezeVehicle() di sini! Kendaraan tetap freeze jika sedang freeze
-    
     loopRunning = true
     MSLoopStatus.Text = "▶️ LOOP RUNNING"
     MSLoopStatus.TextColor3 = Color3.fromRGB(100,255,100)
@@ -1435,8 +1442,6 @@ local function startMSLoop()
         HPSafeStatus.Text = "🛡️ HP SAFE: INACTIVE"
         HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
         updateBuyIndicators()
-        
-        -- TIDAK ADA stopHPMonitoring() di sini! Biar kendaraan tetap freeze
     end)
 end
 
@@ -1680,6 +1685,7 @@ CloseBtn.MouseButton1Click:Connect(function()
         loopRunning = false
     end
     if autoBuyRunning then stopAutoBuy() end
+    stopHPMonitoring()
     unfreezeVehicle()
     ScreenGui:Destroy()
 end)
@@ -1690,7 +1696,7 @@ end)
 
 MSLoopStopBtn.MouseButton1Click:Connect(function() 
     loopRunning = false
-    -- TIDAK ADA stopHPMonitoring() di sini! Biar kendaraan tetap freeze
+    stopHPMonitoring()
 end)
 
 RefreshBtn.MouseButton1Click:Connect(updateBuyIndicators)

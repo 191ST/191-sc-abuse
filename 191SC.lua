@@ -301,7 +301,7 @@ local APART_SUB_LOCATIONS = {
 -- ========== VARIABLE ==========
 local activeSubButtons = {}
 local activeApartIndex = nil
-local anchoredParts = {}  -- Menyimpan parts yang di-anchor
+local anchoredParts = {}
 local isVehicleLocked = false
 local currentVehicle = nil
 local originalPositionBeforeHit = nil
@@ -323,7 +323,7 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FUNGSI LOCK VEHICLE (ANCHOR SEMUA PART) ==========
+-- ========== FUNGSI LOCK VEHICLE ==========
 local function lockVehicle()
     if isVehicleLocked then return end
     
@@ -342,7 +342,6 @@ local function lockVehicle()
     currentVehicle = vehicle
     anchoredParts = {}
     
-    -- Anchor semua BasePart di vehicle
     for _, part in ipairs(vehicle:GetDescendants()) do
         if part:IsA("BasePart") and not part.Anchored then
             table.insert(anchoredParts, part)
@@ -357,7 +356,6 @@ local function lockVehicle()
     isVehicleLocked = true
 end
 
--- ========== FUNGSI UNLOCK VEHICLE ==========
 local function unlockVehicle()
     if not isVehicleLocked then return end
     
@@ -372,18 +370,24 @@ local function unlockVehicle()
     currentVehicle = nil
 end
 
--- ========== FUNGSI TELEPORT (TANPA UNLOCK) ==========
-local function teleportToPosition(targetCFrame)
+-- ========== FUNGSI TELEPORT YANG SINKRON (MULTI FRAME) ==========
+local function teleportToPosition(targetCFrame, shouldLockAfter)
     local character = player.Character
     if not character then return false end
     
     local hum = character:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
     
+    -- Unlock dulu
+    unlockVehicle()
+    
     local seatPart = hum.SeatPart
-    if seatPart then
-        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
+    local vehicle = seatPart and seatPart:FindFirstAncestorOfClass("Model")
+    
+    -- Teleport MULTIPLE TIMES untuk memaksa server update posisi ke semua client
+    for i = 1, 5 do
         if vehicle then
+            -- Teleport vehicle
             if vehicle.PrimaryPart then
                 vehicle:SetPrimaryPartCFrame(targetCFrame)
             else
@@ -393,21 +397,33 @@ local function teleportToPosition(targetCFrame)
                 end
             end
         end
-    else
+        
+        -- Teleport karakter
         local hrp = character:FindFirstChild("HumanoidRootPart")
         if hrp then
             hrp.CFrame = targetCFrame
+            -- Reset velocity biar tidak melayang
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
         end
+        
+        task.wait(0.03)
+    end
+    
+    -- Lock lagi jika diminta
+    if shouldLockAfter then
+        task.wait(0.1)
+        lockVehicle()
     end
     
     return true
 end
 
-local function teleportToVector3(targetPos)
-    return teleportToPosition(CFrame.new(targetPos))
+local function teleportToVector3(targetPos, shouldLockAfter)
+    return teleportToPosition(CFrame.new(targetPos), shouldLockAfter)
 end
 
--- ========== TELEPORT KE SAFE ZONE ==========
+-- ========== SAFE ZONE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
 -- ========== HP MONITORING ==========
@@ -422,6 +438,7 @@ local function onCharacterAdded(character)
         task.cancel(safeZoneTimerThread)
         safeZoneTimerThread = nil
     end
+    unlockVehicle()
 end
 
 if player.Character then
@@ -429,7 +446,6 @@ if player.Character then
 end
 player.CharacterAdded:Connect(onCharacterAdded)
 
--- Teleport ke safe zone (UNLOCK dulu, teleport, tapi JANGAN lock lagi)
 local function goToSafeZone()
     local character = player.Character
     if not character then return false end
@@ -437,42 +453,38 @@ local function goToSafeZone()
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
-    -- Simpan posisi original dan status lock asli
     originalPositionBeforeHit = hrp.CFrame
     originalShouldLock = isVehicleLocked
     
-    -- UNLOCK kendaraan
     unlockVehicle()
     
-    -- Teleport ke safe zone
-    local hum = character:FindFirstChildOfClass("Humanoid")
-    if hum and hum.SeatPart then
-        local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
-        if vehicle then
-            if vehicle.PrimaryPart then
-                vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
-            else
-                local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
-                if anchor then
-                    anchor.CFrame = SAFE_ZONE_CFRAME
+    -- Teleport multiple times untuk sinkronisasi
+    for i = 1, 5 do
+        local hum = character:FindFirstChildOfClass("Humanoid")
+        if hum and hum.SeatPart then
+            local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
+            if vehicle then
+                if vehicle.PrimaryPart then
+                    vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
+                else
+                    local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
+                    if anchor then
+                        anchor.CFrame = SAFE_ZONE_CFRAME
+                    end
                 end
             end
         end
-    else
         hrp.CFrame = SAFE_ZONE_CFRAME
+        task.wait(0.03)
     end
     
     isInSafeZone = true
     return true
 end
 
--- Kembali ke posisi original dan LOCK jika seharusnya
 local function goBackToOriginal()
     if originalPositionBeforeHit then
-        teleportToPosition(originalPositionBeforeHit)
-        if originalShouldLock then
-            lockVehicle()
-        end
+        teleportToPosition(originalPositionBeforeHit, originalShouldLock)
         originalPositionBeforeHit = nil
     end
     isInSafeZone = false
@@ -512,7 +524,6 @@ local function checkHealthAndTeleport()
     if maxHealth > 0 then
         local currentPercent = (currentHealth / maxHealth) * 100
         
-        -- Jika kena hit (HP turun)
         if currentPercent < lastHealthPercent then
             if goToSafeZone() then
                 isWaitingForReturn = true
@@ -546,7 +557,7 @@ local function startHPMonitoring()
     task.spawn(function()
         while hpMonitoringActive do
             checkHealthAndTeleport()
-            task.wait(0.05)  -- Respon tercepat
+            task.wait(0.05)
         end
     end)
 end
@@ -616,12 +627,10 @@ local function createSubButtons(parentBtn, apartIndex, layoutOrder)
         
         subBtn.MouseButton1Click:Connect(function()
             if sub.freeze then
-                teleportToPosition(sub.pos)
-                lockVehicle()
+                teleportToPosition(sub.pos, true)
                 startHPMonitoring()
             else
-                teleportToPosition(sub.pos)
-                unlockVehicle()
+                teleportToPosition(sub.pos, false)
             end
             clearSubButtons()
         end)
@@ -687,8 +696,7 @@ for i, loc in ipairs(LOCATIONS) do
     else
         btn.MouseButton1Click:Connect(function()
             clearSubButtons()
-            teleportToVector3(loc.pos)
-            unlockVehicle()
+            teleportToVector3(loc.pos, false)
         end)
     end
 end
@@ -710,7 +718,7 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ========== MS LOOP CONTENT ==========
+-- ========== MS LOOP CONTENT (SAMA) ==========
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1,-16,0,25)
@@ -1352,7 +1360,7 @@ local loopRunning = false
 local function startMSLoop()
     if loopRunning then return end
     
-    -- TIDAK ADA unlockVehicle() di sini! Kendaraan tetap LOCK saat MS Loop berjalan
+    -- TIDAK unlock vehicle! Kendaraan tetap LOCK saat MS Loop berjalan
     
     loopRunning = true
     MSLoopStatus.Text = "▶️ LOOP RUNNING"

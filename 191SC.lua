@@ -27,7 +27,7 @@ setupCustomRespawn()
 local remotes = ReplicatedStorage:FindFirstChild("RemoteEvents")
 local storePurchaseRE = remotes and remotes:FindFirstChild("StorePurchase")
 
--- Konfigurasi ukuran HP
+-- Konfigurasi ukuran GUI
 local GUI_WIDTH = 420
 local GUI_HEIGHT = 680
 local TAB_HEIGHT = 35
@@ -312,7 +312,7 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FUNGSI FREEZE KENDARAAN (PAKAI LOOP, BUKAN ANCHOR) ==========
+-- ========== FUNGSI FREEZE KENDARAAN (PAKAI HEARTBEAT, TIDAK MENTAL) ==========
 local isVehicleFrozen = false
 local frozenVehicleCFrame = nil
 local freezeConnection = nil
@@ -329,31 +329,41 @@ local function stopVehicleFreeze()
 end
 
 local function startVehicleFreeze(vehicle, cframe)
+    -- Hentikan freeze yang lama dulu
     stopVehicleFreeze()
+    
     frozenVehicle = vehicle
     frozenVehicleCFrame = cframe
     
     -- Paksa posisi kendaraan setiap frame
     freezeConnection = RunService.Heartbeat:Connect(function()
         if frozenVehicle and frozenVehicle.Parent then
+            -- Coba teleport kendaraan ke posisi freeze
+            local success = false
             if frozenVehicle.PrimaryPart then
                 frozenVehicle:SetPrimaryPartCFrame(frozenVehicleCFrame)
+                success = true
             else
                 local anchor = frozenVehicle:FindFirstChildOfClass("VehicleSeat") or frozenVehicle:FindFirstChildOfClass("BasePart")
                 if anchor then
                     anchor.CFrame = frozenVehicleCFrame
+                    success = true
                 end
             end
-            -- Reset velocity
-            for _, part in ipairs(frozenVehicle:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    pcall(function()
-                        part.AssemblyLinearVelocity = Vector3.zero
-                        part.AssemblyAngularVelocity = Vector3.zero
-                    end)
+            
+            -- Reset velocity semua part
+            if success then
+                for _, part in ipairs(frozenVehicle:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        pcall(function()
+                            part.AssemblyLinearVelocity = Vector3.zero
+                            part.AssemblyAngularVelocity = Vector3.zero
+                        end)
+                    end
                 end
             end
         else
+            -- Vehicle hilang, stop freeze
             stopVehicleFreeze()
         end
     end)
@@ -380,6 +390,7 @@ local function teleportToPosition(targetCFrame, shouldFreeze)
     if seatPart then
         local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
+            -- Teleport vehicle
             if vehicle.PrimaryPart then
                 vehicle:SetPrimaryPartCFrame(targetCFrame)
             else
@@ -388,8 +399,11 @@ local function teleportToPosition(targetCFrame, shouldFreeze)
                     anchor.CFrame = targetCFrame
                 end
             end
+            
             -- Freeze setelah teleport jika diminta
             if shouldFreeze then
+                -- Tunggu sebentar biar physics stabil
+                task.wait(0.1)
                 startVehicleFreeze(vehicle, targetCFrame)
             end
         end
@@ -537,7 +551,7 @@ local function stopHPMonitoring()
     
     isInSafeZone = false
     originalPosition = nil
-    unfreezeVehicle()
+    -- HAPUS unfreezeVehicle() dari sini! Biar kendaraan tetap freeze
 end
 
 -- Buat semua button TP
@@ -1422,7 +1436,7 @@ local function startMSLoop()
         HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
         updateBuyIndicators()
         
-        stopHPMonitoring()
+        -- TIDAK ADA stopHPMonitoring() di sini! Biar kendaraan tetap freeze
     end)
 end
 
@@ -1664,7 +1678,6 @@ CloseBtn.MouseButton1Click:Connect(function()
     if autoSellRunning then stopAutoSell() end
     if loopRunning then 
         loopRunning = false
-        stopHPMonitoring()
     end
     if autoBuyRunning then stopAutoBuy() end
     unfreezeVehicle()
@@ -1674,10 +1687,12 @@ end)
 MSLoopStartBtn.MouseButton1Click:Connect(function()
     if not loopRunning then task.spawn(startMSLoop) end
 end)
+
 MSLoopStopBtn.MouseButton1Click:Connect(function() 
     loopRunning = false
-    stopHPMonitoring()
+    -- TIDAK ADA stopHPMonitoring() di sini! Biar kendaraan tetap freeze
 end)
+
 RefreshBtn.MouseButton1Click:Connect(updateBuyIndicators)
 
 BuyStartBtn.MouseButton1Click:Connect(startAutoBuy)
@@ -1860,10 +1875,10 @@ task.spawn(function()
     while true do
         task.wait(0.5)
         if isVehicleFrozen then
-            VehicleFreezeStatus.Text = "RAWR"
+            VehicleFreezeStatus.Text = "🚗 VEHICLE FREEZE: ACTIVE"
             VehicleFreezeStatus.TextColor3 = Color3.fromRGB(255,100,100)
         else
-            VehicleFreezeStatus.Text = "RAWR"
+            VehicleFreezeStatus.Text = "🚗 VEHICLE FREEZE: INACTIVE"
             VehicleFreezeStatus.TextColor3 = Color3.fromRGB(100,255,100)
         end
     end

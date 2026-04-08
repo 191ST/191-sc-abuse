@@ -301,7 +301,7 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FREEZE KENDARAAN (ANCHOR SEMUA PART) ==========
+-- ========== FREEZE KENDARAAN (ANCHOR SEMUA PART - BAN TIDAK TERBANG) ==========
 local isVehicleFrozen = false
 local frozenVehicle = nil
 local frozenParts = {}
@@ -321,7 +321,7 @@ local function startVehicleFreeze(vehicle)
     stopVehicleFreeze()
     frozenVehicle = vehicle
     
-    -- Anchor SEMUA BasePart di dalam kendaraan (termasuk ban)
+    -- Anchor SEMUA BasePart di dalam kendaraan (termasuk ban/roda)
     for _, part in ipairs(vehicle:GetDescendants()) do
         if part:IsA("BasePart") and not part.Anchored then
             table.insert(frozenParts, part)
@@ -334,6 +334,10 @@ local function startVehicleFreeze(vehicle)
     end
     
     isVehicleFrozen = true
+end
+
+local function unfreezeVehicle()
+    stopVehicleFreeze()
 end
 
 -- ========== TELEPORT FUNCTION ==========
@@ -362,7 +366,7 @@ local function teleportToPosition(targetCFrame, shouldFreezeAfter)
             -- Freeze setelah teleport jika diminta
             if shouldFreezeAfter then
                 task.wait(0.1)
-                startVehicleFreeze(vehicle, targetCFrame)
+                startVehicleFreeze(vehicle)
             end
         end
     else

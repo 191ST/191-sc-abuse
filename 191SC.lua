@@ -282,7 +282,7 @@ local APART_SUB_LOCATIONS = {
         {name = "APART 5 BAWAH POT", pos = CFrame.new(924.34, 6.23, 36.52) * CFrame.Angles(-3.14, -1.53, -3.14), freeze = true},
     },
     [6] = {
-        {name = "APART 6", pos = CFrame.new(895.721, 8.932, 41.928), freeze = false},
+        {name = "APART 6", pos = CFrame.new(894.721, 8.932, 41.928), freeze = false},
         {name = "APART 6 BAWAH POT", pos = CFrame.new(896.02, 6.23, 36.70) * CFrame.Angles(0.00, -1.55, 0.00), freeze = true},
     },
 }

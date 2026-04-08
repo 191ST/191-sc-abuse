@@ -20,20 +20,19 @@ local function setupCustomRespawn()
         end
     end)
 end
-
 setupCustomRespawn()
 
--- ========== AMBIL REMOTE EVENTS ==========
+-- ========== REMOTE EVENTS ==========
 local remotes = ReplicatedStorage:FindFirstChild("RemoteEvents")
 local storePurchaseRE = remotes and remotes:FindFirstChild("StorePurchase")
 
--- Konfigurasi ukuran GUI
+-- ========== GUI CONFIG ==========
 local GUI_WIDTH = 420
 local GUI_HEIGHT = 680
 local TAB_HEIGHT = 35
 local TITLE_HEIGHT = 45
 
--- GUI
+-- ========== GUI ==========
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = player:WaitForChild("PlayerGui")
 ScreenGui.Name = "TP_Hub_191"
@@ -66,7 +65,6 @@ TitleBar.Parent = Frame
 TitleBar.Size = UDim2.new(1,0,0,TITLE_HEIGHT)
 TitleBar.BackgroundColor3 = Color3.fromRGB(35,35,45)
 TitleBar.BorderSizePixel = 0
-
 local TitleCorner = Instance.new("UICorner")
 TitleCorner.Parent = TitleBar
 TitleCorner.CornerRadius = UDim.new(0,12)
@@ -206,7 +204,7 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.Parent = Content
 ContentCorner.CornerRadius = UDim.new(0,12)
 
--- TP Tab Content
+-- Tab Contents
 local TPContent = Instance.new("ScrollingFrame")
 TPContent.Parent = Content
 TPContent.Size = UDim2.new(1,0,1,0)
@@ -215,7 +213,6 @@ TPContent.Visible = true
 TPContent.ScrollBarThickness = 4
 TPContent.CanvasSize = UDim2.new(0,0,0,850)
 
--- MS Loop Tab Content
 local MSLoopContent = Instance.new("ScrollingFrame")
 MSLoopContent.Parent = Content
 MSLoopContent.Size = UDim2.new(1,0,1,0)
@@ -224,7 +221,6 @@ MSLoopContent.Visible = false
 MSLoopContent.ScrollBarThickness = 4
 MSLoopContent.CanvasSize = UDim2.new(0,0,0,520)
 
--- AUTO BUY TAB CONTENT
 local AutoBuyContent = Instance.new("ScrollingFrame")
 AutoBuyContent.Parent = Content
 AutoBuyContent.Size = UDim2.new(1,0,1,0)
@@ -233,7 +229,6 @@ AutoBuyContent.Visible = false
 AutoBuyContent.ScrollBarThickness = 4
 AutoBuyContent.CanvasSize = UDim2.new(0,0,0,350)
 
--- MS SAFETY TAB CONTENT
 local MSSafetyContent = Instance.new("ScrollingFrame")
 MSSafetyContent.Parent = Content
 MSSafetyContent.Size = UDim2.new(1,0,1,0)
@@ -242,7 +237,6 @@ MSSafetyContent.Visible = false
 MSSafetyContent.ScrollBarThickness = 4
 MSSafetyContent.CanvasSize = UDim2.new(0,0,0,360)
 
--- AUTO SELL TAB CONTENT
 local AutoSellContent = Instance.new("ScrollingFrame")
 AutoSellContent.Parent = Content
 AutoSellContent.Size = UDim2.new(1,0,1,0)
@@ -313,7 +307,7 @@ local frozenVehicle = nil
 local frozenCFrame = nil
 local freezeConnection = nil
 
-local function stopFreeze()
+local function stopVehicleFreeze()
     if freezeConnection then
         freezeConnection:Disconnect()
         freezeConnection = nil
@@ -323,8 +317,8 @@ local function stopFreeze()
     frozenCFrame = nil
 end
 
-local function startFreeze(vehicle, cframe)
-    stopFreeze()
+local function startVehicleFreeze(vehicle, cframe)
+    stopVehicleFreeze()
     frozenVehicle = vehicle
     frozenCFrame = cframe
     freezeConnection = RunService.Heartbeat:Connect(function()
@@ -346,30 +340,30 @@ local function startFreeze(vehicle, cframe)
                 end
             end
         else
-            stopFreeze()
+            stopVehicleFreeze()
         end
     end)
     isVehicleFrozen = true
 end
 
-local function unfreeze()
-    stopFreeze()
+local function unfreezeVehicle()
+    stopVehicleFreeze()
 end
 
--- ========== TELEPORT (SEDERHANA & WORK) ==========
-local function teleport(targetCFrame, shouldFreeze)
-    local char = player.Character
-    if not char then return false end
+-- ========== TELEPORT FUNCTION ==========
+local function teleportToPosition(targetCFrame, shouldFreezeAfter)
+    local character = player.Character
+    if not character then return false end
     
-    local hum = char:FindFirstChildOfClass("Humanoid")
+    local hum = character:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
     
-    -- Unfreeze dulu
-    unfreeze()
+    -- Unfreeze dulu sebelum teleport
+    unfreezeVehicle()
     
-    local seat = hum.SeatPart
-    if seat then
-        local vehicle = seat:FindFirstAncestorOfClass("Model")
+    local seatPart = hum.SeatPart
+    if seatPart then
+        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
             if vehicle.PrimaryPart then
                 vehicle:SetPrimaryPartCFrame(targetCFrame)
@@ -379,181 +373,183 @@ local function teleport(targetCFrame, shouldFreeze)
                     anchor.CFrame = targetCFrame
                 end
             end
-        end
-    end
-    
-    -- Teleport karakter
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = targetCFrame
-    end
-    
-    -- Freeze jika perlu
-    if shouldFreeze then
-        task.wait(0.1)
-        local hum2 = char:FindFirstChildOfClass("Humanoid")
-        if hum2 and hum2.SeatPart then
-            local vehicle2 = hum2.SeatPart:FindFirstAncestorOfClass("Model")
-            if vehicle2 then
-                startFreeze(vehicle2, targetCFrame)
+            -- Freeze setelah teleport jika diminta
+            if shouldFreezeAfter then
+                task.wait(0.1)
+                startVehicleFreeze(vehicle, targetCFrame)
             end
+        end
+    else
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = targetCFrame
         end
     end
     
     return true
 end
 
-local function teleportPos(pos, shouldFreeze)
-    return teleport(CFrame.new(pos), shouldFreeze)
+local function teleportToVector3(targetPos, shouldFreezeAfter)
+    return teleportToPosition(CFrame.new(targetPos), shouldFreezeAfter)
 end
 
 -- ========== SAFE ZONE ==========
-local SAFE_ZONE = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
+local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
 -- ========== HP MONITORING ==========
-local hpActive = false
-local inSafeZone = false
-local originalPos = nil
-local wasFrozen = false
-local timerThread = nil
-local currentHum = nil
-local lastHP = 100
+local hpMonitoringActive = false
+local isInSafeZone = false
+local originalPosition = nil
+local safeZoneTimerThread = nil
+local currentHumanoid = nil
+local lastHealthPercent = 100
+local wasFrozenBeforeHit = false
 
-local function onCharAdded(char)
-    currentHum = char:WaitForChild("Humanoid")
-    lastHP = (currentHum.Health / currentHum.MaxHealth) * 100
-    inSafeZone = false
-    originalPos = nil
-    wasFrozen = false
-    if timerThread then
-        task.cancel(timerThread)
-        timerThread = nil
+local function onCharacterAdded(character)
+    currentHumanoid = character:WaitForChild("Humanoid")
+    lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
+    isInSafeZone = false
+    originalPosition = nil
+    wasFrozenBeforeHit = false
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
+        safeZoneTimerThread = nil
     end
-    unfreeze()
+    unfreezeVehicle()
 end
 
 if player.Character then
-    onCharAdded(player.Character)
+    onCharacterAdded(player.Character)
 end
-player.CharacterAdded:Connect(onCharAdded)
+player.CharacterAdded:Connect(onCharacterAdded)
 
-local function goToSafe()
-    local char = player.Character
-    if not char then return false end
+local function goToSafeZone()
+    local character = player.Character
+    if not character then return false end
     
-    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
-    originalPos = hrp.CFrame
-    wasFrozen = isVehicleFrozen
+    -- Simpan posisi original dan status freeze
+    originalPosition = hrp.CFrame
+    wasFrozenBeforeHit = isVehicleFrozen
     
-    unfreeze()
+    -- Unfreeze kendaraan
+    unfreezeVehicle()
     
-    local hum = char:FindFirstChildOfClass("Humanoid")
+    -- Teleport ke safe zone
+    local hum = character:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then
         local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
         if vehicle then
             if vehicle.PrimaryPart then
-                vehicle:SetPrimaryPartCFrame(SAFE_ZONE)
+                vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
             else
                 local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
                 if anchor then
-                    anchor.CFrame = SAFE_ZONE
+                    anchor.CFrame = SAFE_ZONE_CFRAME
                 end
             end
         end
     end
-    hrp.CFrame = SAFE_ZONE
+    hrp.CFrame = SAFE_ZONE_CFRAME
     
-    inSafeZone = true
+    isInSafeZone = true
     return true
 end
 
-local function backToOriginal()
-    if originalPos then
-        teleport(originalPos, wasFrozen)
-        originalPos = nil
+local function goBackToOriginal()
+    if originalPosition then
+        teleportToPosition(originalPosition, wasFrozenBeforeHit)
+        originalPosition = nil
     end
-    inSafeZone = false
+    isInSafeZone = false
 end
 
-local function startTimer()
-    if timerThread then
-        task.cancel(timerThread)
+local function startReturnTimer()
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
     end
-    timerThread = task.spawn(function()
+    
+    safeZoneTimerThread = task.spawn(function()
         task.wait(8)
-        if inSafeZone and hpActive then
-            backToOriginal()
+        if isInSafeZone and hpMonitoringActive then
+            goBackToOriginal()
         end
-        timerThread = nil
+        safeZoneTimerThread = nil
     end)
 end
 
-local function checkHP()
-    if not hpActive then return end
-    if inSafeZone then return end
+local function checkHealthAndTeleport()
+    if not hpMonitoringActive then return end
+    if isInSafeZone then return end
     
-    if not currentHum or currentHum.Parent == nil then
-        local char = player.Character
-        if char then
-            currentHum = char:FindFirstChildOfClass("Humanoid")
+    if not currentHumanoid or currentHumanoid.Parent == nil then
+        local character = player.Character
+        if character then
+            currentHumanoid = character:FindFirstChildOfClass("Humanoid")
         end
-        if not currentHum then return end
+        if not currentHumanoid then return end
     end
     
-    local health = currentHum.Health
-    local maxHealth = currentHum.MaxHealth
+    local currentHealth = currentHumanoid.Health
+    local maxHealth = currentHumanoid.MaxHealth
     
     if maxHealth > 0 then
-        local percent = (health / maxHealth) * 100
-        if percent < lastHP then
-            if goToSafe() then
-                startTimer()
+        local currentPercent = (currentHealth / maxHealth) * 100
+        
+        -- Jika kena hit (HP turun)
+        if currentPercent < lastHealthPercent then
+            if goToSafeZone() then
+                startReturnTimer()
             end
         end
-        lastHP = percent
+        
+        lastHealthPercent = currentPercent
     end
 end
 
-local function startHPMonitor()
-    if hpActive then return end
-    hpActive = true
-    inSafeZone = false
-    originalPos = nil
-    wasFrozen = false
+local function startHPMonitoring()
+    if hpMonitoringActive then return end
+    hpMonitoringActive = true
+    isInSafeZone = false
+    originalPosition = nil
+    wasFrozenBeforeHit = false
     
-    if currentHum then
-        lastHP = (currentHum.Health / currentHum.MaxHealth) * 100
+    if currentHumanoid then
+        lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
     else
-        lastHP = 100
+        lastHealthPercent = 100
     end
     
-    if timerThread then
-        task.cancel(timerThread)
-        timerThread = nil
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
+        safeZoneTimerThread = nil
     end
     
     task.spawn(function()
-        while hpActive do
-            checkHP()
-            task.wait(0.1)
+        while hpMonitoringActive do
+            checkHealthAndTeleport()
+            task.wait(0.05)
         end
     end)
 end
 
-local function stopHPMonitor()
-    hpActive = false
-    if timerThread then
-        task.cancel(timerThread)
-        timerThread = nil
+local function stopHPMonitoring()
+    hpMonitoringActive = false
+    
+    if safeZoneTimerThread then
+        task.cancel(safeZoneTimerThread)
+        safeZoneTimerThread = nil
     end
-    if inSafeZone then
-        backToOriginal()
+    
+    if isInSafeZone then
+        goBackToOriginal()
     end
-    inSafeZone = false
-    originalPos = nil
-    wasFrozen = false
+    
+    isInSafeZone = false
+    originalPosition = nil
+    wasFrozenBeforeHit = false
 end
 
 -- ========== BUAT BUTTON TP ==========
@@ -603,10 +599,10 @@ local function createSubButtons(parentBtn, apartIndex, layoutOrder)
         
         subBtn.MouseButton1Click:Connect(function()
             if sub.freeze then
-                teleport(sub.pos, true)
-                startHPMonitor()
+                teleportToPosition(sub.pos, true)
+                startHPMonitoring()
             else
-                teleport(sub.pos, false)
+                teleportToPosition(sub.pos, false)
             end
             clearSubButtons()
         end)
@@ -672,7 +668,7 @@ for i, loc in ipairs(LOCATIONS) do
     else
         btn.MouseButton1Click:Connect(function()
             clearSubButtons()
-            teleportPos(loc.pos, false)
+            teleportToVector3(loc.pos, false)
         end)
     end
 end
@@ -829,16 +825,16 @@ HPSafeStatus.TextXAlignment = Enum.TextXAlignment.Left
 HPSafeStatus.Font = Enum.Font.GothamBold
 HPSafeStatus.TextSize = 10
 
-local FreezeStatus = Instance.new("TextLabel")
-FreezeStatus.Parent = MSLoopContent
-FreezeStatus.Size = UDim2.new(1,-16,0,20)
-FreezeStatus.Position = UDim2.new(0,8,0,296)
-FreezeStatus.BackgroundTransparency = 1
-FreezeStatus.Text = "❄️ VEHICLE FREEZE: INACTIVE"
-FreezeStatus.TextColor3 = Color3.fromRGB(200,200,200)
-FreezeStatus.TextXAlignment = Enum.TextXAlignment.Left
-FreezeStatus.Font = Enum.Font.GothamBold
-FreezeStatus.TextSize = 10
+local VehicleFreezeStatus = Instance.new("TextLabel")
+VehicleFreezeStatus.Parent = MSLoopContent
+VehicleFreezeStatus.Size = UDim2.new(1,-16,0,20)
+VehicleFreezeStatus.Position = UDim2.new(0,8,0,296)
+VehicleFreezeStatus.BackgroundTransparency = 1
+VehicleFreezeStatus.Text = "🚗 VEHICLE FREEZE: INACTIVE"
+VehicleFreezeStatus.TextColor3 = Color3.fromRGB(200,200,200)
+VehicleFreezeStatus.TextXAlignment = Enum.TextXAlignment.Left
+VehicleFreezeStatus.Font = Enum.Font.GothamBold
+VehicleFreezeStatus.TextSize = 10
 
 local MSLoopStartBtn = Instance.new("TextButton")
 MSLoopStartBtn.Parent = MSLoopContent
@@ -878,461 +874,6 @@ RefreshBtn.TextSize = 11
 local RefreshBtnCorner = Instance.new("UICorner")
 RefreshBtnCorner.Parent = RefreshBtn
 RefreshBtnCorner.CornerRadius = UDim.new(0,6)
-
--- ========== MS LOOP FUNCTIONS ==========
-local function countTools(toolName)
-    local count = 0
-    if player.Character then
-        for _, child in pairs(player.Character:GetChildren()) do
-            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
-                count = count + 1
-            end
-        end
-    end
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, child in pairs(backpack:GetChildren()) do
-            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
-                count = count + 1
-            end
-        end
-    end
-    return count
-end
-
-local function updateIndicators()
-    local water = countTools("water")
-    local sugar = countTools("sugar")
-    local gelatin = countTools("gelatin")
-    
-    WaterIndicator.Text = "💧 WATER: " .. water
-    SugarIndicator.Text = "🍚 SUGAR: " .. sugar
-    GelatinIndicator.Text = "🧪 GELATIN: " .. gelatin
-    
-    local bisa = math.min(water, sugar, gelatin)
-    BisaMasak.Text = "🍳 BISA MASAK: " .. bisa
-    if bisa >= 3 then BisaMasak.TextColor3 = Color3.fromRGB(100,255,100)
-    elseif bisa >= 1 then BisaMasak.TextColor3 = Color3.fromRGB(255,255,100)
-    else BisaMasak.TextColor3 = Color3.fromRGB(255,255,255) end
-end
-
-local function findTool(name)
-    if player.Character then
-        for _, child in pairs(player.Character:GetChildren()) do
-            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(name)) then
-                return child
-            end
-        end
-    end
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, child in pairs(backpack:GetChildren()) do
-            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(name)) then
-                return child
-            end
-        end
-    end
-    return nil
-end
-
-local function equipTool(tool)
-    if not tool or not player.Character then return false end
-    if tool.Parent == player.Character then return true end
-    if tool.Parent == player:FindFirstChild("Backpack") then
-        local hum = player.Character:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum:EquipTool(tool)
-            task.wait(0.2)
-            return tool.Parent == player.Character
-        end
-    end
-    return false
-end
-
-local function pressE()
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-    task.wait(0.1)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-end
-
-local loopActive = false
-
-local function startLoop()
-    if loopActive then return end
-    
-    -- Unfreeze vehicle sebelum loop
-    unfreeze()
-    
-    loopActive = true
-    MSLoopStatus.Text = "▶️ LOOP RUNNING"
-    MSLoopStatus.TextColor3 = Color3.fromRGB(100,255,100)
-    HPSafeStatus.Text = "🛡️ HP SAFE: ACTIVE"
-    HPSafeStatus.TextColor3 = Color3.fromRGB(100,255,100)
-    
-    startHPMonitor()
-    
-    task.spawn(function()
-        while loopActive do
-            updateIndicators()
-            
-            local water = findTool("water")
-            if water and equipTool(water) then
-                ToolStatus.Text = "Tool: WATER"
-                MSLoopStepLabel.Text = "Step 1: WATER - 20s"
-                pressE()
-                local start = tick()
-                while loopActive and (tick() - start) < 20 do
-                    MSLoopTimer.Text = string.format("Timer: %d/20s", math.floor(20 - (tick() - start)))
-                    task.wait(0.1)
-                end
-            else
-                MSLoopStepLabel.Text = "ERROR: Water not found!"
-                break
-            end
-            
-            task.wait(3)
-            if not loopActive then break
-            
-            local sugar = findTool("sugar")
-            if sugar and equipTool(sugar) then
-                ToolStatus.Text = "Tool: SUGAR"
-                MSLoopStepLabel.Text = "Step 2: SUGAR - 2s"
-                pressE()
-                local start = tick()
-                while loopActive and (tick() - start) < 2 do
-                    MSLoopTimer.Text = string.format("Timer: %d/2s", math.floor(2 - (tick() - start)))
-                    task.wait(0.1)
-                end
-            else
-                MSLoopStepLabel.Text = "ERROR: Sugar not found!"
-                break
-            end
-            
-            task.wait(0.5)
-            if not loopActive then break
-            
-            local gelatin = findTool("gelatin")
-            if gelatin and equipTool(gelatin) then
-                ToolStatus.Text = "Tool: GELATIN"
-                MSLoopStepLabel.Text = "Step 3: GELATIN - 45s"
-                pressE()
-                local start = tick()
-                while loopActive and (tick() - start) < 45 do
-                    MSLoopTimer.Text = string.format("Timer: %d/45s", math.floor(45 - (tick() - start)))
-                    task.wait(0.1)
-                end
-            else
-                MSLoopStepLabel.Text = "ERROR: Gelatin not found!"
-                break
-            end
-            
-            task.wait(3)
-            if not loopActive then break
-            
-            local empty = findTool("empty") or findTool("bag")
-            if empty and equipTool(empty) then
-                ToolStatus.Text = "Tool: EMPTY BAG"
-                MSLoopStepLabel.Text = "Step 4: HASIL - 2s"
-                pressE()
-                local start = tick()
-                while loopActive and (tick() - start) < 2 do
-                    MSLoopTimer.Text = string.format("Timer: %d/2s", math.floor(2 - (tick() - start)))
-                    task.wait(0.1)
-                end
-            else
-                MSLoopStepLabel.Text = "ERROR: Empty Bag not found!"
-                break
-            end
-            
-            updateIndicators()
-            MSLoopStepLabel.Text = "Loop complete!"
-            task.wait(1)
-        end
-        
-        loopActive = false
-        MSLoopStatus.Text = "⏹️ LOOP STOPPED"
-        MSLoopStatus.TextColor3 = Color3.fromRGB(255,100,100)
-        MSLoopStepLabel.Text = "Stopped"
-        MSLoopTimer.Text = "Timer: 0s"
-        ToolStatus.Text = "Tool: -"
-        HPSafeStatus.Text = "🛡️ HP SAFE: INACTIVE"
-        HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
-        updateIndicators()
-        
-        -- Freeze lagi jika seharusnya freeze
-        if wasFrozen then
-            local char = player.Character
-            if char then
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                if hum and hum.SeatPart then
-                    local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
-                    if vehicle then
-                        local hrp = char:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            startFreeze(vehicle, hrp.CFrame)
-                        end
-                    end
-                end
-            end
-        end
-        
-        stopHPMonitor()
-    end)
-end
-
--- ========== AUTO SELL FUNCTIONS ==========
-local SELL_TOOLS = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
-
-local function getSellTools()
-    local tools = {}
-    if player.Character then
-        for _, child in pairs(player.Character:GetChildren()) do
-            if child:IsA("Tool") then
-                for _, name in ipairs(SELL_TOOLS) do
-                    if child.Name == name then table.insert(tools, child) break end
-                end
-            end
-        end
-    end
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, child in pairs(backpack:GetChildren()) do
-            if child:IsA("Tool") then
-                for _, name in ipairs(SELL_TOOLS) do
-                    if child.Name == name then table.insert(tools, child) break end
-                end
-            end
-        end
-    end
-    return tools
-end
-
-local sellActive = false
-local sellCount = 0
-
-local function startSell()
-    if sellActive then return end
-    sellActive = true
-    sellCount = 0
-    AutoSellStatus.Text = "▶️ RUNNING"
-    AutoSellStatus.TextColor3 = Color3.fromRGB(100,255,100)
-    
-    task.spawn(function()
-        while sellActive do
-            local tools = getSellTools()
-            AutoSellInfo.Text = "Tools: " .. #tools
-            
-            if #tools > 0 then
-                for _, tool in ipairs(tools) do
-                    if not sellActive then break end
-                    if tool and tool.Parent then
-                        if tool.Parent == player:FindFirstChild("Backpack") then
-                            local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-                            if hum then hum:EquipTool(tool) task.wait(0.3) end
-                        end
-                        AutoSellStatus.Text = "▶️ HOLD E..."
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                        task.wait(2)
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                        sellCount = sellCount + 1
-                        AutoSellCounter.Text = "Terjual: " .. sellCount
-                        AutoSellStatus.Text = "▶️ RUNNING"
-                        task.wait(1)
-                    end
-                end
-            else
-                task.wait(2)
-            end
-            task.wait(0.5)
-        end
-    end)
-end
-
-local function stopSell()
-    sellActive = false
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-    AutoSellStatus.Text = "⏹️ STOPPED"
-    AutoSellStatus.TextColor3 = Color3.fromRGB(255,100,100)
-end
-
--- ========== AUTO BUY FUNCTIONS ==========
-local buyActive = false
-local buyAmount = 10
-local buyTotal = 0
-
-local function setBuyAmount(amount)
-    buyAmount = math.clamp(amount, 1, 50)
-    JumlahValueLabel.Text = buyAmount .. "x"
-    JumlahSliderFill.Size = UDim2.new((buyAmount - 1) / 49, 0, 1, 0)
-end
-
-local function startBuy()
-    if buyActive then return end
-    if not storePurchaseRE then
-        BuyStatusValue.Text = "❌ Remote tidak ada!"
-        BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
-        task.wait(2)
-        BuyStatusValue.Text = "⏹️ BELUM MULAI"
-        BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
-        return
-    end
-    
-    buyActive = true
-    buyTotal = 0
-    BuyStatusValue.Text = "▶️ RUNNING"
-    BuyStatusValue.TextColor3 = Color3.fromRGB(100,255,100)
-    BuyTotalLabel.Text = "Total: 0"
-    
-    local ITEMS = {
-        {name = "Water", display = "💧 Water"},
-        {name = "Sugar Block Bag", display = "🍚 Sugar"},
-        {name = "Gelatin", display = "🧪 Gelatin"}
-    }
-    
-    task.spawn(function()
-        local amount = buyAmount
-        
-        for _, item in ipairs(ITEMS) do
-            if not buyActive then break end
-            
-            BuyStatusValue.Text = "🛒 " .. item.display .. " x" .. amount
-            BuyStatusValue.TextColor3 = Color3.fromRGB(255,255,100)
-            
-            for i = 1, amount do
-                if not buyActive then break end
-                pcall(function()
-                    storePurchaseRE:FireServer(item.name, 1)
-                end)
-                buyTotal = buyTotal + 1
-                BuyTotalLabel.Text = "Total: " .. buyTotal
-                task.wait(0.5)
-            end
-            task.wait(0.8)
-        end
-        
-        if buyActive then
-            BuyStatusValue.Text = "✅ Selesai! Total: " .. buyTotal
-            BuyStatusValue.TextColor3 = Color3.fromRGB(100,255,100)
-            task.wait(2)
-            if buyActive then
-                BuyStatusValue.Text = "⏹️ STOPPED"
-                BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
-                buyActive = false
-            end
-        end
-        updateIndicators()
-    end)
-end
-
-local function stopBuy()
-    buyActive = false
-    BuyStatusValue.Text = "⏹️ STOPPED"
-    BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
-end
-
--- ========== BLINK FUNCTIONS ==========
-local function blinkUp()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, 2, 0)
-        BlinkStatus.Text = "✅ Naik 2 studs!"
-        task.wait(1)
-        BlinkStatus.Text = "Klik tombol blink"
-    end
-end
-
-local function blinkDown()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
-        BlinkStatus.Text = "✅ Turun 4 studs!"
-        task.wait(1)
-        BlinkStatus.Text = "Klik tombol blink"
-    end
-end
-
-local function blinkFwd()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 5
-        BlinkStatus.Text = "✅ Maju 5 studs!"
-        task.wait(1)
-        BlinkStatus.Text = "Klik tombol blink"
-    end
-end
-
-local function blinkBack()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame - hrp.CFrame.LookVector * 5
-        BlinkStatus.Text = "✅ Mundur 5 studs!"
-        task.wait(1)
-        BlinkStatus.Text = "Klik tombol blink"
-    end
-end
-
-local function createBlinkBtn(parent, name, desc, color, y, callback)
-    local btn = Instance.new("TextButton")
-    btn.Parent = parent
-    btn.Size = UDim2.new(1, -16, 0, 55)
-    btn.Position = UDim2.new(0, 8, 0, y)
-    btn.BackgroundColor3 = Color3.fromRGB(35,35,45)
-    btn.Text = ""
-    btn.BorderSizePixel = 0
-    local corner = Instance.new("UICorner")
-    corner.Parent = btn
-    corner.CornerRadius = UDim.new(0, 8)
-    
-    local icon = Instance.new("TextLabel")
-    icon.Parent = btn
-    icon.Size = UDim2.new(0, 45, 1, 0)
-    icon.Position = UDim2.new(0, 8, 0, 0)
-    icon.BackgroundTransparency = 1
-    icon.Text = name:sub(1, 2)
-    icon.TextSize = 28
-    icon.Font = Enum.Font.GothamBold
-    
-    local title = Instance.new("TextLabel")
-    title.Parent = btn
-    title.Size = UDim2.new(1, -70, 0, 22)
-    title.Position = UDim2.new(0, 55, 0, 8)
-    title.BackgroundTransparency = 1
-    title.Text = name
-    title.TextColor3 = Color3.fromRGB(255,255,255)
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 13
-    
-    local descLbl = Instance.new("TextLabel")
-    descLbl.Parent = btn
-    descLbl.Size = UDim2.new(1, -70, 0, 18)
-    descLbl.Position = UDim2.new(0, 55, 0, 32)
-    descLbl.BackgroundTransparency = 1
-    descLbl.Text = desc
-    descLbl.TextColor3 = Color3.fromRGB(160,160,180)
-    descLbl.TextXAlignment = Enum.TextXAlignment.Left
-    descLbl.Font = Enum.Font.Gotham
-    descLbl.TextSize = 10
-    
-    local action = Instance.new("TextButton")
-    action.Parent = btn
-    action.Size = UDim2.new(0, 40, 0, 32)
-    action.Position = UDim2.new(1, -48, 0.5, -16)
-    action.BackgroundColor3 = color
-    action.Text = "▶️"
-    action.TextColor3 = Color3.fromRGB(255,255,255)
-    action.TextSize = 14
-    action.Font = Enum.Font.GothamBold
-    local actionCorner = Instance.new("UICorner")
-    actionCorner.Parent = action
-    actionCorner.CornerRadius = UDim.new(0, 6)
-    
-    action.MouseButton1Click:Connect(callback)
-end
 
 -- ========== AUTO BUY UI ==========
 local AutoBuyTitle = Instance.new("TextLabel")
@@ -1485,7 +1026,7 @@ local BuyStopCorner = Instance.new("UICorner")
 BuyStopCorner.Parent = BuyStopBtn
 BuyStopCorner.CornerRadius = UDim.new(0,6)
 
--- ========== MS SAFETY CONTENT ==========
+-- ========== MS SAFETY CONTENT (BLINK) ==========
 local MSSafetyTitle = Instance.new("TextLabel")
 MSSafetyTitle.Parent = MSSafetyContent
 MSSafetyTitle.Size = UDim2.new(1,-16,0,28)
@@ -1509,11 +1050,6 @@ BlinkStatus.TextSize = 10
 local BlinkStatusCorner = Instance.new("UICorner")
 BlinkStatusCorner.Parent = BlinkStatus
 BlinkStatusCorner.CornerRadius = UDim.new(0,6)
-
-createBlinkBtn(MSSafetyContent, "⬆️ BLINK ATAS", "Naik 2 studs", Color3.fromRGB(150,100,200), 40, blinkUp)
-createBlinkBtn(MSSafetyContent, "⬇️ BLINK BAWAH", "Turun 4 studs", Color3.fromRGB(0,150,200), 100, blinkDown)
-createBlinkBtn(MSSafetyContent, "➡️ BLINK MAJU", "Maju 5 studs", Color3.fromRGB(0,200,100), 160, blinkFwd)
-createBlinkBtn(MSSafetyContent, "⬅️ BLINK MUNDUR", "Mundur 5 studs", Color3.fromRGB(200,100,0), 220, blinkBack)
 
 -- ========== AUTO SELL CONTENT ==========
 local AutoSellTitle = Instance.new("TextLabel")
@@ -1627,65 +1163,539 @@ local AutoSellStopCorner = Instance.new("UICorner")
 AutoSellStopCorner.Parent = AutoSellStopBtn
 AutoSellStopCorner.CornerRadius = UDim.new(0,6)
 
--- ========== SLIDER ==========
-local isDragging = false
+-- ========== FUNCTIONS ==========
+local function countTools(toolName)
+    local count = 0
+    if player.Character then
+        for _, child in pairs(player.Character:GetChildren()) do
+            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
+                count = count + 1
+            end
+        end
+    end
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, child in pairs(backpack:GetChildren()) do
+            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
+                count = count + 1
+            end
+        end
+    end
+    return count
+end
+
+local function updateBuyIndicators()
+    local waterCount = countTools("water")
+    local sugarCount = countTools("sugar")
+    local gelatinCount = countTools("gelatin")
+    
+    WaterIndicator.Text = "💧 WATER: " .. waterCount
+    SugarIndicator.Text = "🍚 SUGAR: " .. sugarCount
+    GelatinIndicator.Text = "🧪 GELATIN: " .. gelatinCount
+    
+    if waterCount > 0 then WaterIndicator.TextColor3 = Color3.fromRGB(100,200,255)
+    else WaterIndicator.TextColor3 = Color3.fromRGB(255,255,255) end
+    
+    if sugarCount > 0 then SugarIndicator.TextColor3 = Color3.fromRGB(100,200,255)
+    else SugarIndicator.TextColor3 = Color3.fromRGB(255,255,255) end
+    
+    if gelatinCount > 0 then GelatinIndicator.TextColor3 = Color3.fromRGB(100,200,255)
+    else GelatinIndicator.TextColor3 = Color3.fromRGB(255,255,255) end
+    
+    local bisaMasak = math.min(waterCount, sugarCount, gelatinCount)
+    BisaMasak.Text = "🍳 BISA MASAK: " .. bisaMasak
+    if bisaMasak >= 3 then BisaMasak.TextColor3 = Color3.fromRGB(100,255,100)
+    elseif bisaMasak >= 1 then BisaMasak.TextColor3 = Color3.fromRGB(255,255,100)
+    else BisaMasak.TextColor3 = Color3.fromRGB(255,255,255) end
+end
+
+local SELL_TOOLS = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
+
+local function getSellTools()
+    local tools = {}
+    if player.Character then
+        for _, child in pairs(player.Character:GetChildren()) do
+            if child:IsA("Tool") then
+                for _, toolName in ipairs(SELL_TOOLS) do
+                    if child.Name == toolName then table.insert(tools, child) break end
+                end
+            end
+        end
+    end
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, child in pairs(backpack:GetChildren()) do
+            if child:IsA("Tool") then
+                for _, toolName in ipairs(SELL_TOOLS) do
+                    if child.Name == toolName then table.insert(tools, child) break end
+                end
+            end
+        end
+    end
+    return tools
+end
+
+local autoSellRunning = false
+local autoSellCount = 0
+
+local function startAutoSell()
+    if autoSellRunning then return end
+    autoSellRunning = true
+    autoSellCount = 0
+    AutoSellStatus.Text = "▶️ RUNNING"
+    AutoSellStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    
+    task.spawn(function()
+        while autoSellRunning do
+            local tools = getSellTools()
+            AutoSellInfo.Text = "Tools: " .. #tools
+            
+            if #tools > 0 then
+                for _, tool in ipairs(tools) do
+                    if not autoSellRunning then break end
+                    if tool and tool.Parent then
+                        if tool.Parent == player:FindFirstChild("Backpack") then
+                            local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+                            if humanoid then humanoid:EquipTool(tool) task.wait(0.3) end
+                        end
+                        AutoSellStatus.Text = "▶️ HOLD E..."
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                        local holdStart = tick()
+                        while autoSellRunning and (tick() - holdStart) < 2 do task.wait(0.1) end
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                        autoSellCount = autoSellCount + 1
+                        AutoSellCounter.Text = "Terjual: " .. autoSellCount
+                        AutoSellStatus.Text = "▶️ RUNNING"
+                        task.wait(1)
+                    end
+                end
+            else
+                task.wait(2)
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+local function stopAutoSell()
+    autoSellRunning = false
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    AutoSellStatus.Text = "⏹️ STOPPED"
+    AutoSellStatus.TextColor3 = Color3.fromRGB(255,100,100)
+end
+
+local function findTool(toolName)
+    if player.Character then
+        for _, child in pairs(player.Character:GetChildren()) do
+            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
+                return child
+            end
+        end
+    end
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, child in pairs(backpack:GetChildren()) do
+            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
+                return child
+            end
+        end
+    end
+    return nil
+end
+
+local function equipTool(tool)
+    if not tool or not player.Character then return false end
+    if tool.Parent == player.Character then return true end
+    if tool.Parent == player:FindFirstChild("Backpack") then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:EquipTool(tool)
+            task.wait(0.2)
+            return tool.Parent == player.Character
+        end
+    end
+    return false
+end
+
+local function pressE()
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+local loopRunning = false
+
+local function startMSLoop()
+    if loopRunning then return end
+    
+    -- TIDAK ADA unfreezeVehicle() di sini! Kendaraan tetap freeze jika sedang freeze
+    -- MS Loop tetap berjalan meskipun kendaraan freeze
+    
+    loopRunning = true
+    MSLoopStatus.Text = "▶️ LOOP RUNNING"
+    MSLoopStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    HPSafeStatus.Text = "🛡️ HP SAFE: ACTIVE"
+    HPSafeStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    
+    startHPMonitoring()
+    
+    task.spawn(function()
+        while loopRunning do
+            updateBuyIndicators()
+            
+            local waterTool = findTool("water")
+            if waterTool and equipTool(waterTool) then
+                ToolStatus.Text = "Tool: WATER"
+                MSLoopStepLabel.Text = "Step 1: WATER - 20 seconds"
+                pressE()
+                local startTime = tick()
+                while loopRunning and (tick() - startTime) < 20 do
+                    local remaining = 20 - (tick() - startTime)
+                    MSLoopTimer.Text = string.format("Timer: %d/20s - WATER", math.floor(20 - remaining))
+                    task.wait(0.1)
+                end
+            else
+                MSLoopStepLabel.Text = "ERROR: Water tool not found!"
+                break
+            end
+            
+            task.wait(3)
+            if not loopRunning then break end
+            
+            local sugarTool = findTool("sugar")
+            if sugarTool and equipTool(sugarTool) then
+                ToolStatus.Text = "Tool: SUGAR"
+                MSLoopStepLabel.Text = "Step 2: SUGAR - 2 seconds"
+                pressE()
+                local startTime = tick()
+                while loopRunning and (tick() - startTime) < 2 do
+                    local remaining = 2 - (tick() - startTime)
+                    MSLoopTimer.Text = string.format("Timer: %d/2s - SUGAR", math.floor(2 - remaining))
+                    task.wait(0.1)
+                end
+            else
+                MSLoopStepLabel.Text = "ERROR: Sugar tool not found!"
+                break
+            end
+            
+            task.wait(0.5)
+            if not loopRunning then break end
+            
+            local gelatinTool = findTool("gelatin")
+            if gelatinTool and equipTool(gelatinTool) then
+                ToolStatus.Text = "Tool: GELATIN"
+                MSLoopStepLabel.Text = "Step 3: GELATIN - 45 seconds"
+                pressE()
+                local startTime = tick()
+                while loopRunning and (tick() - startTime) < 45 do
+                    local remaining = 45 - (tick() - startTime)
+                    MSLoopTimer.Text = string.format("Timer: %d/45s - GELATIN", math.floor(45 - remaining))
+                    task.wait(0.1)
+                end
+            else
+                MSLoopStepLabel.Text = "ERROR: Gelatin tool not found!"
+                break
+            end
+            
+            task.wait(3)
+            if not loopRunning then break end
+            
+            local emptyTool = findTool("empty") or findTool("bag")
+            if emptyTool and equipTool(emptyTool) then
+                ToolStatus.Text = "Tool: EMPTY BAG"
+                MSLoopStepLabel.Text = "Step 4: EMPTY BAG - 2 seconds (HASIL)"
+                pressE()
+                local startTime = tick()
+                while loopRunning and (tick() - startTime) < 2 do
+                    local remaining = 2 - (tick() - startTime)
+                    MSLoopTimer.Text = string.format("Timer: %d/2s - HASIL", math.floor(2 - remaining))
+                    task.wait(0.1)
+                end
+            else
+                MSLoopStepLabel.Text = "ERROR: Empty Bag tool not found!"
+                break
+            end
+            
+            updateBuyIndicators()
+            MSLoopStepLabel.Text = "Loop complete! Restarting..."
+            task.wait(1)
+        end
+        
+        loopRunning = false
+        MSLoopStatus.Text = "⏹️ LOOP STOPPED"
+        MSLoopStatus.TextColor3 = Color3.fromRGB(255,100,100)
+        MSLoopStepLabel.Text = "Step: Stopped"
+        MSLoopTimer.Text = "Timer: 0s"
+        ToolStatus.Text = "Tool: -"
+        HPSafeStatus.Text = "🛡️ HP SAFE: INACTIVE"
+        HPSafeStatus.TextColor3 = Color3.fromRGB(200,200,200)
+        updateBuyIndicators()
+        
+        -- TIDAK ADA stopHPMonitoring() di sini! Biar HP monitoring tetap jalan
+    end)
+end
+
+-- ========== AUTO BUY FUNCTIONS ==========
+local autoBuyRunning = false
+local currentBuyAmount = 10
+local autoBuyTotalBought = 0
+
+local function setBuyAmount(amount)
+    currentBuyAmount = math.clamp(amount, 1, 50)
+    JumlahValueLabel.Text = currentBuyAmount .. "x"
+    JumlahSliderFill.Size = UDim2.new((currentBuyAmount - 1) / 49, 0, 1, 0)
+end
+
+local function startAutoBuy()
+    if autoBuyRunning then return end
+    if not storePurchaseRE then
+        BuyStatusValue.Text = "❌ RemoteEvent tidak ditemukan!"
+        BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
+        task.wait(2)
+        BuyStatusValue.Text = "⏹️ BELUM MULAI"
+        BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
+        return
+    end
+    
+    autoBuyRunning = true
+    autoBuyTotalBought = 0
+    BuyStatusValue.Text = "▶️ RUNNING"
+    BuyStatusValue.TextColor3 = Color3.fromRGB(100,255,100)
+    BuyTotalLabel.Text = "Total: 0 item"
+    
+    local BUY_ITEMS = {
+        {name = "Water", display = "💧 Water"},
+        {name = "Sugar Block Bag", display = "🍚 Sugar Block Bag"},
+        {name = "Gelatin", display = "🧪 Gelatin"}
+    }
+    
+    task.spawn(function()
+        local amount = currentBuyAmount
+        
+        for _, item in ipairs(BUY_ITEMS) do
+            if not autoBuyRunning then break end
+            
+            BuyStatusValue.Text = "🛒 Membeli " .. item.display .. " x" .. amount
+            BuyStatusValue.TextColor3 = Color3.fromRGB(255,255,100)
+            
+            for i = 1, amount do
+                if not autoBuyRunning then break end
+                
+                pcall(function()
+                    storePurchaseRE:FireServer(item.name, 1)
+                end)
+                
+                autoBuyTotalBought = autoBuyTotalBought + 1
+                BuyTotalLabel.Text = "Total: " .. autoBuyTotalBought .. " item"
+                task.wait(0.5)
+            end
+            
+            task.wait(0.8)
+        end
+        
+        if autoBuyRunning then
+            BuyStatusValue.Text = "✅ Selesai! Total: " .. autoBuyTotalBought .. " item"
+            BuyStatusValue.TextColor3 = Color3.fromRGB(100,255,100)
+            task.wait(2)
+            if autoBuyRunning then
+                BuyStatusValue.Text = "⏹️ STOPPED"
+                BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
+                autoBuyRunning = false
+            end
+        end
+        updateBuyIndicators()
+    end)
+end
+
+local function stopAutoBuy()
+    autoBuyRunning = false
+    BuyStatusValue.Text = "⏹️ STOPPED"
+    BuyStatusValue.TextColor3 = Color3.fromRGB(255,100,100)
+end
+
+-- ========== SLIDER AUTO BUY ==========
+local isDraggingSlider = false
+
 JumlahSliderBg.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = true
-        local mouseX = input.Position.X
-        local sliderX = JumlahSliderBg.AbsolutePosition.X
-        local sliderW = JumlahSliderBg.AbsoluteSize.X
-        local percent = math.clamp((mouseX - sliderX) / sliderW, 0, 1)
-        local newVal = math.floor(1 + percent * 49)
-        setBuyAmount(newVal)
+        isDraggingSlider = true
+        local mousePos = input.Position.X
+        local sliderPos = JumlahSliderBg.AbsolutePosition.X
+        local sliderWidth = JumlahSliderBg.AbsoluteSize.X
+        local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
+        local newAmount = math.floor(1 + percent * 49)
+        setBuyAmount(newAmount)
     end
 end)
 
 UIS.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then
-        local mouseX = input.Position.X
-        local sliderX = JumlahSliderBg.AbsolutePosition.X
-        local sliderW = JumlahSliderBg.AbsoluteSize.X
-        if mouseX >= sliderX and mouseX <= sliderX + sliderW then
-            local percent = math.clamp((mouseX - sliderX) / sliderW, 0, 1)
-            local newVal = math.floor(1 + percent * 49)
-            setBuyAmount(newVal)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and isDraggingSlider then
+        local mousePos = input.Position.X
+        local sliderPos = JumlahSliderBg.AbsolutePosition.X
+        local sliderWidth = JumlahSliderBg.AbsoluteSize.X
+        
+        local mouseInSlider = (mousePos >= sliderPos and mousePos <= sliderPos + sliderWidth)
+        
+        if mouseInSlider then
+            local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
+            local newAmount = math.floor(1 + percent * 49)
+            setBuyAmount(newAmount)
         end
     end
 end)
 
 UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = false
+        isDraggingSlider = false
     end
 end)
 
+-- ========== BLINK FUNCTIONS ==========
+local function blinkAtas()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, 2, 0)
+        BlinkStatus.Text = "✅ Naik 2 studs!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+        task.wait(1)
+        BlinkStatus.Text = "Klik tombol di atas untuk blink"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    end
+end
+
+local function blinkDown()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
+        BlinkStatus.Text = "✅ Turun 4 studs!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+        task.wait(1)
+        BlinkStatus.Text = "Klik tombol di atas untuk blink"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    end
+end
+
+local function blinkMaju()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 5
+        BlinkStatus.Text = "✅ Maju 5 studs!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+        task.wait(1)
+        BlinkStatus.Text = "Klik tombol di atas untuk blink"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    end
+end
+
+local function blinkMundur()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame - hrp.CFrame.LookVector * 5
+        BlinkStatus.Text = "✅ Mundur 5 studs!"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+        task.wait(1)
+        BlinkStatus.Text = "Klik tombol di atas untuk blink"
+        BlinkStatus.TextColor3 = Color3.fromRGB(100,255,100)
+    end
+end
+
+-- ========== CREATE BLINK BUTTONS ==========
+local function createBlinkButton(parent, name, desc, color, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Parent = parent
+    btn.Size = UDim2.new(1, -16, 0, 55)
+    btn.Position = UDim2.new(0, 8, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(35,35,45)
+    btn.Text = ""
+    btn.BorderSizePixel = 0
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.Parent = btn
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    
+    local icon = Instance.new("TextLabel")
+    icon.Parent = btn
+    icon.Size = UDim2.new(0, 45, 1, 0)
+    icon.Position = UDim2.new(0, 8, 0, 0)
+    icon.BackgroundTransparency = 1
+    icon.Text = name:sub(1, 2)
+    icon.TextSize = 28
+    icon.Font = Enum.Font.GothamBold
+    
+    local title = Instance.new("TextLabel")
+    title.Parent = btn
+    title.Size = UDim2.new(1, -70, 0, 22)
+    title.Position = UDim2.new(0, 55, 0, 8)
+    title.BackgroundTransparency = 1
+    title.Text = name
+    title.TextColor3 = Color3.fromRGB(255,255,255)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 13
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Parent = btn
+    descLabel.Size = UDim2.new(1, -70, 0, 18)
+    descLabel.Position = UDim2.new(0, 55, 0, 32)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = desc
+    descLabel.TextColor3 = Color3.fromRGB(160,160,180)
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextSize = 10
+    
+    local actionBtn = Instance.new("TextButton")
+    actionBtn.Parent = btn
+    actionBtn.Size = UDim2.new(0, 40, 0, 32)
+    actionBtn.Position = UDim2.new(1, -48, 0.5, -16)
+    actionBtn.BackgroundColor3 = color
+    actionBtn.Text = "▶️"
+    actionBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    actionBtn.TextSize = 14
+    actionBtn.Font = Enum.Font.GothamBold
+    local actionCorner = Instance.new("UICorner")
+    actionCorner.Parent = actionBtn
+    actionCorner.CornerRadius = UDim.new(0, 6)
+    
+    actionBtn.MouseButton1Click:Connect(callback)
+end
+
+createBlinkButton(MSSafetyContent, "⬆️ BLINK ATAS", "Naik 2 studs", Color3.fromRGB(150,100,200), 40, blinkAtas)
+createBlinkButton(MSSafetyContent, "⬇️ BLINK BAWAH", "Turun 4 studs", Color3.fromRGB(0,150,200), 100, blinkDown)
+createBlinkButton(MSSafetyContent, "➡️ BLINK MAJU", "Maju 5 studs", Color3.fromRGB(0,200,100), 160, blinkMaju)
+createBlinkButton(MSSafetyContent, "⬅️ BLINK MUNDUR", "Mundur 5 studs", Color3.fromRGB(200,100,0), 220, blinkMundur)
+
 -- ========== CONNECT BUTTONS ==========
 CloseBtn.MouseButton1Click:Connect(function()
-    if sellActive then stopSell() end
-    if loopActive then loopActive = false end
-    if buyActive then stopBuy() end
-    stopHPMonitor()
-    unfreeze()
+    if autoSellRunning then stopAutoSell() end
+    if loopRunning then 
+        loopRunning = false
+    end
+    if autoBuyRunning then stopAutoBuy() end
+    stopHPMonitoring()
+    unfreezeVehicle()
     ScreenGui:Destroy()
 end)
 
 MSLoopStartBtn.MouseButton1Click:Connect(function()
-    if not loopActive then task.spawn(startLoop) end
+    if not loopRunning then task.spawn(startMSLoop) end
 end)
 
 MSLoopStopBtn.MouseButton1Click:Connect(function() 
-    loopActive = false
-    stopHPMonitor()
+    loopRunning = false
+    -- TIDAK ADA stopHPMonitoring() di sini! Biar HP monitoring tetap jalan
 end)
 
-RefreshBtn.MouseButton1Click:Connect(updateIndicators)
+RefreshBtn.MouseButton1Click:Connect(updateBuyIndicators)
 
-BuyStartBtn.MouseButton1Click:Connect(startBuy)
-BuyStopBtn.MouseButton1Click:Connect(stopBuy)
+BuyStartBtn.MouseButton1Click:Connect(startAutoBuy)
+BuyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
 
-AutoSellStartBtn.MouseButton1Click:Connect(startSell)
-AutoSellStopBtn.MouseButton1Click:Connect(stopSell)
+AutoSellStartBtn.MouseButton1Click:Connect(startAutoSell)
+AutoSellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
 -- Tab Switching
 TPTabBtn.MouseButton1Click:Connect(function()
@@ -1695,11 +1705,13 @@ TPTabBtn.MouseButton1Click:Connect(function()
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = false
     clearSubButtons()
+    
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoSellTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    
     TPTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
@@ -1714,17 +1726,19 @@ MSLoopTabBtn.MouseButton1Click:Connect(function()
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = false
     clearSubButtons()
+    
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoSellTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    
     TPTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoSellTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
-    updateIndicators()
+    updateBuyIndicators()
 end)
 
 AutoBuyTabBtn.MouseButton1Click:Connect(function()
@@ -1734,17 +1748,19 @@ AutoBuyTabBtn.MouseButton1Click:Connect(function()
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = false
     clearSubButtons()
+    
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
     MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoSellTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    
     TPTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
     MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoSellTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
-    updateIndicators()
+    updateBuyIndicators()
 end)
 
 MSSafetyTabBtn.MouseButton1Click:Connect(function()
@@ -1754,11 +1770,13 @@ MSSafetyTabBtn.MouseButton1Click:Connect(function()
     MSSafetyContent.Visible = true
     AutoSellContent.Visible = false
     clearSubButtons()
+    
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
     AutoSellTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
+    
     TPTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
@@ -1773,16 +1791,19 @@ AutoSellTabBtn.MouseButton1Click:Connect(function()
     MSSafetyContent.Visible = false
     AutoSellContent.Visible = true
     clearSubButtons()
+    
     TPTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoBuyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     MSSafetyTabBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
     AutoSellTabBtn.BackgroundColor3 = Color3.fromRGB(50,50,60)
+    
     TPTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSLoopTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoBuyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     MSSafetyTabBtn.TextColor3 = Color3.fromRGB(200,200,200)
     AutoSellTabBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    
     AutoSellInfo.Text = "Tools: " .. #getSellTools()
 end)
 
@@ -1790,7 +1811,7 @@ end)
 local minimized = false
 local openSize = UDim2.new(0,GUI_WIDTH,0,GUI_HEIGHT)
 local closedSize = UDim2.new(0,GUI_WIDTH,0,TITLE_HEIGHT + 4)
-local tween = TweenInfo.new(0.3)
+local tweenInfo = TweenInfo.new(0.3)
 
 MinBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
@@ -1802,9 +1823,9 @@ MinBtn.MouseButton1Click:Connect(function()
         AutoSellContent.Visible = false
         TabFrame.Visible = false
         MinBtn.Text = "□"
-        TweenService:Create(Frame, tween, {Size = closedSize}):Play()
+        TweenService:Create(Frame, tweenInfo, {Size = closedSize}):Play()
     else
-        TweenService:Create(Frame, tween, {Size = openSize}):Play()
+        TweenService:Create(Frame, tweenInfo, {Size = openSize}):Play()
         task.wait(0.3)
         TPContent.Visible = true
         TabFrame.Visible = true
@@ -1824,9 +1845,9 @@ UIS.InputBegan:Connect(function(input, gp)
             AutoSellContent.Visible = false
             TabFrame.Visible = false
             MinBtn.Text = "□"
-            TweenService:Create(Frame, tween, {Size = closedSize}):Play()
+            TweenService:Create(Frame, tweenInfo, {Size = closedSize}):Play()
         else
-            TweenService:Create(Frame, tween, {Size = openSize}):Play()
+            TweenService:Create(Frame, tweenInfo, {Size = openSize}):Play()
             task.wait(0.3)
             TPContent.Visible = true
             TabFrame.Visible = true
@@ -1838,32 +1859,33 @@ end)
 -- Initial Animation
 Frame.Size = UDim2.new(0,0,0,0)
 task.wait(0.1)
-TweenService:Create(Frame, tween, {Size = openSize}):Play()
+TweenService:Create(Frame, tweenInfo, {Size = openSize}):Play()
 
 -- Initial update
 task.wait(1)
-updateIndicators()
+updateBuyIndicators()
 setBuyAmount(10)
 
--- Status update
+-- Auto refresh status
 task.spawn(function()
     while true do
         task.wait(0.5)
         if isVehicleFrozen then
-            FreezeStatus.Text = "❄️ VEHICLE FREEZE: ACTIVE"
-            FreezeStatus.TextColor3 = Color3.fromRGB(255,100,100)
+            VehicleFreezeStatus.Text = "🚗 VEHICLE FREEZE: ACTIVE"
+            VehicleFreezeStatus.TextColor3 = Color3.fromRGB(255,100,100)
         else
-            FreezeStatus.Text = "❄️ VEHICLE FREEZE: INACTIVE"
-            FreezeStatus.TextColor3 = Color3.fromRGB(100,255,100)
+            VehicleFreezeStatus.Text = "🚗 VEHICLE FREEZE: INACTIVE"
+            VehicleFreezeStatus.TextColor3 = Color3.fromRGB(100,255,100)
         end
     end
 end)
 
+-- Auto refresh
 task.spawn(function()
     while true do
         task.wait(2)
         if MSLoopContent.Visible or AutoBuyContent.Visible then
-            updateIndicators()
+            updateBuyIndicators()
         end
         if AutoSellContent.Visible then
             AutoSellInfo.Text = "Tools: " .. #getSellTools()
@@ -1871,7 +1893,7 @@ task.spawn(function()
     end
 end)
 
--- Notifikasi
+-- Notifikasi custom respawn aktif
 task.wait(2)
 local notif = Instance.new("TextLabel")
 notif.Parent = player.PlayerGui

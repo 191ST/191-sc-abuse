@@ -301,53 +301,39 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FREEZE KENDARAAN (HEARTBEAT) ==========
+-- ========== FREEZE KENDARAAN (ANCHOR SEMUA PART) ==========
 local isVehicleFrozen = false
 local frozenVehicle = nil
-local frozenCFrame = nil
-local freezeConnection = nil
+local frozenParts = {}
 
 local function stopVehicleFreeze()
-    if freezeConnection then
-        freezeConnection:Disconnect()
-        freezeConnection = nil
+    for _, part in ipairs(frozenParts) do
+        if part and part.Parent then
+            part.Anchored = false
+        end
     end
+    frozenParts = {}
     isVehicleFrozen = false
     frozenVehicle = nil
-    frozenCFrame = nil
 end
 
-local function startVehicleFreeze(vehicle, cframe)
+local function startVehicleFreeze(vehicle)
     stopVehicleFreeze()
     frozenVehicle = vehicle
-    frozenCFrame = cframe
-    freezeConnection = RunService.Heartbeat:Connect(function()
-        if frozenVehicle and frozenVehicle.Parent then
-            if frozenVehicle.PrimaryPart then
-                frozenVehicle:SetPrimaryPartCFrame(frozenCFrame)
-            else
-                local anchor = frozenVehicle:FindFirstChildOfClass("VehicleSeat") or frozenVehicle:FindFirstChildOfClass("BasePart")
-                if anchor then
-                    anchor.CFrame = frozenCFrame
-                end
-            end
-            for _, part in ipairs(frozenVehicle:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    pcall(function()
-                        part.AssemblyLinearVelocity = Vector3.zero
-                        part.AssemblyAngularVelocity = Vector3.zero
-                    end)
-                end
-            end
-        else
-            stopVehicleFreeze()
+    
+    -- Anchor SEMUA BasePart di dalam kendaraan (termasuk ban)
+    for _, part in ipairs(vehicle:GetDescendants()) do
+        if part:IsA("BasePart") and not part.Anchored then
+            table.insert(frozenParts, part)
+            part.Anchored = true
+            pcall(function()
+                part.AssemblyLinearVelocity = Vector3.zero
+                part.AssemblyAngularVelocity = Vector3.zero
+            end)
         end
-    end)
+    end
+    
     isVehicleFrozen = true
-end
-
-local function unfreezeVehicle()
-    stopVehicleFreeze()
 end
 
 -- ========== TELEPORT FUNCTION ==========

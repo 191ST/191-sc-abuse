@@ -312,7 +312,7 @@ local function clearSubButtons()
     activeApartIndex = nil
 end
 
--- ========== FUNGSI FREEZE KENDARAAN (PAKAI HEARTBEAT) ==========
+-- ========== FUNGSI FREEZE KENDARAAN ==========
 local isVehicleFrozen = false
 local frozenVehicleCFrame = nil
 local freezeConnection = nil
@@ -408,7 +408,7 @@ end
 -- ========== SAFE ZONE ==========
 local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
 
--- ========== HP MONITORING & AUTO SAFE TELEPORT ==========
+-- ========== HP MONITORING & AUTO SAFE TELEPORT (DIREWRITE) ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalPosition = nil
@@ -435,7 +435,8 @@ if player.Character then
 end
 player.CharacterAdded:Connect(onCharacterAdded)
 
-local function teleportToSafeZoneAndSave()
+-- Fungsi teleport ke safe zone (pakai teleportToPosition)
+local function goToSafeZone()
     local character = player.Character
     if not character then return false end
     
@@ -446,28 +447,14 @@ local function teleportToSafeZoneAndSave()
     originalPosition = hrp.CFrame
     
     -- Teleport ke safe zone
-    local hum = character:FindFirstChildOfClass("Humanoid")
-    if hum and hum.SeatPart then
-        local vehicle = hum.SeatPart:FindFirstAncestorOfClass("Model")
-        if vehicle then
-            if vehicle.PrimaryPart then
-                vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
-            else
-                local anchor = vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
-                if anchor then
-                    anchor.CFrame = SAFE_ZONE_CFRAME
-                end
-            end
-        end
-    else
-        hrp.CFrame = SAFE_ZONE_CFRAME
-    end
+    teleportToPosition(SAFE_ZONE_CFRAME, false)
     
     isInSafeZone = true
     return true
 end
 
-local function returnToOriginalAndFreeze()
+-- Fungsi kembali ke original
+local function goBackToOriginal()
     if originalPosition then
         teleportToPosition(originalPosition, true)
         originalPosition = nil
@@ -476,6 +463,7 @@ local function returnToOriginalAndFreeze()
     isWaitingForReturn = false
 end
 
+-- Timer 8 detik
 local function startReturnTimer()
     if safeZoneTimerThread then
         task.cancel(safeZoneTimerThread)
@@ -484,15 +472,18 @@ local function startReturnTimer()
     safeZoneTimerThread = task.spawn(function()
         task.wait(8)
         if isInSafeZone and hpMonitoringActive then
-            returnToOriginalAndFreeze()
+            goBackToOriginal()
         end
         safeZoneTimerThread = nil
     end)
 end
 
+-- Cek kesehatan
 local function checkHealthAndTeleport()
     if not hpMonitoringActive then return end
     if isWaitingForReturn then return end
+    if isInSafeZone then return end
+    
     if not currentHumanoid or currentHumanoid.Parent == nil then
         local character = player.Character
         if character then
@@ -508,9 +499,8 @@ local function checkHealthAndTeleport()
         local currentPercent = (currentHealth / maxHealth) * 100
         
         -- Jika kena hit (HP turun)
-        if currentPercent < lastHealthPercent and not isInSafeZone then
-            -- Teleport ke safe zone
-            if teleportToSafeZoneAndSave() then
+        if currentPercent < lastHealthPercent then
+            if goToSafeZone() then
                 isWaitingForReturn = true
                 startReturnTimer()
             end
@@ -555,7 +545,7 @@ local function stopHPMonitoring()
     end
     
     if isInSafeZone then
-        returnToOriginalAndFreeze()
+        goBackToOriginal()
     end
     
     isInSafeZone = false

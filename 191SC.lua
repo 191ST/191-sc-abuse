@@ -52,25 +52,34 @@ Frame.ClipsDescendants = true
 
 local Corner = Instance.new("UICorner")
 Corner.Parent = Frame
-Corner.CornerRadius = UDim.new(0, 14)
+Corner.CornerRadius = UDim.new(0, 12)
 
--- Garis border penuh (stroke)
-local BorderStroke = Instance.new("UIStroke")
-BorderStroke.Parent = Frame
-BorderStroke.Color = Color3.fromRGB(100, 150, 255)
-BorderStroke.Thickness = 2
-BorderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+-- Garis samping kiri
+local LeftLine = Instance.new("Frame")
+LeftLine.Parent = Frame
+LeftLine.Size = UDim2.new(0, 2, 1, -20)
+LeftLine.Position = UDim2.new(0, 6, 0, 10)
+LeftLine.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+LeftLine.BorderSizePixel = 0
 
--- Garis animasi di dalam border (efek neon)
-local GlowLine = Instance.new("Frame")
-GlowLine.Parent = Frame
-GlowLine.Size = UDim2.new(1, -4, 0, 2)
-GlowLine.Position = UDim2.new(0, 2, 0, TITLE_HEIGHT)
-GlowLine.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
-GlowLine.BorderSizePixel = 0
+-- Garis samping kanan
+local RightLine = Instance.new("Frame")
+RightLine.Parent = Frame
+RightLine.Size = UDim2.new(0, 2, 1, -20)
+RightLine.Position = UDim2.new(1, -8, 0, 10)
+RightLine.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+RightLine.BorderSizePixel = 0
+
+-- Garis animasi horizontal
+local AnimatedLine = Instance.new("Frame")
+AnimatedLine.Parent = Frame
+AnimatedLine.Size = UDim2.new(1, 0, 0, 2)
+AnimatedLine.Position = UDim2.new(0, 0, 0, TITLE_HEIGHT)
+AnimatedLine.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+AnimatedLine.BorderSizePixel = 0
 
 local LineGradient = Instance.new("UIGradient")
-LineGradient.Parent = GlowLine
+LineGradient.Parent = AnimatedLine
 LineGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 150, 255)),
     ColorSequenceKeypoint.new(0.3, Color3.fromRGB(180, 210, 255)),
@@ -79,7 +88,6 @@ LineGradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 150, 255))
 }
 
--- Animasi garis bergerak
 task.spawn(function()
     local offset = 0
     while true do
@@ -107,7 +115,6 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 15
 
--- Sticker custom
 local Sticker = Instance.new("ImageLabel")
 Sticker.Parent = TitleBar
 Sticker.Size = UDim2.new(0, 22, 0, 22)
@@ -193,10 +200,10 @@ MSLoopTabBtn.Parent = TabFrame
 MSLoopTabBtn.Size = UDim2.new(0.2, -2, 1, -4)
 MSLoopTabBtn.Position = UDim2.new(0.2, 0, 0, 2)
 MSLoopTabBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
-MSLoopTabBtn.Text = "🔄 AUTO MS"
+MSLoopTabBtn.Text = "🔄 MS Loop"
 MSLoopTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 MSLoopTabBtn.Font = Enum.Font.GothamBold
-MSLoopTabBtn.TextSize = 11
+MSLoopTabBtn.TextSize = 10
 
 local AutoBuyTabBtn = Instance.new("TextButton")
 AutoBuyTabBtn.Parent = TabFrame
@@ -299,31 +306,26 @@ local LOCATIONS = {
     {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76), desc = "Rumah Sakit", hasSub = false},
 }
 
--- ========== SUB LOKASI APARTEMEN (TANPA BAWAH POT) ==========
+-- ========== SUB LOKASI APARTEMEN (HANYA APART NORMAL, BAWAH POT DIHAPUS) ==========
 local APART_SUB_LOCATIONS = {
     [1] = {
         {name = "APART 1", pos = CFrame.new(1137.992, 8.932, 449.753), freeze = false},
-        -- BAWAH POT DIHAPUS
+        -- BAWAH POT SUDAH DIHAPUS
     },
     [2] = {
         {name = "APART 2", pos = CFrame.new(1139.174, 8.932, 420.556), freeze = false},
-        -- BAWAH POT DIHAPUS
     },
     [3] = {
         {name = "APART 3", pos = CFrame.new(984.856, 8.932, 247.280), freeze = false},
-        -- BAWAH POT DIHAPUS
     },
     [4] = {
         {name = "APART 4", pos = CFrame.new(988.311, 8.932, 221.664), freeze = false},
-        -- BAWAH POT DIHAPUS
     },
     [5] = {
         {name = "APART 5", pos = CFrame.new(923.954, 8.932, 42.202), freeze = false},
-        -- BAWAH POT DIHAPUS
     },
     [6] = {
         {name = "APART 6", pos = CFrame.new(894.721, 8.932, 41.928), freeze = false},
-        -- BAWAH POT DIHAPUS
     },
 }
 
@@ -749,13 +751,13 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- ========== AUTO MS CONTENT ==========
+-- ========== MS LOOP CONTENT ==========
 local MSLoopTitle = Instance.new("TextLabel")
 MSLoopTitle.Parent = MSLoopContent
 MSLoopTitle.Size = UDim2.new(1, -16, 0, 22)
 MSLoopTitle.Position = UDim2.new(0, 8, 0, 5)
 MSLoopTitle.BackgroundTransparency = 1
-MSLoopTitle.Text = "🔄 AUTO MS (AUTO TOOLS)"
+MSLoopTitle.Text = "🔄 MS LOOP (AUTO TOOLS)"
 MSLoopTitle.TextColor3 = Color3.fromRGB(100, 255, 100)
 MSLoopTitle.TextXAlignment = Enum.TextXAlignment.Left
 MSLoopTitle.Font = Enum.Font.GothamBold
@@ -766,7 +768,7 @@ MSLoopStatus.Parent = MSLoopContent
 MSLoopStatus.Size = UDim2.new(1, -16, 0, 28)
 MSLoopStatus.Position = UDim2.new(0, 8, 0, 30)
 MSLoopStatus.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
-MSLoopStatus.Text = "⏹️ AUTO STOPPED"
+MSLoopStatus.Text = "⏹️ LOOP STOPPED"
 MSLoopStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
 MSLoopStatus.Font = Enum.Font.GothamBold
 MSLoopStatus.TextSize = 11
@@ -790,7 +792,7 @@ BuyIndicatorTitle.Parent = BuyIndicatorFrame
 BuyIndicatorTitle.Size = UDim2.new(1, -12, 0, 18)
 BuyIndicatorTitle.Position = UDim2.new(0, 6, 0, 4)
 BuyIndicatorTitle.BackgroundTransparency = 1
-BuyIndicatorTitle.Text = "📊 TOTAL BISA MASAK"
+BuyIndicatorTitle.Text = "🛒 INDIKATOR STOK"
 BuyIndicatorTitle.TextColor3 = Color3.fromRGB(255, 255, 100)
 BuyIndicatorTitle.TextXAlignment = Enum.TextXAlignment.Left
 BuyIndicatorTitle.Font = Enum.Font.GothamBold
@@ -801,44 +803,44 @@ BisaMasak.Parent = BuyIndicatorFrame
 BisaMasak.Size = UDim2.new(1, -12, 0, 30)
 BisaMasak.Position = UDim2.new(0, 6, 0, 24)
 BisaMasak.BackgroundTransparency = 1
-BisaMasak.Text = "🍳 0"
+BisaMasak.Text = "🍳 BISA MASAK: 0"
 BisaMasak.TextColor3 = Color3.fromRGB(255, 255, 255)
 BisaMasak.TextXAlignment = Enum.TextXAlignment.Left
 BisaMasak.Font = Enum.Font.GothamBold
-BisaMasak.TextSize = 16
+BisaMasak.TextSize = 13
 
 local WaterIndicator = Instance.new("TextLabel")
 WaterIndicator.Parent = BuyIndicatorFrame
-WaterIndicator.Size = UDim2.new(0.33, -8, 0, 18)
-WaterIndicator.Position = UDim2.new(0, 6, 0, 56)
+WaterIndicator.Size = UDim2.new(0.33, -8, 0, 16)
+WaterIndicator.Position = UDim2.new(0, 6, 0, 58)
 WaterIndicator.BackgroundTransparency = 1
-WaterIndicator.Text = "💧 0"
+WaterIndicator.Text = "💧 WATER: 0"
 WaterIndicator.TextColor3 = Color3.fromRGB(200, 200, 200)
 WaterIndicator.TextXAlignment = Enum.TextXAlignment.Left
 WaterIndicator.Font = Enum.Font.GothamBold
-WaterIndicator.TextSize = 10
+WaterIndicator.TextSize = 9
 
 local SugarIndicator = Instance.new("TextLabel")
 SugarIndicator.Parent = BuyIndicatorFrame
-SugarIndicator.Size = UDim2.new(0.33, -8, 0, 18)
-SugarIndicator.Position = UDim2.new(0.33, 2, 0, 56)
+SugarIndicator.Size = UDim2.new(0.33, -8, 0, 16)
+SugarIndicator.Position = UDim2.new(0.33, 2, 0, 58)
 SugarIndicator.BackgroundTransparency = 1
-SugarIndicator.Text = "🍚 0"
+SugarIndicator.Text = "🍚 SUGAR: 0"
 SugarIndicator.TextColor3 = Color3.fromRGB(200, 200, 200)
 SugarIndicator.TextXAlignment = Enum.TextXAlignment.Left
 SugarIndicator.Font = Enum.Font.GothamBold
-SugarIndicator.TextSize = 10
+SugarIndicator.TextSize = 9
 
 local GelatinIndicator = Instance.new("TextLabel")
 GelatinIndicator.Parent = BuyIndicatorFrame
-GelatinIndicator.Size = UDim2.new(0.33, -8, 0, 18)
-GelatinIndicator.Position = UDim2.new(0.66, 4, 0, 56)
+GelatinIndicator.Size = UDim2.new(0.33, -8, 0, 16)
+GelatinIndicator.Position = UDim2.new(0.66, 4, 0, 58)
 GelatinIndicator.BackgroundTransparency = 1
-GelatinIndicator.Text = "🧪 0"
+GelatinIndicator.Text = "🧪 GELATIN: 0"
 GelatinIndicator.TextColor3 = Color3.fromRGB(200, 200, 200)
 GelatinIndicator.TextXAlignment = Enum.TextXAlignment.Left
 GelatinIndicator.Font = Enum.Font.GothamBold
-GelatinIndicator.TextSize = 10
+GelatinIndicator.TextSize = 9
 
 local MSLoopStepLabel = Instance.new("TextLabel")
 MSLoopStepLabel.Parent = MSLoopContent
@@ -1248,9 +1250,9 @@ local function updateBuyIndicators()
     local sugarCount = countTools("sugar")
     local gelatinCount = countTools("gelatin")
     
-    WaterIndicator.Text = "💧 " .. waterCount
-    SugarIndicator.Text = "🍚 " .. sugarCount
-    GelatinIndicator.Text = "🧪 " .. gelatinCount
+    WaterIndicator.Text = "💧 WATER: " .. waterCount
+    SugarIndicator.Text = "🍚 SUGAR: " .. sugarCount
+    GelatinIndicator.Text = "🧪 GELATIN: " .. gelatinCount
     
     if waterCount > 0 then WaterIndicator.TextColor3 = Color3.fromRGB(100, 200, 255)
     else WaterIndicator.TextColor3 = Color3.fromRGB(200, 200, 200) end
@@ -1262,7 +1264,7 @@ local function updateBuyIndicators()
     else GelatinIndicator.TextColor3 = Color3.fromRGB(200, 200, 200) end
     
     local bisaMasak = math.min(waterCount, sugarCount, gelatinCount)
-    BisaMasak.Text = "🍳 " .. bisaMasak
+    BisaMasak.Text = "🍳 BISA MASAK: " .. bisaMasak
     if bisaMasak >= 3 then BisaMasak.TextColor3 = Color3.fromRGB(100, 255, 100)
     elseif bisaMasak >= 1 then BisaMasak.TextColor3 = Color3.fromRGB(255, 255, 100)
     else BisaMasak.TextColor3 = Color3.fromRGB(200, 200, 200) end
@@ -1389,7 +1391,7 @@ local function startMSLoop()
     if loopRunning then return end
     
     loopRunning = true
-    MSLoopStatus.Text = "▶️ AUTO RUNNING"
+    MSLoopStatus.Text = "▶️ LOOP RUNNING"
     MSLoopStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
     HPSafeStatus.Text = "🛡️ HP SAFE: ACTIVE"
     HPSafeStatus.TextColor3 = Color3.fromRGB(100, 255, 100)
@@ -1483,7 +1485,7 @@ local function startMSLoop()
         end
         
         loopRunning = false
-        MSLoopStatus.Text = "⏹️ AUTO STOPPED"
+        MSLoopStatus.Text = "⏹️ LOOP STOPPED"
         MSLoopStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
         MSLoopStepLabel.Text = "Step: Stopped"
         MSLoopTimer.Text = "Timer: 0s"
@@ -1889,7 +1891,9 @@ MinBtn.MouseButton1Click:Connect(function()
         AutoSellContent.Visible = false
         TabFrame.Visible = false
         RightPanel.Visible = false
-        GlowLine.Visible = false
+        AnimatedLine.Visible = false
+        LeftLine.Visible = false
+        RightLine.Visible = false
         MinBtn.Text = "□"
         TweenService:Create(Frame, tweenInfo, {Size = closedSize}):Play()
     else
@@ -1898,7 +1902,9 @@ MinBtn.MouseButton1Click:Connect(function()
         TPContent.Visible = true
         TabFrame.Visible = true
         RightPanel.Visible = true
-        GlowLine.Visible = true
+        AnimatedLine.Visible = true
+        LeftLine.Visible = true
+        RightLine.Visible = true
         MinBtn.Text = "−"
     end
 end)
@@ -1915,7 +1921,9 @@ UIS.InputBegan:Connect(function(input, gp)
             AutoSellContent.Visible = false
             TabFrame.Visible = false
             RightPanel.Visible = false
-            GlowLine.Visible = false
+            AnimatedLine.Visible = false
+            LeftLine.Visible = false
+            RightLine.Visible = false
             MinBtn.Text = "□"
             TweenService:Create(Frame, tweenInfo, {Size = closedSize}):Play()
         else
@@ -1924,7 +1932,9 @@ UIS.InputBegan:Connect(function(input, gp)
             TPContent.Visible = true
             TabFrame.Visible = true
             RightPanel.Visible = true
-            GlowLine.Visible = true
+            AnimatedLine.Visible = true
+            LeftLine.Visible = true
+            RightLine.Visible = true
             MinBtn.Text = "−"
         end
     end

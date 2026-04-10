@@ -132,6 +132,282 @@ local function vehicleTeleport(cf)
     seat.Throttle = 0
 end
 
+local function stepTeleport(targetPos)
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not char or not hum then return end
+    local seatPart = hum.SeatPart
+    if seatPart then
+        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
+        if vehicle then
+            if vehicle.PrimaryPart then
+                vehicle:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 2, 0)))
+            end
+        end
+    else
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Anchored = true
+            hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+            task.wait(0.05)
+            hrp.Anchored = false
+        end
+    end
+end
+
+-- ============================================================
+-- AUTO FULLY CONFIG
+-- ============================================================
+local CFG = {
+    WATER_WAIT = 20,
+    COOK_WAIT = 46,
+    ITEM_WATER = "Water",
+    ITEM_SUGAR = "Sugar Block Bag",
+    ITEM_GEL = "Gelatin",
+    ITEM_EMPTY = "Empty Bag",
+    ITEM_MS_SMALL = "Small Marshmallow Bag",
+    ITEM_MS_MEDIUM = "Medium Marshmallow Bag",
+    ITEM_MS_LARGE = "Large Marshmallow Bag",
+    SELL_RADIUS = 10,
+}
+
+local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
+
+local function hasAllIngredients()
+    return countItem(CFG.ITEM_WATER) >= 1
+        and countItem(CFG.ITEM_SUGAR) >= 1
+        and countItem(CFG.ITEM_GEL) >= 1
+end
+
+local function countAllMS()
+    return countItem(CFG.ITEM_MS_SMALL) + countItem(CFG.ITEM_MS_MEDIUM) + countItem(CFG.ITEM_MS_LARGE)
+end
+
+local function getEquippableMS()
+    if countItem(CFG.ITEM_MS_SMALL) > 0 then return CFG.ITEM_MS_SMALL end
+    if countItem(CFG.ITEM_MS_MEDIUM) > 0 then return CFG.ITEM_MS_MEDIUM end
+    if countItem(CFG.ITEM_MS_LARGE) > 0 then return CFG.ITEM_MS_LARGE end
+    return nil
+end
+
+local function firePromptNearby(radius)
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") then
+            local part = obj.Parent
+            if part and part:IsA("BasePart") then
+                if (root.Position - part.Position).Magnitude <= (radius or 8) then
+                    pcall(function()
+                        if fireproximityprompt then
+                            fireproximityprompt(obj)
+                        else
+                            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                            task.wait(0.1)
+                            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                        end
+                    end)
+                end
+            end
+        end
+    end
+end
+
+local function doAutoSell(setStatusFunc)
+    local msTotal = countAllMS()
+    if msTotal == 0 then
+        if setStatusFunc then setStatusFunc("Tidak ada MS", Color3.fromRGB(160,160,180)) end
+        return
+    end
+    if setStatusFunc then setStatusFunc("Menjual " .. msTotal .. " MS...", Color3.fromRGB(50,210,110)) end
+    task.wait(0.3)
+
+    local sold = 0
+    local maxFail = 5
+    local failStreak = 0
+
+    while countAllMS() > 0 do
+        local msName = getEquippableMS()
+        if not msName then break end
+
+        local ok = equip(msName)
+        if not ok then
+            failStreak = failStreak + 1
+            if setStatusFunc then setStatusFunc("Gagal equip (" .. failStreak .. "/" .. maxFail .. ")", Color3.fromRGB(210,40,40)) end
+            task.wait(1)
+            if failStreak >= maxFail then break end
+            continue
+        end
+
+        local bS = countItem(CFG.ITEM_MS_SMALL)
+        local bM = countItem(CFG.ITEM_MS_MEDIUM)
+        local bL = countItem(CFG.ITEM_MS_LARGE)
+        task.wait(0.2)
+        
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.15)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        task.wait(0.3)
+        firePromptNearby(CFG.SELL_RADIUS)
+        task.wait(0.3)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.15)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+
+        local elapsed = 0
+        local terjual = false
+        while elapsed < 10 do
+            local diff = (bS - countItem(CFG.ITEM_MS_SMALL))
+                + (bM - countItem(CFG.ITEM_MS_MEDIUM))
+                + (bL - countItem(CFG.ITEM_MS_LARGE))
+            if diff > 0 then
+                sold = sold + diff
+                terjual = true
+                failStreak = 0
+                break
+            end
+            task.wait(0.3)
+            elapsed = elapsed + 0.3
+        end
+
+        if terjual then
+            if setStatusFunc then setStatusFunc("Terjual " .. sold .. " | Sisa: " .. countAllMS(), Color3.fromRGB(50,210,110)) end
+            task.wait(0.2)
+        else
+            failStreak = failStreak + 1
+            if setStatusFunc then setStatusFunc("Tidak terjual (" .. failStreak .. "/" .. maxFail .. ")", Color3.fromRGB(255,155,35)) end
+            task.wait(1.2)
+            if failStreak >= maxFail then
+                if setStatusFunc then setStatusFunc("Gagal. Dekati NPC!", Color3.fromRGB(210,40,40)) end
+                break
+            end
+        end
+    end
+
+    if sold > 0 then
+        if setStatusFunc then setStatusFunc("Terjual " .. sold .. " MS", Color3.fromRGB(50,210,110)) end
+    else
+        if setStatusFunc then setStatusFunc("Tidak ada MS terjual", Color3.fromRGB(255,155,35)) end
+    end
+    task.wait(1)
+end
+
+local function doAutoBuy(setStatusFunc, overrideQty)
+    if not storePurchaseRE then
+        if setStatusFunc then setStatusFunc("Remote tidak ada!", Color3.fromRGB(210,40,40)) end
+        return
+    end
+
+    local BUY_ITEMS = {"Gelatin", "Sugar Block Bag", "Water"}
+    local totalBought = 0
+    local qty = overrideQty or 5
+
+    for _, itemName in ipairs(BUY_ITEMS) do
+        if setStatusFunc then setStatusFunc("Beli " .. itemName .. " x" .. qty .. "...", Color3.fromRGB(100,180,255)) end
+
+        local before = countItem(itemName)
+        for i = 1, qty do
+            pcall(function()
+                storePurchaseRE:FireServer(itemName, 1)
+            end)
+            task.wait(0.4)
+        end
+
+        local timeout = 0
+        local gained = 0
+        repeat
+            task.wait(0.2)
+            timeout = timeout + 0.2
+            gained = countItem(itemName) - before
+        until gained >= qty or timeout > 6
+
+        if gained < qty then
+            local missing = qty - gained
+            if setStatusFunc then setStatusFunc("Retry " .. missing .. " " .. itemName, Color3.fromRGB(255,160,40)) end
+            for i = 1, missing do
+                pcall(function() storePurchaseRE:FireServer(itemName, 1) end)
+                task.wait(0.5)
+            end
+            timeout = 0
+            repeat
+                task.wait(0.2)
+                timeout = timeout + 0.2
+                gained = countItem(itemName) - before
+            until gained >= qty or timeout > 5
+        end
+
+        totalBought = totalBought + gained
+    end
+
+    if setStatusFunc then setStatusFunc("Beli selesai! " .. totalBought .. " item", Color3.fromRGB(80,220,130)) end
+    task.wait(1)
+end
+
+local function doOneCook(setStatusFunc)
+    local snapS = countItem(CFG.ITEM_MS_SMALL)
+    local snapM = countItem(CFG.ITEM_MS_MEDIUM)
+    local snapL = countItem(CFG.ITEM_MS_LARGE)
+
+    if setStatusFunc then setStatusFunc("Masukkan Water...", Color3.fromRGB(100,180,255)) end
+    equip(CFG.ITEM_WATER)
+    task.wait(0.2)
+    firePromptNearby(8)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    firePromptNearby(8)
+
+    for i = 20, 1, -1 do
+        if setStatusFunc then setStatusFunc("💧 Mendidih... " .. i .. "s", Color3.fromRGB(80,150,255)) end
+        task.wait(1)
+    end
+
+    if setStatusFunc then setStatusFunc("Masukkan Sugar...", Color3.fromRGB(255,220,100)) end
+    equip(CFG.ITEM_SUGAR)
+    task.wait(0.2)
+    firePromptNearby(8)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+
+    if setStatusFunc then setStatusFunc("Masukkan Gelatin...", Color3.fromRGB(255,200,50)) end
+    equip(CFG.ITEM_GEL)
+    task.wait(0.2)
+    firePromptNearby(8)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+
+    for i = 46, 1, -1 do
+        if setStatusFunc then setStatusFunc("🔥 Memasak... " .. i .. "s", Color3.fromRGB(80,140,255)) end
+        task.wait(1)
+    end
+
+    if setStatusFunc then setStatusFunc("Ambil Marshmallow...", Color3.fromRGB(100,180,255)) end
+    equip(CFG.ITEM_EMPTY)
+    task.wait(0.2)
+    firePromptNearby(8)
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(0.1)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+
+    local waitMS = 0
+    local newS, newM, newL
+    repeat
+        task.wait(0.3)
+        waitMS = waitMS + 0.3
+        newS = countItem(CFG.ITEM_MS_SMALL) - snapS
+        newM = countItem(CFG.ITEM_MS_MEDIUM) - snapM
+        newL = countItem(CFG.ITEM_MS_LARGE) - snapL
+    until (newS > 0 or newM > 0 or newL > 0) or waitMS > 8
+
+    return true
+end
+
 -- ============================================================
 -- GUI SETUP
 -- ============================================================
@@ -142,7 +418,7 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ============================================================
--- COLOR PALETTE
+-- COLOR PALETTE (BIRU & HITAM)
 -- ============================================================
 local C = {
     bg        = Color3.fromRGB(8,  8,  16),
@@ -287,11 +563,12 @@ local currentTab = nil
 
 local tabDefs = {
     {label = "AUTO",     order = 1},
-    {label = "TP",       order = 2},
-    {label = "MS POT",   order = 3},
-    {label = "BUY",      order = 4},
-    {label = "SELL",     order = 5},
-    {label = "SETTINGS", order = 6},
+    {label = "FULLY",    order = 2},
+    {label = "TP",       order = 3},
+    {label = "MS POT",   order = 4},
+    {label = "BUY",      order = 5},
+    {label = "SELL",     order = 6},
+    {label = "SETTINGS", order = 7},
 }
 
 local function switchTab(name)
@@ -507,8 +784,62 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     return wrap, valLbl
 end
 
+local function makeStepper(parent, labelText, minV, maxV, defaultV, order, callback)
+    local wrap = card(parent, 50, order)
+
+    local lbl = Instance.new("TextLabel", wrap)
+    lbl.Position = UDim2.new(0, 12, 0, 8)
+    lbl.Size = UDim2.new(0.5, 0, 0, 20)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = labelText
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextSize = 11
+    lbl.TextColor3 = C.textMid
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextStrokeTransparency = 1
+
+    local valLbl = Instance.new("TextLabel", wrap)
+    valLbl.Position = UDim2.new(0.5, 0, 0, 8)
+    valLbl.Size = UDim2.new(0, 50, 0, 20)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = tostring(defaultV)
+    valLbl.Font = Enum.Font.GothamBold
+    valLbl.TextSize = 13
+    valLbl.TextColor3 = C.accentGlow
+    valLbl.TextXAlignment = Enum.TextXAlignment.Center
+    valLbl.TextStrokeTransparency = 1
+
+    local minusBtn = makeActionBtn(wrap, "-", C.accentDim, nil)
+    minusBtn.Size = UDim2.new(0, 36, 0, 30)
+    minusBtn.Position = UDim2.new(0.7, 0, 0.5, -15)
+    minusBtn.TextSize = 16
+
+    local plusBtn = makeActionBtn(wrap, "+", C.accentDim, nil)
+    plusBtn.Size = UDim2.new(0, 36, 0, 30)
+    plusBtn.Position = UDim2.new(0.85, 0, 0.5, -15)
+    plusBtn.TextSize = 16
+
+    local currentVal = defaultV
+
+    local function updateVal(newVal)
+        currentVal = math.clamp(newVal, minV, maxV)
+        valLbl.Text = tostring(currentVal)
+        if callback then callback(currentVal) end
+    end
+
+    minusBtn.MouseButton1Click:Connect(function()
+        updateVal(currentVal - 1)
+    end)
+
+    plusBtn.MouseButton1Click:Connect(function()
+        updateVal(currentVal + 1)
+    end)
+
+    return function() return currentVal end
+end
+
 -- ============================================================
--- AUTO PAGE (MS LOOP dengan logic Elixir)
+-- AUTO PAGE (MS Loop)
 -- ============================================================
 local ap = pages["AUTO"]
 
@@ -553,46 +884,61 @@ timerLbl.TextStrokeTransparency = 1
 local msStartBtn = makeActionBtn(ap, "▶️ START MS LOOP", C.green, 5)
 local msStopBtn = makeActionBtn(ap, "⏹️ STOP MS LOOP", C.red, 6)
 
--- ========== AUTO MS LOGIC (dari Elixir FARM) ==========
-local running = false
+-- AUTO MS LOGIC
+local msRunning = false
 
 local function msLoop()
-    while running do
+    while msRunning do
         if equip("Water") then
             stepLbl.Text = "Cooking Water..."
-            timerLbl.Text = "Timer: 20s"
-            holdE(0.7)
-            task.wait(20)
+            for i = 20, 1, -1 do
+                if not msRunning then break end
+                timerLbl.Text = "Timer: " .. i .. "/20s"
+                task.wait(1)
+            end
         end
+        if not msRunning then break end
+        
         if equip("Sugar Block Bag") then
             stepLbl.Text = "Cooking Sugar..."
-            timerLbl.Text = "Timer: 1s"
             holdE(0.7)
+            timerLbl.Text = "Timer: 1s"
             task.wait(1)
         end
+        if not msRunning then break end
+        
         if equip("Gelatin") then
             stepLbl.Text = "Cooking Gelatin..."
-            timerLbl.Text = "Timer: 1s"
             holdE(0.7)
+            timerLbl.Text = "Timer: 1s"
             task.wait(1)
         end
+        if not msRunning then break end
+        
         stepLbl.Text = "Waiting for Bag..."
-        timerLbl.Text = "Timer: 45s"
-        task.wait(45)
+        for i = 45, 1, -1 do
+            if not msRunning then break end
+            timerLbl.Text = "Timer: " .. i .. "/45s"
+            task.wait(1)
+        end
+        if not msRunning then break end
+        
         if equip("Empty Bag") then
             stepLbl.Text = "Collecting Result..."
-            timerLbl.Text = "Timer: 1s"
             holdE(0.7)
+            timerLbl.Text = "Timer: 1s"
             task.wait(1)
         end
+        if not msRunning then break end
+        
         stepLbl.Text = "Loop Complete! Restarting..."
         task.wait(2)
     end
 end
 
 msStartBtn.MouseButton1Click:Connect(function()
-    if not running then
-        running = true
+    if not msRunning then
+        msRunning = true
         msStartBtn.Text = "STOP MS LOOP"
         TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
         msStatusLbl.Text = "▶️ RUNNING"
@@ -602,13 +948,146 @@ msStartBtn.MouseButton1Click:Connect(function()
 end)
 
 msStopBtn.MouseButton1Click:Connect(function()
-    running = false
+    msRunning = false
     msStartBtn.Text = "START MS LOOP"
     TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
     msStatusLbl.Text = "⏹️ STOPPED"
     msStatusLbl.TextColor3 = C.red
     stepLbl.Text = "Step: Stopped"
     timerLbl.Text = "Timer: 0s"
+end)
+
+-- ============================================================
+-- FULLY PAGE (Auto Fully)
+-- ============================================================
+local fullyPage = pages["FULLY"]
+
+sectionLabel(fullyPage, "Auto Fully (AFK Loop)", 1)
+
+local fullyInfoCard = card(fullyPage, 50, 2)
+local fullyInfoLbl = Instance.new("TextLabel", fullyInfoCard)
+fullyInfoLbl.Size = UDim2.new(1, -20, 1, 0)
+fullyInfoLbl.Position = UDim2.new(0, 12, 0, 0)
+fullyInfoLbl.BackgroundTransparency = 1
+fullyInfoLbl.Text = "Loop: Beli bahan → Masak di posisi terakhir → Jual → Ulangi sampai bahan habis"
+fullyInfoLbl.Font = Enum.Font.Gotham
+fullyInfoLbl.TextSize = 10
+fullyInfoLbl.TextColor3 = C.textMid
+fullyInfoLbl.TextXAlignment = Enum.TextXAlignment.Left
+fullyInfoLbl.TextWrapped = true
+fullyInfoLbl.TextStrokeTransparency = 1
+
+sectionLabel(fullyPage, "Setting", 3)
+
+local targetStepper = makeStepper(fullyPage, "Target MS per loop", 1, 50, 5, 4, nil)
+
+local fullyStatusCard = card(fullyPage, 40, 5)
+local fullyStatusLbl = Instance.new("TextLabel", fullyStatusCard)
+fullyStatusLbl.Size = UDim2.new(1, -20, 1, 0)
+fullyStatusLbl.Position = UDim2.new(0, 12, 0, 0)
+fullyStatusLbl.BackgroundTransparency = 1
+fullyStatusLbl.Text = "⏹️ STOPPED"
+fullyStatusLbl.Font = Enum.Font.GothamBold
+fullyStatusLbl.TextSize = 13
+fullyStatusLbl.TextColor3 = C.red
+fullyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+fullyStatusLbl.TextStrokeTransparency = 1
+
+local fullyStartBtn = makeActionBtn(fullyPage, "⚡ START FULLY", C.green, 6)
+local fullyStopBtn = makeActionBtn(fullyPage, "■ STOP FULLY", C.red, 7)
+
+-- FULLY LOGIC
+local fullyRunning = false
+local fullySavedPos = nil
+
+local function setFullyStatus(msg, color)
+    fullyStatusLbl.Text = msg
+    fullyStatusLbl.TextColor3 = color or C.textMid
+end
+
+fullyStartBtn.MouseButton1Click:Connect(function()
+    if fullyRunning then return end
+    
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        setFullyStatus("❌ Tidak bisa dapatkan posisi!", C.red)
+        return
+    end
+    fullySavedPos = hrp.Position
+    
+    fullyRunning = true
+    fullyStartBtn.Text = "RUNNING..."
+    TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
+    setFullyStatus("▶️ RUNNING", C.green)
+    
+    task.spawn(function()
+        while fullyRunning do
+            local target = targetStepper()
+            
+            -- 1. Teleport ke NPC
+            setFullyStatus("🏪 Teleport ke NPC...", Color3.fromRGB(100,180,255))
+            stepTeleport(NPC_MS_POS)
+            if not fullyRunning then break end
+            task.wait(1)
+            
+            -- 2. Beli bahan
+            setFullyStatus("🛒 Beli bahan untuk " .. target .. " MS...", Color3.fromRGB(100,180,255))
+            doAutoBuy(setFullyStatus, target)
+            if not fullyRunning then break end
+            task.wait(1)
+            
+            -- 3. Kembali ke posisi awal
+            if fullySavedPos then
+                setFullyStatus("🏠 Kembali ke posisi awal...", Color3.fromRGB(148,80,255))
+                stepTeleport(fullySavedPos)
+            end
+            if not fullyRunning then break end
+            task.wait(1)
+            
+            -- 4. Masak
+            setFullyStatus("🔥 Memasak " .. target .. " MS...", Color3.fromRGB(82,130,255))
+            local cooked = 0
+            while fullyRunning and cooked < target and hasAllIngredients() do
+                doOneCook(setFullyStatus)
+                cooked = cooked + 1
+                setFullyStatus("🔥 Memasak " .. cooked .. "/" .. target .. " MS", Color3.fromRGB(82,130,255))
+                if fullyRunning then task.wait(0.5) end
+            end
+            if not fullyRunning then break end
+            
+            setFullyStatus("✅ " .. cooked .. " MS selesai!", Color3.fromRGB(52,210,110))
+            task.wait(1)
+            
+            -- 5. Teleport ke NPC untuk jual
+            setFullyStatus("💰 Teleport ke NPC untuk jual...", Color3.fromRGB(52,210,110))
+            stepTeleport(NPC_MS_POS)
+            if not fullyRunning then break end
+            task.wait(1)
+            
+            -- 6. Jual
+            setFullyStatus("💰 Menjual MS...", Color3.fromRGB(52,210,110))
+            doAutoSell(setFullyStatus)
+            if not fullyRunning then break end
+            task.wait(1)
+            
+            setFullyStatus("🔄 Loop selesai! Memulai ulang...", Color3.fromRGB(100,180,255))
+            task.wait(2)
+        end
+        
+        fullyRunning = false
+        fullyStartBtn.Text = "START FULLY"
+        TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
+        setFullyStatus("⏹️ STOPPED", C.red)
+    end)
+end)
+
+fullyStopBtn.MouseButton1Click:Connect(function()
+    fullyRunning = false
+    msRunning = false
+    fullyStartBtn.Text = "START FULLY"
+    TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
+    setFullyStatus("⏹️ STOPPED", C.red)
 end)
 
 -- ============================================================
@@ -632,7 +1111,7 @@ local LOCATIONS = {
 for i, loc in ipairs(LOCATIONS) do
     local btn = makeActionBtn(tp, loc.name, C.card, i)
     btn.MouseButton1Click:Connect(function()
-        vehicleTeleport(CFrame.new(loc.pos))
+        stepTeleport(loc.pos)
     end)
 end
 
@@ -813,7 +1292,7 @@ local buyStopBtn = makeActionBtn(buyp, "⏹️ STOP BUY", C.red, 6)
 local autoBuyRunning = false
 local autoBuyTotalBought = 0
 
-local function startAutoBuy()
+local function startAutoBuy2()
     if autoBuyRunning then return end
     if not storePurchaseRE then
         buyStatusLbl.Text = "❌ Error!"
@@ -829,12 +1308,12 @@ local function startAutoBuy()
     buyStatusLbl.TextColor3 = C.green
     buyTotalLbl.Text = "Total: 0 item"
     
-    local BUY_ITEMS = {"Water", "Sugar Block Bag", "Gelatin"}
+    local BUY_ITEMS2 = {"Water", "Sugar Block Bag", "Gelatin"}
     
     task.spawn(function()
         local amount = buyAmount
         
-        for _, itemName in ipairs(BUY_ITEMS) do
+        for _, itemName in ipairs(BUY_ITEMS2) do
             if not autoBuyRunning then break end
             
             buyStatusLbl.Text = "🛒 Buying " .. itemName .. " x" .. amount
@@ -868,14 +1347,14 @@ local function startAutoBuy()
     end)
 end
 
-local function stopAutoBuy()
+local function stopAutoBuy2()
     autoBuyRunning = false
     buyStatusLbl.Text = "⏹️ STOPPED"
     buyStatusLbl.TextColor3 = C.red
 end
 
-buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
-buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
+buyStartBtn.MouseButton1Click:Connect(startAutoBuy2)
+buyStopBtn.MouseButton1Click:Connect(stopAutoBuy2)
 
 -- ============================================================
 -- SELL PAGE
@@ -940,7 +1419,7 @@ local function getSellTools()
     return tools
 end
 
-local function startAutoSell()
+local function startAutoSell2()
     if autoSellRunning then return end
     autoSellRunning = true
     autoSellCount = 0
@@ -978,15 +1457,15 @@ local function startAutoSell()
     end)
 end
 
-local function stopAutoSell()
+local function stopAutoSell2()
     autoSellRunning = false
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
     sellStatusLbl.Text = "⏹️ STOPPED"
     sellStatusLbl.TextColor3 = C.red
 end
 
-sellStartBtn.MouseButton1Click:Connect(startAutoSell)
-sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
+sellStartBtn.MouseButton1Click:Connect(startAutoSell2)
+sellStopBtn.MouseButton1Click:Connect(stopAutoSell2)
 
 -- ============================================================
 -- SETTINGS PAGE

@@ -1,3 +1,6 @@
+-- 191 STORE - FULL SCRIPT
+-- PASTI MUNCUL, PAKAI CoreGui
+
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
@@ -7,6 +10,16 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ContextActionService = game:GetService("ContextActionService")
 local VirtualUser = game:GetService("VirtualUser")
+
+-- HAPUS GUI LAMA
+pcall(function()
+    if game:GetService("CoreGui"):FindFirstChild("191_STORE") then
+        game:GetService("CoreGui")["191_STORE"]:Destroy()
+    end
+    if player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("191_STORE") then
+        player.PlayerGui["191_STORE"]:Destroy()
+    end
+end)
 
 -- ========== CUSTOM RESPAWN ==========
 local RESPAWN_POINT = CFrame.new(729.86, 3.71, 444.46) * CFrame.Angles(-3.14, 0.01, -3.14)
@@ -139,13 +152,19 @@ local function stepTeleport(targetPos)
 end
 
 -- ============================================================
--- GUI SETUP
+-- GUI SETUP (PASTI MUNCUL)
 -- ============================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "191_STORE"
-gui.Parent = playerGui
 gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = game:GetService("CoreGui")
+
+-- KALAU GAGAL PAKAI CoreGui, PAKAI PlayerGui
+if not gui.Parent then
+    gui.Parent = playerGui
+end
 
 -- ============================================================
 -- COLOR PALETTE
@@ -200,7 +219,6 @@ do
     fix.BackgroundColor3 = C.surface
     fix.BorderSizePixel = 0
 
-    -- GARIS DI SAMPING TITLE DIGANTI CENTANG
     local checkMark = Instance.new("TextLabel", topBar)
     checkMark.Size = UDim2.new(0, 20, 0, 20)
     checkMark.Position = UDim2.new(0, 16, 0.5, -10)
@@ -546,7 +564,7 @@ local function makeStatusRow(parent, label, order)
 end
 
 -- ============================================================
--- AUTO PAGE (MS LOOP)
+-- AUTO PAGE
 -- ============================================================
 local ap = pages["AUTO"]
 
@@ -583,13 +601,12 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- FUNGSI MASAK SEDERHANA
 local function cookProcess()
     pcall(function()
         equip("Water")
         holdE(0.7)
         for i = 20, 1, -1 do
-            if not msRunning and not fullyRunning then return end
+            if not msRunning then return end
             task.wait(1)
         end
         
@@ -602,7 +619,7 @@ local function cookProcess()
         task.wait(1)
         
         for i = 45, 1, -1 do
-            if not msRunning and not fullyRunning then return end
+            if not msRunning then return end
             task.wait(1)
         end
         
@@ -643,7 +660,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (FIXED STOP)
+-- FULLY PAGE
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -737,7 +754,6 @@ local function fullySell()
     return true
 end
 
--- FUNGSI MASAK UNTUK FULLY
 local function fullyCook()
     if not fullyRunning then return false end
     
@@ -774,15 +790,12 @@ local function fullyCook()
     return true
 end
 
--- LOOP FULLY
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
-        -- CEK SEBELUM BELI
         if not fullyRunning then break end
         
-        -- BELI
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -791,7 +804,6 @@ local function fullyLoop()
         fullyBuy(fullyTarget)
         if not fullyRunning then break end
         
-        -- KEMBALI KE APART
         if fullySavedPos then
             setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
@@ -801,7 +813,6 @@ local function fullyLoop()
         if not fullyRunning then break end
         updateFullyInventory()
         
-        -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
@@ -814,7 +825,6 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
-        -- JUAL
         setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -827,7 +837,6 @@ local function fullyLoop()
         task.wait(2)
     end
     
-    -- TAMAT
     fullyRunning = false
     fullyStartBtn.Text = "START FULLY"
     TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
@@ -1350,3 +1359,9 @@ end, false, Enum.KeyCode.Z)
 -- STARTUP
 -- ============================================================
 switchTab("AUTO")
+
+-- NOTIFIKASI SEDERHANA
+task.spawn(function()
+    task.wait(1)
+    print("191 STORE LOADED! Tekan Z untuk hide/show GUI")
+end)

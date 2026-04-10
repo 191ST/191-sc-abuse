@@ -95,17 +95,13 @@ local function holdE(t)
     VirtualInputManager:SendKeyEvent(false,"E",false,game)
 end
 
-local function equipWithRetry(name, maxRetry)
-    maxRetry = maxRetry or 3
-    for i = 1, maxRetry do
-        local char = player.Character
-        local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
-        if tool then
-            char.Humanoid:EquipTool(tool)
-            task.wait(0.5)
-            return true
-        end
-        task.wait(0.5)
+local function equip(name)
+    local char = player.Character
+    local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
+    if tool then
+        char.Humanoid:EquipTool(tool)
+        task.wait(.3)
+        return true
     end
     return false
 end
@@ -546,7 +542,7 @@ local function makeStatusRow(parent, label, order)
 end
 
 -- ============================================================
--- AUTO PAGE (MS LOOP)
+-- AUTO PAGE (MS LOOP) - PAKAI INI
 -- ============================================================
 local ap = pages["AUTO"]
 
@@ -583,10 +579,10 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- FUNGSI MASAK YANG ROBUST (dengan retry)
+-- INI FUNGSI MASAK YANG PASTI BERHASIL (COPY DARI SCRIPT LAMA)
 local function cookProcess()
-    -- STEP 1: WATER
-    if equipWithRetry("Water", 3) then
+    -- WATER
+    if equip("Water") then
         holdE(0.7)
         for i = 20, 1, -1 do
             if not msRunning and not fullyRunning then return false end
@@ -596,30 +592,30 @@ local function cookProcess()
         return false
     end
     
-    -- STEP 2: SUGAR
-    if equipWithRetry("Sugar Block Bag", 3) then
+    -- SUGAR
+    if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(1)
     else
         return false
     end
     
-    -- STEP 3: GELATIN
-    if equipWithRetry("Gelatin", 3) then
+    -- GELATIN
+    if equip("Gelatin") then
         holdE(0.7)
         task.wait(1)
     else
         return false
     end
     
-    -- STEP 4: WAIT 45 DETIK
+    -- WAIT 45 DETIK
     for i = 45, 1, -1 do
         if not msRunning and not fullyRunning then return false end
         task.wait(1)
     end
     
-    -- STEP 5: EMPTY BAG
-    if equipWithRetry("Empty Bag", 3) then
+    -- EMPTY BAG
+    if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
     else
@@ -671,7 +667,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (FIXED COOKING)
+-- FULLY PAGE - PAKAI FUNGSI MASAK YANG SAMA PERSIS
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -730,7 +726,7 @@ local function fullyBuy(qty)
     
     for _, item in ipairs(items) do
         if not fullyRunning then return false end
-        setFullyStatus("BUYING " .. item:upper() .. " x" .. qty, Color3.fromRGB(100, 180, 255))
+        setFullyStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
         
         for i = 1, qty do
             if not fullyRunning then return false end
@@ -755,9 +751,9 @@ local function fullySell()
         if not fullyRunning then return false end
         
         while countItem(item) > 0 and fullyRunning do
-            setFullyStatus("SELLING " .. item:upper(), Color3.fromRGB(52, 210, 110))
+            setFullyStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
             
-            if equipWithRetry(item, 3) then
+            if equip(item) then
                 holdE(0.7)
                 task.wait(1)
                 totalSold = totalSold + 1
@@ -777,17 +773,17 @@ local function fullySell()
     return true
 end
 
--- FULLY LOOP
+-- LOOP FULLY
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
-        -- STEP 1: BELI BAHAN
-        setFullyStatus("STEP 1: TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
+        -- BELI BAHAN
+        setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
-        setFullyStatus("STEP 2: BUYING INGREDIENTS", Color3.fromRGB(100, 180, 255))
+        setFullyStatus("BUYING INGREDIENTS", Color3.fromRGB(100, 180, 255))
         if not fullyBuy(fullyTarget) then
             if not fullyRunning then break end
             setFullyStatus("FAILED TO BUY!", C.red)
@@ -795,27 +791,27 @@ local function fullyLoop()
             break
         end
         
-        -- STEP 2: KEMBALI KE APART
+        -- KEMBALI KE APART
         if fullySavedPos then
-            setFullyStatus("STEP 3: RETURNING TO APARTMENT", Color3.fromRGB(148, 80, 255))
+            setFullyStatus("RETURNING TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
             task.wait(1)
         end
         
         updateFullyInventory()
         
-        -- STEP 3: MASAK
+        -- MASAK PAKAI FUNGSI YANG SAMA DENGAN AUTO MS
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
-            setFullyStatus("STEP 4: COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
+            setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
             
             if cookProcess() then
                 cooked = cooked + 1
-                setFullyStatus("COMPLETED " .. cooked .. "/" .. fullyTarget .. " MS", Color3.fromRGB(52, 210, 110))
+                setFullyStatus("COMPLETED " .. cooked .. "/" .. fullyTarget, Color3.fromRGB(52, 210, 110))
                 updateFullyInventory()
             else
                 if not fullyRunning then break end
-                setFullyStatus("COOKING FAILED! CHECK INVENTORY", Color3.fromRGB(255, 155, 35))
+                setFullyStatus("COOKING FAILED!", Color3.fromRGB(255, 155, 35))
                 task.wait(2)
                 break
             end
@@ -824,12 +820,12 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
-        -- STEP 4: JUAL
-        setFullyStatus("STEP 5: TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
+        -- JUAL
+        setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
-        setFullyStatus("STEP 6: SELLING ALL MS", Color3.fromRGB(52, 210, 110))
+        setFullyStatus("SELLING ALL MS", Color3.fromRGB(52, 210, 110))
         fullySell()
         
         if not fullyRunning then break end

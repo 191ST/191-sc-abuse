@@ -103,6 +103,7 @@ local function equip(name)
         task.wait(.3)
         return true
     end
+    return false
 end
 
 local function countItem(name)
@@ -147,7 +148,7 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ============================================================
--- COLOR PALETTE (BIRU & HITAM)
+-- COLOR PALETTE
 -- ============================================================
 local C = {
     bg        = Color3.fromRGB(8,  8,  16),
@@ -171,15 +172,14 @@ local C = {
 -- MAIN WINDOW
 -- ============================================================
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 660, 0, 480)
-main.Position = UDim2.new(0.5, -330, 0.5, -240)
+main.Size = UDim2.new(0, 660, 0, 500)
+main.Position = UDim2.new(0.5, -330, 0.5, -250)
 main.BackgroundColor3 = C.bg
 main.Active = true
 main.Draggable = true
 main.ClipsDescendants = false
 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
-
 local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Color = C.border
 mainStroke.Thickness = 1
@@ -542,19 +542,18 @@ local function makeStatusRow(parent, label, order)
 end
 
 -- ============================================================
--- AUTO PAGE (MS Loop)
+-- AUTO PAGE
 -- ============================================================
 local ap = pages["AUTO"]
 
-sectionLabel(ap, "MS Loop Auto Cook", 1)
+sectionLabel(ap, "MS LOOP AUTO COOK", 1)
 
--- Status inventory untuk AUTO
 local waterValAuto = makeStatusRow(ap, "Water", 2)
 local sugarValAuto = makeStatusRow(ap, "Sugar Block Bag", 3)
 local gelatinValAuto = makeStatusRow(ap, "Gelatin", 4)
 local emptyValAuto = makeStatusRow(ap, "Empty Bag", 5)
 
-sectionLabel(ap, "Control", 6)
+sectionLabel(ap, "CONTROL", 6)
 
 local msStatusCard = card(ap, 40, 7)
 local msStatusLbl = Instance.new("TextLabel", msStatusCard)
@@ -571,7 +570,6 @@ msStatusLbl.TextStrokeTransparency = 1
 local msStartBtn = makeActionBtn(ap, "START MS LOOP", C.green, 8)
 local msStopBtn = makeActionBtn(ap, "STOP MS LOOP", C.red, 9)
 
--- AUTO MS LOGIC
 local msRunning = false
 
 local function updateAutoInventory()
@@ -585,24 +583,11 @@ local function msLoop()
     while msRunning do
         updateAutoInventory()
         
-        if countItem("Water") > 0 then
-            msStatusLbl.Text = "Cooking Water..."
-            if equip("Water") then
-                holdE(0.7)
-                for i = 20, 1, -1 do
-                    if not msRunning then break end
-                    task.wait(1)
-                end
-            end
-        end
-        
-        if not msRunning then break end
-        updateAutoInventory()
-        
-        if countItem("Sugar Block Bag") > 0 then
-            msStatusLbl.Text = "Cooking Sugar..."
-            if equip("Sugar Block Bag") then
-                holdE(0.7)
+        if countItem("Water") > 0 and equip("Water") then
+            msStatusLbl.Text = "COOKING WATER..."
+            holdE(0.7)
+            for i = 20, 1, -1 do
+                if not msRunning then break end
                 task.wait(1)
             end
         end
@@ -610,18 +595,25 @@ local function msLoop()
         if not msRunning then break end
         updateAutoInventory()
         
-        if countItem("Gelatin") > 0 then
-            msStatusLbl.Text = "Cooking Gelatin..."
-            if equip("Gelatin") then
-                holdE(0.7)
-                task.wait(1)
-            end
+        if countItem("Sugar Block Bag") > 0 and equip("Sugar Block Bag") then
+            msStatusLbl.Text = "COOKING SUGAR..."
+            holdE(0.7)
+            task.wait(1)
         end
         
         if not msRunning then break end
         updateAutoInventory()
         
-        msStatusLbl.Text = "Waiting 45 seconds..."
+        if countItem("Gelatin") > 0 and equip("Gelatin") then
+            msStatusLbl.Text = "COOKING GELATIN..."
+            holdE(0.7)
+            task.wait(1)
+        end
+        
+        if not msRunning then break end
+        updateAutoInventory()
+        
+        msStatusLbl.Text = "WAITING 45 SECONDS..."
         for i = 45, 1, -1 do
             if not msRunning then break end
             task.wait(1)
@@ -630,16 +622,14 @@ local function msLoop()
         if not msRunning then break end
         updateAutoInventory()
         
-        if countItem("Empty Bag") > 0 then
-            msStatusLbl.Text = "Collecting Result..."
-            if equip("Empty Bag") then
-                holdE(0.7)
-                task.wait(1)
-            end
+        if countItem("Empty Bag") > 0 and equip("Empty Bag") then
+            msStatusLbl.Text = "COLLECTING RESULT..."
+            holdE(0.7)
+            task.wait(1)
         end
         
         updateAutoInventory()
-        msStatusLbl.Text = "Loop Complete"
+        msStatusLbl.Text = "LOOP COMPLETE"
         task.wait(2)
     end
     msStatusLbl.Text = "STOPPED"
@@ -665,19 +655,18 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (Auto Fully)
+-- FULLY PAGE (FIXED)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
 sectionLabel(fullyPage, "AUTO FULLY", 1)
 
--- Status inventory untuk FULLY
 local waterValFully = makeStatusRow(fullyPage, "Water", 2)
 local sugarValFully = makeStatusRow(fullyPage, "Sugar Block Bag", 3)
 local gelatinValFully = makeStatusRow(fullyPage, "Gelatin", 4)
 local emptyValFully = makeStatusRow(fullyPage, "Empty Bag", 5)
 
-sectionLabel(fullyPage, "Setting", 6)
+sectionLabel(fullyPage, "SETTING", 6)
 
 local targetSliderWrap, targetValLbl = makeSlider(fullyPage, "TARGET FULLY", 1, 50, 5, 7, function(v)
     fullyTarget = v
@@ -715,55 +704,71 @@ local function setFullyStatus(msg, color)
     fullyStatusLbl.TextColor3 = color or C.textMid
 end
 
+-- FUNGSI MASAK YANG BENER
 local function fullyCook()
     if not fullyRunning then return false end
     
-    setFullyStatus("Cooking Water...", Color3.fromRGB(100, 180, 255))
+    -- STEP 1: WATER
+    setFullyStatus("STEP 1: COOKING WATER...", Color3.fromRGB(100, 180, 255))
     if equip("Water") then
         holdE(0.7)
         for i = 20, 1, -1 do
             if not fullyRunning then return false end
+            if i % 5 == 0 or i <= 3 then
+                setFullyStatus("WATER: " .. i .. "s left", Color3.fromRGB(80, 150, 255))
+            end
             task.wait(1)
         end
     else
-        setFullyStatus("Failed equip Water!", C.red)
+        setFullyStatus("FAILED: No Water!", C.red)
         return false
     end
     
     if not fullyRunning then return false end
-    setFullyStatus("Cooking Sugar...", Color3.fromRGB(255, 220, 100))
+    
+    -- STEP 2: SUGAR
+    setFullyStatus("STEP 2: COOKING SUGAR...", Color3.fromRGB(255, 220, 100))
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(1)
     else
-        setFullyStatus("Failed equip Sugar!", C.red)
+        setFullyStatus("FAILED: No Sugar!", C.red)
         return false
     end
     
     if not fullyRunning then return false end
-    setFullyStatus("Cooking Gelatin...", Color3.fromRGB(255, 200, 50))
+    
+    -- STEP 3: GELATIN
+    setFullyStatus("STEP 3: COOKING GELATIN...", Color3.fromRGB(255, 200, 50))
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(1)
     else
-        setFullyStatus("Failed equip Gelatin!", C.red)
+        setFullyStatus("FAILED: No Gelatin!", C.red)
         return false
     end
     
     if not fullyRunning then return false end
-    setFullyStatus("Cooking process...", Color3.fromRGB(80, 140, 255))
+    
+    -- STEP 4: WAIT 45 SECONDS
+    setFullyStatus("STEP 4: COOKING PROCESS...", Color3.fromRGB(80, 140, 255))
     for i = 45, 1, -1 do
         if not fullyRunning then return false end
+        if i % 10 == 0 or i <= 5 then
+            setFullyStatus("COOKING: " .. i .. "s left", Color3.fromRGB(80, 140, 255))
+        end
         task.wait(1)
     end
     
     if not fullyRunning then return false end
-    setFullyStatus("Collecting result...", Color3.fromRGB(100, 180, 255))
+    
+    -- STEP 5: COLLECT RESULT
+    setFullyStatus("STEP 5: COLLECTING RESULT...", Color3.fromRGB(100, 180, 255))
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
     else
-        setFullyStatus("Failed equip Empty Bag!", C.red)
+        setFullyStatus("FAILED: No Empty Bag!", C.red)
         return false
     end
     
@@ -772,7 +777,7 @@ end
 
 local function fullyBuy(qty)
     if not storePurchaseRE then
-        setFullyStatus("RemoteEvent not found!", C.red)
+        setFullyStatus("ERROR: RemoteEvent not found!", C.red)
         return false
     end
     
@@ -780,7 +785,7 @@ local function fullyBuy(qty)
     
     for _, item in ipairs(items) do
         if not fullyRunning then return false end
-        setFullyStatus("Buying " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
+        setFullyStatus("BUYING " .. item:upper() .. " x" .. qty, Color3.fromRGB(100, 180, 255))
         
         for i = 1, qty do
             if not fullyRunning then return false end
@@ -792,7 +797,7 @@ local function fullyBuy(qty)
         task.wait(0.5)
     end
     
-    setFullyStatus("Purchase complete!", Color3.fromRGB(80, 220, 130))
+    setFullyStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
     task.wait(1)
     return true
 end
@@ -805,7 +810,7 @@ local function fullySell()
         if not fullyRunning then return false end
         
         while countItem(item) > 0 and fullyRunning do
-            setFullyStatus("Selling " .. item, Color3.fromRGB(52, 210, 110))
+            setFullyStatus("SELLING " .. item:upper(), Color3.fromRGB(52, 210, 110))
             
             if equip(item) then
                 holdE(0.7)
@@ -819,43 +824,43 @@ local function fullySell()
     end
     
     if totalSold > 0 then
-        setFullyStatus("Sold " .. totalSold .. " items!", Color3.fromRGB(52, 210, 110))
+        setFullyStatus("SOLD " .. totalSold .. " ITEMS!", Color3.fromRGB(52, 210, 110))
     else
-        setFullyStatus("No items to sell", Color3.fromRGB(255, 155, 35))
+        setFullyStatus("NO ITEMS TO SELL", Color3.fromRGB(255, 155, 35))
     end
     task.wait(1)
     return true
 end
 
 local function fullyLoop()
-    setFullyStatus("Target: " .. fullyTarget .. " MS per loop", Color3.fromRGB(100, 180, 255))
+    setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
         updateFullyInventory()
         
-        -- Cek apakah perlu beli bahan
+        -- CEK BAHAN
         local needWater = countItem("Water") < fullyTarget
         local needSugar = countItem("Sugar Block Bag") < fullyTarget
         local needGelatin = countItem("Gelatin") < fullyTarget
         local needEmpty = countItem("Empty Bag") < fullyTarget
         
         if needWater or needSugar or needGelatin or needEmpty then
-            setFullyStatus("Need more ingredients, teleport to NPC...", Color3.fromRGB(255, 160, 40))
+            setFullyStatus("NEED MORE INGREDIENTS, GOING TO NPC...", Color3.fromRGB(255, 160, 40))
             task.wait(1)
             
-            setFullyStatus("Teleporting to NPC...", Color3.fromRGB(100, 180, 255))
+            setFullyStatus("TELEPORTING TO NPC...", Color3.fromRGB(100, 180, 255))
             stepTeleport(NPC_MS_POS)
             task.wait(1)
             
             if not fullyBuy(fullyTarget) then
                 if not fullyRunning then break end
-                setFullyStatus("Failed to buy!", C.red)
+                setFullyStatus("FAILED TO BUY!", C.red)
                 task.wait(2)
                 break
             end
             
             if fullySavedPos then
-                setFullyStatus("Returning to apartment...", Color3.fromRGB(148, 80, 255))
+                setFullyStatus("RETURNING TO APARTMENT...", Color3.fromRGB(148, 80, 255))
                 stepTeleport(fullySavedPos)
                 task.wait(1)
             end
@@ -863,7 +868,7 @@ local function fullyLoop()
         
         updateFullyInventory()
         
-        -- Masak
+        -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             local waterCount = countItem("Water")
@@ -872,29 +877,29 @@ local function fullyLoop()
             local emptyCount = countItem("Empty Bag")
             
             if waterCount == 0 or sugarCount == 0 or gelatinCount == 0 or emptyCount == 0 then
-                setFullyStatus("Out of ingredients!", Color3.fromRGB(255, 160, 40))
+                setFullyStatus("OUT OF INGREDIENTS!", Color3.fromRGB(255, 160, 40))
                 break
             end
             
-            setFullyStatus("Cooking MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
+            setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
             
             if fullyCook() then
                 cooked = cooked + 1
-                setFullyStatus("Completed " .. cooked .. "/" .. fullyTarget, Color3.fromRGB(52, 210, 110))
+                setFullyStatus("COMPLETED " .. cooked .. "/" .. fullyTarget .. " MS", Color3.fromRGB(52, 210, 110))
+                updateFullyInventory()
             else
                 if not fullyRunning then break end
-                setFullyStatus("Cooking failed!", Color3.fromRGB(255, 155, 35))
+                setFullyStatus("COOKING FAILED!", Color3.fromRGB(255, 155, 35))
                 task.wait(2)
                 break
             end
             task.wait(0.5)
-            updateFullyInventory()
         end
         
         if not fullyRunning then break end
         
-        -- Jual
-        setFullyStatus("Teleport to NPC for selling...", Color3.fromRGB(52, 210, 110))
+        -- JUAL
+        setFullyStatus("TELEPORTING TO NPC FOR SELLING...", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
@@ -902,7 +907,7 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
-        setFullyStatus("Loop complete, restarting...", Color3.fromRGB(100, 180, 255))
+        setFullyStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
         task.wait(2)
     end
     
@@ -918,7 +923,7 @@ fullyStartBtn.MouseButton1Click:Connect(function()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then
-        setFullyStatus("Cannot get character position!", C.red)
+        setFullyStatus("CANNOT GET POSITION!", C.red)
         return
     end
     
@@ -971,16 +976,15 @@ end
 -- ============================================================
 local mspot = pages["MS POT"]
 
-sectionLabel(mspot, "Delete Part Below", 1)
+sectionLabel(mspot, "DELETE PART BELOW", 1)
 
 local deleteFloorBtn = makeActionBtn(mspot, "DELETE PART BELOW", Color3.fromRGB(120, 20, 50), 2)
 local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 3)
 
-sectionLabel(mspot, "Find Cook Prompt Scanner", 4)
+sectionLabel(mspot, "FIND COOK (PROMPT SCANNER)", 4)
 
 local findCookBtn = makeActionBtn(mspot, "FIND COOK", Color3.fromRGB(0, 100, 80), 5)
 
--- MS POT LOGIC
 local deletedStack = {}
 local scannedPrompts = {}
 local SCAN_RADIUS = 50
@@ -1048,7 +1052,7 @@ local function doPromptScan()
 end
 
 findCookBtn.MouseButton1Click:Connect(function()
-    findCookBtn.Text = "Scanning..."
+    findCookBtn.Text = "SCANNING..."
     TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 60, 50)}):Play()
     task.spawn(function()
         doPromptScan()
@@ -1061,7 +1065,7 @@ end)
 deleteFloorBtn.MouseButton1Click:Connect(function()
     if isDeleting then return end
     isDeleting = true
-    deleteFloorBtn.Text = "Processing..."
+    deleteFloorBtn.Text = "PROCESSING..."
     TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 0, 30)}):Play()
 
     local char = player.Character
@@ -1106,7 +1110,7 @@ end)
 -- ============================================================
 local buyp = pages["BUY"]
 
-sectionLabel(buyp, "Auto Buy Ingredients", 1)
+sectionLabel(buyp, "AUTO BUY INGREDIENTS", 1)
 
 local buyStatusCard = card(buyp, 40, 2)
 local buyStatusLbl = Instance.new("TextLabel", buyStatusCard)
@@ -1139,14 +1143,13 @@ end)
 local buyStartBtn = makeActionBtn(buyp, "START BUY", C.green, 5)
 local buyStopBtn = makeActionBtn(buyp, "STOP BUY", C.red, 6)
 
--- AUTO BUY LOGIC
 local autoBuyRunning = false
 local autoBuyTotalBought = 0
 
 local function startAutoBuy()
     if autoBuyRunning then return end
     if not storePurchaseRE then
-        buyStatusLbl.Text = "RemoteEvent Error!"
+        buyStatusLbl.Text = "ERROR: RemoteEvent not found!"
         buyStatusLbl.TextColor3 = C.red
         task.wait(2)
         buyStatusLbl.Text = "STOPPED"
@@ -1172,16 +1175,11 @@ local function startAutoBuy()
             
             for i = 1, amount do
                 if not autoBuyRunning then break end
-                
-                pcall(function()
-                    storePurchaseRE:FireServer(itemName, 1)
-                end)
-                
+                pcall(function() storePurchaseRE:FireServer(itemName, 1) end)
                 autoBuyTotalBought = autoBuyTotalBought + 1
                 buyTotalLbl.Text = "Total: " .. autoBuyTotalBought .. " items"
                 task.wait(0.5)
             end
-            
             task.wait(0.8)
         end
         
@@ -1212,7 +1210,7 @@ buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
 -- ============================================================
 local sellp = pages["SELL"]
 
-sectionLabel(sellp, "Auto Sell Marshmallow Bags", 1)
+sectionLabel(sellp, "AUTO SELL MARSHMALLOW BAGS", 1)
 
 local sellStatusCard = card(sellp, 40, 2)
 local sellStatusLbl = Instance.new("TextLabel", sellStatusCard)
@@ -1241,7 +1239,6 @@ sellCounterLbl.TextStrokeTransparency = 1
 local sellStartBtn = makeActionBtn(sellp, "START SELL", C.green, 4)
 local sellStopBtn = makeActionBtn(sellp, "STOP SELL", C.red, 5)
 
--- AUTO SELL LOGIC
 local autoSellRunning = false
 local autoSellCount = 0
 local SELL_TOOLS = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
@@ -1289,7 +1286,7 @@ local function startAutoSell()
                             local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
                             if humanoid then humanoid:EquipTool(tool) task.wait(0.3) end
                         end
-                        sellStatusLbl.Text = "Selling..."
+                        sellStatusLbl.Text = "SELLING..."
                         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
                         local holdStart = tick()
                         while autoSellRunning and (tick() - holdStart) < 2 do task.wait(0.1) end
@@ -1323,7 +1320,7 @@ sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 -- ============================================================
 local settingsp = pages["SETTINGS"]
 
-sectionLabel(settingsp, "Shortcut Settings", 1)
+sectionLabel(settingsp, "SHORTCUT SETTINGS", 1)
 
 local blinkToggleCard = card(settingsp, 50, 2)
 local blinkToggleTitle = Instance.new("TextLabel", blinkToggleCard)
@@ -1360,7 +1357,7 @@ blinkToggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-sectionLabel(settingsp, "Blink Buttons for Mobile", 3)
+sectionLabel(settingsp, "BLINK BUTTONS FOR MOBILE", 3)
 
 local blinkMajuBtn = makeActionBtn(settingsp, "BLINK FORWARD", C.accentDim, 4)
 local blinkMundurBtn = makeActionBtn(settingsp, "BLINK BACKWARD", C.accentDim, 5)
@@ -1397,7 +1394,7 @@ minBtn.MouseButton1Click:Connect(function()
     sidebar.Visible = bodyVisible
     content.Visible = bodyVisible
     if bodyVisible then
-        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 480)}):Play()
+        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 500)}):Play()
     else
         TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 46)}):Play()
     end

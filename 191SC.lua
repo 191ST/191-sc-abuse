@@ -36,7 +36,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Variables
 local buyAmount = 10
-local running = false
 local blinkEnabled = true
 
 -- ========== BLINK FUNCTIONS ==========
@@ -72,7 +71,6 @@ local function blinkBawah()
     end
 end
 
--- Shortcut T untuk blink maju (keyboard)
 ContextActionService:BindAction("blink_forward", function(_, state)
     if state == Enum.UserInputState.Begin and blinkEnabled then
         blinkMaju()
@@ -88,7 +86,7 @@ player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- HELPERS (dari Elixir)
+-- HELPERS
 -- ============================================================
 local function holdE(t)
     VirtualInputManager:SendKeyEvent(true,"E",false,game)
@@ -117,25 +115,6 @@ local function countItem(name)
     return total
 end
 
-local function findTool(toolName)
-    if player.Character then
-        for _, child in pairs(player.Character:GetChildren()) do
-            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
-                return child
-            end
-        end
-    end
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, child in pairs(backpack:GetChildren()) do
-            if child:IsA("Tool") and string.find(string.lower(child.Name), string.lower(toolName)) then
-                return child
-            end
-        end
-    end
-    return nil
-end
-
 local function vehicleTeleport(cf)
     local char = player.Character
     if not char then return end
@@ -153,12 +132,6 @@ local function vehicleTeleport(cf)
     seat.Throttle = 0
 end
 
-local function fill(bar, time)
-    bar.Size = UDim2.new(0,0,1,0)
-    bar:TweenSize(UDim2.new(1,0,1,0), Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, time, true)
-    task.delay(time, function() bar.Size = UDim2.new(0,0,1,0) end)
-end
-
 -- ============================================================
 -- GUI SETUP
 -- ============================================================
@@ -169,7 +142,7 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ============================================================
--- COLOR PALETTE (BIRU & HITAM)
+-- COLOR PALETTE
 -- ============================================================
 local C = {
     bg        = Color3.fromRGB(8,  8,  16),
@@ -270,7 +243,7 @@ minBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
 -- ============================================================
--- TEXT SIDEBAR
+-- SIDEBAR
 -- ============================================================
 local sidebar = Instance.new("Frame", main)
 sidebar.Size = UDim2.new(0, 80, 1, -46)
@@ -535,177 +508,107 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
 end
 
 -- ============================================================
--- AUTO PAGE (dengan logic dari Elixir FARM)
+-- AUTO PAGE (MS LOOP dengan logic Elixir)
 -- ============================================================
 local ap = pages["AUTO"]
 
-sectionLabel(ap, "Auto Cook", 1)
+sectionLabel(ap, "MS Loop (Auto Cook)", 1)
 
--- Status
-local statusCard = card(ap, 40, 2)
-local statusLbl = Instance.new("TextLabel", statusCard)
-statusLbl.Size = UDim2.new(1, -20, 1, 0)
-statusLbl.Position = UDim2.new(0, 12, 0, 0)
-statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "IDLE"
-statusLbl.Font = Enum.Font.GothamBold
-statusLbl.TextSize = 13
-statusLbl.TextColor3 = C.textMid
-statusLbl.TextXAlignment = Enum.TextXAlignment.Left
-statusLbl.TextStrokeTransparency = 1
+local msStatusCard = card(ap, 40, 2)
+local msStatusLbl = Instance.new("TextLabel", msStatusCard)
+msStatusLbl.Size = UDim2.new(1, -20, 1, 0)
+msStatusLbl.Position = UDim2.new(0, 12, 0, 0)
+msStatusLbl.BackgroundTransparency = 1
+msStatusLbl.Text = "⏹️ STOPPED"
+msStatusLbl.Font = Enum.Font.GothamBold
+msStatusLbl.TextSize = 13
+msStatusLbl.TextColor3 = C.red
+msStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+msStatusLbl.TextStrokeTransparency = 1
 
--- Inventory
-sectionLabel(ap, "Inventory", 3)
+local stepCard = card(ap, 30, 3)
+local stepLbl = Instance.new("TextLabel", stepCard)
+stepLbl.Size = UDim2.new(1, -20, 1, 0)
+stepLbl.Position = UDim2.new(0, 12, 0, 0)
+stepLbl.BackgroundTransparency = 1
+stepLbl.Text = "Step: Waiting..."
+stepLbl.Font = Enum.Font.Gotham
+stepLbl.TextSize = 11
+stepLbl.TextColor3 = C.textMid
+stepLbl.TextXAlignment = Enum.TextXAlignment.Left
+stepLbl.TextStrokeTransparency = 1
 
-local waterVal, _ = makeStatusRow(ap, "Water", 4)
-local sugarVal, _ = makeStatusRow(ap, "Sugar Block Bag", 5)
-local gelatinVal, _ = makeStatusRow(ap, "Gelatin", 6)
-local bagVal, _ = makeStatusRow(ap, "Empty Bag", 7)
+local timerCard = card(ap, 30, 4)
+local timerLbl = Instance.new("TextLabel", timerCard)
+timerLbl.Size = UDim2.new(1, -20, 1, 0)
+timerLbl.Position = UDim2.new(0, 12, 0, 0)
+timerLbl.BackgroundTransparency = 1
+timerLbl.Text = "Timer: 0s"
+timerLbl.Font = Enum.Font.Gotham
+timerLbl.TextSize = 11
+timerLbl.TextColor3 = C.textMid
+timerLbl.TextXAlignment = Enum.TextXAlignment.Left
+timerLbl.TextStrokeTransparency = 1
 
--- Controls
-sectionLabel(ap, "Controls", 8)
+local msStartBtn = makeActionBtn(ap, "▶️ START MS LOOP", C.green, 5)
+local msStopBtn = makeActionBtn(ap, "⏹️ STOP MS LOOP", C.red, 6)
 
-local buySliderWrap, buyValLbl = makeSlider(ap, "BUY AMOUNT", 1, 25, 10, 9, function(v)
-    buyAmount = v
-end)
+-- ========== AUTO MS LOGIC (dari Elixir FARM) ==========
+local running = false
 
-local startStopBtn = makeActionBtn(ap, "START AUTO", C.green, 10)
-local buyNowBtn = makeActionBtn(ap, "BUY NOW", C.card, 11)
-
--- Progress Bars
-sectionLabel(ap, "Cook Progress", 12)
-
-local function makeProgressCard(label, order)
-    local f = card(ap, 34, order)
-    local lbl3 = Instance.new("TextLabel", f)
-    lbl3.Position = UDim2.new(0, 10, 0, 5)
-    lbl3.Size = UDim2.new(0.6, 0, 0, 13)
-    lbl3.BackgroundTransparency = 1
-    lbl3.Text = label
-    lbl3.Font = Enum.Font.GothamSemibold
-    lbl3.TextSize = 10
-    lbl3.TextColor3 = C.textMid
-    lbl3.TextXAlignment = Enum.TextXAlignment.Left
-    lbl3.TextStrokeTransparency = 1
-    local bg2 = Instance.new("Frame", f)
-    bg2.Position = UDim2.new(0, 10, 0, 22)
-    bg2.Size = UDim2.new(1, -20, 0, 5)
-    bg2.BackgroundColor3 = C.border
-    bg2.BorderSizePixel = 0
-    Instance.new("UICorner", bg2).CornerRadius = UDim.new(1, 0)
-    local bar2 = Instance.new("Frame", bg2)
-    bar2.Size = UDim2.new(0, 0, 1, 0)
-    bar2.BackgroundColor3 = C.accent
-    bar2.BorderSizePixel = 0
-    Instance.new("UICorner", bar2).CornerRadius = UDim.new(1, 0)
-    return bar2
-end
-
-local waterBar = makeProgressCard("Water (20s)", 13)
-local sugarBar = makeProgressCard("Sugar (1s)", 14)
-local gelatinBar = makeProgressCard("Gelatin (1s)", 15)
-local bagBar = makeProgressCard("Bag (45s)", 16)
-
--- Helper untuk status row
-local function makeStatusRow(parent, label, order)
-    local f = card(parent, 30, order)
-
-    local lbl2 = Instance.new("TextLabel", f)
-    lbl2.Position = UDim2.new(0, 12, 0, 0)
-    lbl2.Size = UDim2.new(0.6, 0, 1, 0)
-    lbl2.BackgroundTransparency = 1
-    lbl2.Text = label
-    lbl2.Font = Enum.Font.GothamSemibold
-    lbl2.TextSize = 11
-    lbl2.TextColor3 = C.textMid
-    lbl2.TextXAlignment = Enum.TextXAlignment.Left
-    lbl2.TextStrokeTransparency = 1
-
-    local val2 = Instance.new("TextLabel", f)
-    val2.Position = UDim2.new(0.6, 0, 0, 0)
-    val2.Size = UDim2.new(0.4, -10, 1, 0)
-    val2.BackgroundTransparency = 1
-    val2.Text = "0"
-    val2.Font = Enum.Font.GothamBold
-    val2.TextSize = 12
-    val2.TextColor3 = C.accentGlow
-    val2.TextXAlignment = Enum.TextXAlignment.Right
-    val2.TextStrokeTransparency = 1
-
-    return val2, f
-end
-
--- ============================================================
--- AUTO COOK LOGIC (dari Elixir FARM)
--- ============================================================
-local function cook()
+local function msLoop()
     while running do
         if equip("Water") then
-            statusLbl.Text = "Cooking Water..."
-            statusLbl.TextColor3 = C.accentGlow
-            if waterBar then fill(waterBar, 20) end
+            stepLbl.Text = "Cooking Water..."
+            timerLbl.Text = "Timer: 20s"
             holdE(0.7)
             task.wait(20)
         end
         if equip("Sugar Block Bag") then
-            statusLbl.Text = "Cooking Sugar..."
-            if sugarBar then fill(sugarBar, 1) end
+            stepLbl.Text = "Cooking Sugar..."
+            timerLbl.Text = "Timer: 1s"
             holdE(0.7)
             task.wait(1)
         end
         if equip("Gelatin") then
-            statusLbl.Text = "Cooking Gelatin..."
-            if gelatinBar then fill(gelatinBar, 1) end
+            stepLbl.Text = "Cooking Gelatin..."
+            timerLbl.Text = "Timer: 1s"
             holdE(0.7)
             task.wait(1)
         end
-        statusLbl.Text = "Waiting..."
-        if bagBar then fill(bagBar, 45) end
+        stepLbl.Text = "Waiting for Bag..."
+        timerLbl.Text = "Timer: 45s"
         task.wait(45)
         if equip("Empty Bag") then
-            statusLbl.Text = "Collecting..."
+            stepLbl.Text = "Collecting Result..."
+            timerLbl.Text = "Timer: 1s"
             holdE(0.7)
             task.wait(1)
         end
+        stepLbl.Text = "Loop Complete! Restarting..."
+        task.wait(2)
     end
-    statusLbl.Text = "IDLE"
-    statusLbl.TextColor3 = C.textMid
 end
 
-local buying = false
-local function autoBuy()
-    if buying then return end
-    buying = true
-    for i = 1, buyAmount do
-        if storePurchaseRE then
-            storePurchaseRE:FireServer("Water") task.wait(.35)
-            storePurchaseRE:FireServer("Sugar Block Bag") task.wait(.35)
-            storePurchaseRE:FireServer("Gelatin") task.wait(.35)
-            storePurchaseRE:FireServer("Empty Bag") task.wait(.45)
-        end
-    end
-    buying = false
-    -- Update inventory display
-    waterVal.Text = tostring(countItem("Water"))
-    sugarVal.Text = tostring(countItem("Sugar Block Bag"))
-    gelatinVal.Text = tostring(countItem("Gelatin"))
-    bagVal.Text = tostring(countItem("Empty Bag"))
-end
-
-startStopBtn.MouseButton1Click:Connect(function()
-    running = not running
-    if running then
-        startStopBtn.Text = "STOP AUTO"
-        TweenService:Create(startStopBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
-        task.spawn(cook)
-    else
-        startStopBtn.Text = "START AUTO"
-        TweenService:Create(startStopBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
+msStartBtn.MouseButton1Click:Connect(function()
+    if not running then
+        running = true
+        msStartBtn.Text = "STOP MS LOOP"
+        TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
+        msStatusLbl.Text = "▶️ RUNNING"
+        msStatusLbl.TextColor3 = C.green
+        task.spawn(msLoop)
     end
 end)
 
-buyNowBtn.MouseButton1Click:Connect(function()
-    task.spawn(autoBuy)
+msStopBtn.MouseButton1Click:Connect(function()
+    running = false
+    msStartBtn.Text = "START MS LOOP"
+    TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
+    msStatusLbl.Text = "⏹️ STOPPED"
+    msStatusLbl.TextColor3 = C.red
+    stepLbl.Text = "Step: Stopped"
+    timerLbl.Text = "Timer: 0s"
 end)
 
 -- ============================================================
@@ -869,7 +772,7 @@ undoBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- BUY PAGE (Auto Buy dengan Slider)
+-- BUY PAGE
 -- ============================================================
 local buyp = pages["BUY"]
 
@@ -899,7 +802,7 @@ buyTotalLbl.TextColor3 = C.textMid
 buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
 buyTotalLbl.TextStrokeTransparency = 1
 
-local buySliderWrap2, buyValLbl2 = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
+local buySliderWrap, buyValLbl = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
     buyAmount = v
 end)
 
@@ -975,7 +878,7 @@ buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
 buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
 
 -- ============================================================
--- SELL PAGE (Auto Sell)
+-- SELL PAGE
 -- ============================================================
 local sellp = pages["SELL"]
 
@@ -1086,13 +989,12 @@ sellStartBtn.MouseButton1Click:Connect(startAutoSell)
 sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
 -- ============================================================
--- SETTINGS PAGE (dengan tombol blink untuk HP)
+-- SETTINGS PAGE
 -- ============================================================
 local settingsp = pages["SETTINGS"]
 
 sectionLabel(settingsp, "Shortcut Settings", 1)
 
--- Toggle Shortcut T
 local blinkToggleCard = card(settingsp, 50, 2)
 local blinkToggleTitle = Instance.new("TextLabel", blinkToggleCard)
 blinkToggleTitle.Size = UDim2.new(0.6, 0, 1, 0)
@@ -1130,7 +1032,6 @@ end)
 
 sectionLabel(settingsp, "Blink Buttons (Mobile/HP)", 3)
 
--- Tombol blink untuk HP
 local blinkMajuBtn = makeActionBtn(settingsp, "⬆️ BLINK MAJU", C.accentDim, 4)
 local blinkMundurBtn = makeActionBtn(settingsp, "⬇️ BLINK MUNDUR", C.accentDim, 5)
 local blinkAtasBtn = makeActionBtn(settingsp, "🔼 BLINK ATAS", C.accentDim, 6)
@@ -1140,25 +1041,6 @@ blinkMajuBtn.MouseButton1Click:Connect(blinkMaju)
 blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
 blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
-
--- ============================================================
--- STATUS LOOP (update inventory)
--- ============================================================
-task.spawn(function()
-    while gui and gui.Parent do
-        local w = countItem("Water")
-        local sg = countItem("Sugar Block Bag")
-        local ge = countItem("Gelatin")
-        local bg = countItem("Empty Bag")
-
-        if waterVal then waterVal.Text = tostring(w) end
-        if sugarVal then sugarVal.Text = tostring(sg) end
-        if gelatinVal then gelatinVal.Text = tostring(ge) end
-        if bagVal then bagVal.Text = tostring(bg) end
-
-        task.wait(0.5)
-    end
-end)
 
 -- ============================================================
 -- MINIMIZE BUTTON

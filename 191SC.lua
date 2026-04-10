@@ -750,9 +750,7 @@ for i, loc in ipairs(LOCATIONS) do
     local btn = makeActionBtn(tp, loc.name, C.card, i)
     btn.MouseButton1Click:Connect(function()
         notify("Teleport", "Menuju "..loc.name.."...", "info")
-        showLoading("Menuju " .. loc.name)
         vehicleTeleport(CFrame.new(loc.pos))
-        hideLoading()
         notify("Teleport", "Tiba di "..loc.name, "success")
     end)
 end

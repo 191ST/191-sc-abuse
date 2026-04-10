@@ -579,7 +579,7 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- FUNGSI MASAK SEDERHANA (GA PAKAI RETURN FALSE)
+-- FUNGSI MASAK SEDERHANA
 local function cookProcess()
     pcall(function()
         equip("Water")
@@ -633,7 +633,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (PAKAI COOKPROCESS YANG SAMA)
+-- FULLY PAGE (STOP FIXED)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -683,15 +683,15 @@ local function setFullyStatus(msg, color)
 end
 
 local function fullyBuy(qty)
-    if not storePurchaseRE then return end
+    if not storePurchaseRE then return false end
     
     local items = {"Water", "Sugar Block Bag", "Gelatin", "Empty Bag"}
     
     for _, item in ipairs(items) do
-        if not fullyRunning then break end
+        if not fullyRunning then return false end
         setFullyStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
         for i = 1, qty do
-            if not fullyRunning then break end
+            if not fullyRunning then return false end
             pcall(function() storePurchaseRE:FireServer(item, 1) end)
             task.wait(0.4)
         end
@@ -699,13 +699,14 @@ local function fullyBuy(qty)
     end
     setFullyStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
     task.wait(1)
+    return true
 end
 
 local function fullySell()
     local sellItems = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     
     for _, item in ipairs(sellItems) do
-        if not fullyRunning then break end
+        if not fullyRunning then return end
         while countItem(item) > 0 and fullyRunning do
             setFullyStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
             pcall(function()
@@ -719,20 +720,28 @@ local function fullySell()
     task.wait(1)
 end
 
--- LOOP FULLY
+-- LOOP FULLY (DENGAN BANYAK PENGECEKAN fullyRunning)
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
-        -- BELI
+        -- STEP 1: TELEPORT KE NPC
+        if not fullyRunning then break end
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
-        fullyBuy(fullyTarget)
+        -- STEP 2: BELI BAHAN
         if not fullyRunning then break end
+        if not fullyBuy(fullyTarget) then
+            if not fullyRunning then break end
+            setFullyStatus("BUY FAILED!", C.red)
+            task.wait(2)
+            break
+        end
         
-        -- KEMBALI
+        -- STEP 3: KEMBALI KE APART
+        if not fullyRunning then break end
         if fullySavedPos then
             setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
@@ -741,9 +750,10 @@ local function fullyLoop()
         
         updateFullyInventory()
         
-        -- MASAK
+        -- STEP 4: MASAK SEBANYAK TARGET
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
+            if not fullyRunning then break end
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
             cookProcess()
             cooked = cooked + 1
@@ -753,18 +763,23 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
-        -- JUAL
+        -- STEP 5: TELEPORT KE NPC UNTUK JUAL
+        if not fullyRunning then break end
         setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
+        -- STEP 6: JUAL
+        if not fullyRunning then break end
         fullySell()
+        
         if not fullyRunning then break end
         
         setFullyStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
         task.wait(2)
     end
     
+    -- CLEANUP SETELAH LOOP BERHENTI
     fullyRunning = false
     fullyStartBtn.Text = "START FULLY"
     TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
@@ -772,7 +787,7 @@ local function fullyLoop()
 end
 
 fullyStartBtn.MouseButton1Click:Connect(function()
-    if fullyRunning then return end
+    if fullyRunning then return
     
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -792,7 +807,7 @@ fullyStartBtn.MouseButton1Click:Connect(function()
 end)
 
 fullyStopBtn.MouseButton1Click:Connect(function()
-    if not fullyRunning then return end
+    if not fullyRunning then return
     fullyRunning = false
     setFullyStatus("STOPPING...", C.orange)
 end)

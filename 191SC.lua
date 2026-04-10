@@ -95,13 +95,17 @@ local function holdE(t)
     VirtualInputManager:SendKeyEvent(false,"E",false,game)
 end
 
-local function equip(name)
-    local char = player.Character
-    local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
-    if tool then
-        char.Humanoid:EquipTool(tool)
-        task.wait(.3)
-        return true
+local function equipWithRetry(name, maxRetry)
+    maxRetry = maxRetry or 3
+    for i = 1, maxRetry do
+        local char = player.Character
+        local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
+        if tool then
+            char.Humanoid:EquipTool(tool)
+            task.wait(0.5)
+            return true
+        end
+        task.wait(0.5)
     end
     return false
 end
@@ -579,9 +583,10 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- FUNGSI MASAK (dipakai AUTO dan FULLY)
+-- FUNGSI MASAK YANG ROBUST (dengan retry)
 local function cookProcess()
-    if equip("Water") then
+    -- STEP 1: WATER
+    if equipWithRetry("Water", 3) then
         holdE(0.7)
         for i = 20, 1, -1 do
             if not msRunning and not fullyRunning then return false end
@@ -591,26 +596,30 @@ local function cookProcess()
         return false
     end
     
-    if equip("Sugar Block Bag") then
+    -- STEP 2: SUGAR
+    if equipWithRetry("Sugar Block Bag", 3) then
         holdE(0.7)
         task.wait(1)
     else
         return false
     end
     
-    if equip("Gelatin") then
+    -- STEP 3: GELATIN
+    if equipWithRetry("Gelatin", 3) then
         holdE(0.7)
         task.wait(1)
     else
         return false
     end
     
+    -- STEP 4: WAIT 45 DETIK
     for i = 45, 1, -1 do
         if not msRunning and not fullyRunning then return false end
         task.wait(1)
     end
     
-    if equip("Empty Bag") then
+    -- STEP 5: EMPTY BAG
+    if equipWithRetry("Empty Bag", 3) then
         holdE(0.7)
         task.wait(1)
     else
@@ -662,7 +671,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (SIMPLIFIED)
+-- FULLY PAGE (FIXED COOKING)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -694,7 +703,7 @@ fullyStatusLbl.TextStrokeTransparency = 1
 local fullyStartBtn = makeActionBtn(fullyPage, "START FULLY", C.green, 9)
 local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 10)
 
--- FULLY LOGIC SIMPLIFIED
+-- FULLY LOGIC
 local fullyRunning = false
 local fullySavedPos = nil
 local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
@@ -748,7 +757,7 @@ local function fullySell()
         while countItem(item) > 0 and fullyRunning do
             setFullyStatus("SELLING " .. item:upper(), Color3.fromRGB(52, 210, 110))
             
-            if equip(item) then
+            if equipWithRetry(item, 3) then
                 holdE(0.7)
                 task.wait(1)
                 totalSold = totalSold + 1
@@ -768,7 +777,7 @@ local function fullySell()
     return true
 end
 
--- LOOP FULLY: BELI -> MASAK -> JUAL -> ULANG
+-- FULLY LOOP
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
@@ -806,7 +815,7 @@ local function fullyLoop()
                 updateFullyInventory()
             else
                 if not fullyRunning then break end
-                setFullyStatus("COOKING FAILED!", Color3.fromRGB(255, 155, 35))
+                setFullyStatus("COOKING FAILED! CHECK INVENTORY", Color3.fromRGB(255, 155, 35))
                 task.wait(2)
                 break
             end

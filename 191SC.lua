@@ -160,7 +160,7 @@ local C = {
 }
 
 -- ============================================================
--- SIMPLE LOADING OVERLAY
+-- SIMPLE LOADING OVERLAY (untuk keperluan lain, tp tidak dipakai)
 -- ============================================================
 local showLoading, hideLoading
 do
@@ -200,6 +200,7 @@ do
     title.TextColor3 = Color3.fromRGB(50, 150, 255)
     title.TextXAlignment = Enum.TextXAlignment.Center
     title.ZIndex = 12
+    title.TextStrokeTransparency = 1
 
     local line = Instance.new("Frame", bg)
     line.Size = UDim2.new(0, 200, 0, 1)
@@ -220,6 +221,7 @@ do
     subLbl.TextColor3 = Color3.fromRGB(0, 90, 190)
     subLbl.TextXAlignment = Enum.TextXAlignment.Center
     subLbl.ZIndex = 12
+    subLbl.TextStrokeTransparency = 1
 
     task.spawn(function()
         local pats = {"Teleporting", "Teleporting.", "Teleporting..", "Teleporting..."}
@@ -297,6 +299,7 @@ local function notify(title, msg, ntype)
     t.TextColor3 = C.text
     t.TextXAlignment = Enum.TextXAlignment.Left
     t.ZIndex = 101
+    t.TextStrokeTransparency = 1
 
     local m = Instance.new("TextLabel", card)
     m.Position = UDim2.new(0, 14, 0, 26)
@@ -309,6 +312,7 @@ local function notify(title, msg, ntype)
     m.TextXAlignment = Enum.TextXAlignment.Left
     m.TextWrapped = true
     m.ZIndex = 101
+    m.TextStrokeTransparency = 1
 
     local timerBar = Instance.new("Frame", card)
     timerBar.Position = UDim2.new(0, 3, 1, -2)
@@ -377,6 +381,7 @@ do
     titleLbl.TextSize = 15
     titleLbl.TextColor3 = C.text
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.TextStrokeTransparency = 1
 end
 
 local closeBtn = Instance.new("TextButton", topBar)
@@ -388,6 +393,7 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 12
 closeBtn.TextColor3 = C.red
 closeBtn.BorderSizePixel = 0
+closeBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -405,6 +411,7 @@ minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 14
 minBtn.TextColor3 = C.textMid
 minBtn.BorderSizePixel = 0
+minBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
 -- ============================================================
@@ -486,6 +493,7 @@ for i, def in ipairs(tabDefs) do
     btn.TextColor3 = C.textDim
     btn.BorderSizePixel = 0
     btn.LayoutOrder = def.order
+    btn.TextStrokeTransparency = 1
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
 
     local indicator = Instance.new("Frame", btn)
@@ -544,6 +552,7 @@ local function sectionLabel(parent, text, order)
     lbl.TextColor3 = C.textDim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.LayoutOrder = order or 0
+    lbl.TextStrokeTransparency = 1
 
     local line = Instance.new("Frame", wrap)
     line.Size = UDim2.new(1, 0, 0, 1)
@@ -561,9 +570,6 @@ local function card(parent, h, order)
     f.BorderSizePixel = 0
     f.LayoutOrder = order or 0
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
-    local s = Instance.new("UIStroke", f)
-    s.Color = C.border
-    s.Thickness = 1
     return f
 end
 
@@ -577,11 +583,8 @@ local function makeActionBtn(parent, text, color, order)
     f.Text = text
     f.BorderSizePixel = 0
     f.LayoutOrder = order or 0
+    f.TextStrokeTransparency = 1
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
-
-    local s = Instance.new("UIStroke", f)
-    s.Color = C.border
-    s.Thickness = 1
 
     f.MouseEnter:Connect(function()
         TweenService:Create(f, TweenInfo.new(0.12), {BackgroundColor3 = C.accent}):Play()
@@ -604,6 +607,7 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     lbl.TextSize = 11
     lbl.TextColor3 = C.textMid
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextStrokeTransparency = 1
 
     local valLbl = Instance.new("TextLabel", wrap)
     valLbl.Position = UDim2.new(1, -52, 0, 8)
@@ -614,6 +618,7 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     valLbl.TextSize = 12
     valLbl.TextColor3 = C.accentGlow
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
+    valLbl.TextStrokeTransparency = 1
 
     local track = Instance.new("Frame", wrap)
     track.Position = UDim2.new(0, 12, 0, 34)
@@ -691,6 +696,7 @@ msStatusLbl.Font = Enum.Font.GothamBold
 msStatusLbl.TextSize = 13
 msStatusLbl.TextColor3 = C.red
 msStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+msStatusLbl.TextStrokeTransparency = 1
 
 local stepCard = card(ap, 30, 3)
 local stepLbl = Instance.new("TextLabel", stepCard)
@@ -702,6 +708,7 @@ stepLbl.Font = Enum.Font.Gotham
 stepLbl.TextSize = 11
 stepLbl.TextColor3 = C.textMid
 stepLbl.TextXAlignment = Enum.TextXAlignment.Left
+stepLbl.TextStrokeTransparency = 1
 
 local timerCard = card(ap, 30, 4)
 local timerLbl = Instance.new("TextLabel", timerCard)
@@ -713,6 +720,7 @@ timerLbl.Font = Enum.Font.Gotham
 timerLbl.TextSize = 11
 timerLbl.TextColor3 = C.textMid
 timerLbl.TextXAlignment = Enum.TextXAlignment.Left
+timerLbl.TextStrokeTransparency = 1
 
 local toolCard = card(ap, 30, 5)
 local toolLbl = Instance.new("TextLabel", toolCard)
@@ -724,12 +732,13 @@ toolLbl.Font = Enum.Font.GothamBold
 toolLbl.TextSize = 11
 toolLbl.TextColor3 = C.accentGlow
 toolLbl.TextXAlignment = Enum.TextXAlignment.Left
+toolLbl.TextStrokeTransparency = 1
 
 local msStartBtn = makeActionBtn(ap, "▶️ START MS LOOP", C.green, 6)
 local msStopBtn = makeActionBtn(ap, "⏹️ STOP MS LOOP", C.red, 7)
 
 -- ============================================================
--- TP PAGE (tanpa Material Storage)
+-- TP PAGE (tanpa loading screen)
 -- ============================================================
 local tp = pages["TP"]
 
@@ -756,7 +765,7 @@ for i, loc in ipairs(LOCATIONS) do
 end
 
 -- ============================================================
--- MS POT PAGE (tanpa indicator)
+-- MS POT PAGE
 -- ============================================================
 local mspot = pages["MS POT"]
 
@@ -772,6 +781,7 @@ mspotStatusLbl.Font = Enum.Font.GothamSemibold
 mspotStatusLbl.TextSize = 12
 mspotStatusLbl.TextColor3 = C.textMid
 mspotStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+mspotStatusLbl.TextStrokeTransparency = 1
 
 local deleteFloorBtn = makeActionBtn(mspot, "DELETE PART DI BAWAH", Color3.fromRGB(120, 20, 50), 3)
 local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 4)
@@ -962,6 +972,7 @@ buyStatusLbl.Font = Enum.Font.GothamBold
 buyStatusLbl.TextSize = 13
 buyStatusLbl.TextColor3 = C.red
 buyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+buyStatusLbl.TextStrokeTransparency = 1
 
 local buyTotalCard = card(buyp, 30, 3)
 local buyTotalLbl = Instance.new("TextLabel", buyTotalCard)
@@ -973,6 +984,7 @@ buyTotalLbl.Font = Enum.Font.Gotham
 buyTotalLbl.TextSize = 11
 buyTotalLbl.TextColor3 = C.textMid
 buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
+buyTotalLbl.TextStrokeTransparency = 1
 
 local buySliderWrap, buyValLbl = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
     buyAmount = v
@@ -1050,7 +1062,7 @@ buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
 buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
 
 -- ============================================================
--- SELL PAGE (Auto Sell dari Elixir)
+-- SELL PAGE (Auto Sell)
 -- ============================================================
 local sellp = pages["SELL"]
 
@@ -1066,6 +1078,7 @@ sellStatusLbl.Font = Enum.Font.GothamBold
 sellStatusLbl.TextSize = 13
 sellStatusLbl.TextColor3 = C.red
 sellStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+sellStatusLbl.TextStrokeTransparency = 1
 
 local sellCounterCard = card(sellp, 30, 3)
 local sellCounterLbl = Instance.new("TextLabel", sellCounterCard)
@@ -1077,6 +1090,7 @@ sellCounterLbl.Font = Enum.Font.GothamBold
 sellCounterLbl.TextSize = 12
 sellCounterLbl.TextColor3 = C.accentGlow
 sellCounterLbl.TextXAlignment = Enum.TextXAlignment.Left
+sellCounterLbl.TextStrokeTransparency = 1
 
 local sellStartBtn = makeActionBtn(sellp, "▶️ START SELL", C.green, 4)
 local sellStopBtn = makeActionBtn(sellp, "⏹️ STOP SELL", C.red, 5)
@@ -1175,6 +1189,7 @@ blinkTitle.Font = Enum.Font.GothamSemibold
 blinkTitle.TextSize = 12
 blinkTitle.TextColor3 = C.text
 blinkTitle.TextXAlignment = Enum.TextXAlignment.Left
+blinkTitle.TextStrokeTransparency = 1
 
 local blinkToggleBtn = Instance.new("TextButton", blinkCard)
 blinkToggleBtn.Size = UDim2.new(0, 80, 0, 32)
@@ -1185,6 +1200,7 @@ blinkToggleBtn.Font = Enum.Font.GothamBold
 blinkToggleBtn.TextSize = 12
 blinkToggleBtn.TextColor3 = C.text
 blinkToggleBtn.BorderSizePixel = 0
+blinkToggleBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", blinkToggleBtn).CornerRadius = UDim.new(0, 6)
 
 blinkToggleBtn.MouseButton1Click:Connect(function()
@@ -1372,7 +1388,7 @@ local function stopHPMonitoring()
 end
 
 -- ============================================================
--- MS LOOP LOGIC (pakai script punya user)
+-- MS LOOP LOGIC
 -- ============================================================
 local loopRunning = false
 
@@ -1388,12 +1404,10 @@ local function startMSLoop()
     msStatusLbl.Text = "▶️ RUNNING"
     msStatusLbl.TextColor3 = C.green
     
-    -- Aktifkan HP Safe otomatis
     startHPMonitoring()
     
     task.spawn(function()
         while loopRunning do
-            -- Masak Water (20 detik)
             local waterTool = findTool("water")
             if waterTool and equip(waterTool.Name) then
                 toolLbl.Text = "Tool: WATER"
@@ -1412,7 +1426,6 @@ local function startMSLoop()
             
             if not loopRunning then break end
             
-            -- Masak Sugar (1 detik)
             local sugarTool = findTool("sugar")
             if sugarTool and equip(sugarTool.Name) then
                 toolLbl.Text = "Tool: SUGAR"
@@ -1431,7 +1444,6 @@ local function startMSLoop()
             task.wait(0.5)
             if not loopRunning then break end
             
-            -- Masak Gelatin (45 detik)
             local gelatinTool = findTool("gelatin")
             if gelatinTool and equip(gelatinTool.Name) then
                 toolLbl.Text = "Tool: GELATIN"
@@ -1451,7 +1463,6 @@ local function startMSLoop()
             task.wait(3)
             if not loopRunning then break end
             
-            -- Ambil hasil (Empty Bag)
             local emptyTool = findTool("empty") or findTool("bag")
             if emptyTool and equip(emptyTool.Name) then
                 toolLbl.Text = "Tool: EMPTY BAG"
@@ -1479,7 +1490,6 @@ local function startMSLoop()
         timerLbl.Text = "Timer: 0s"
         toolLbl.Text = "Tool: -"
         
-        -- Matikan HP Safe otomatis saat MS stop
         stopHPMonitoring()
     end)
 end
@@ -1527,6 +1537,7 @@ hideBtn.TextColor3 = Color3.new(1,1,1)
 hideBtn.Active = true
 hideBtn.Draggable = true
 hideBtn.BorderSizePixel = 0
+hideBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", hideBtn).CornerRadius = UDim.new(0, 10)
 
 hideBtn.MouseButton1Click:Connect(function()

@@ -37,6 +37,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Variables
 local buyAmount = 10
 local blinkEnabled = true
+local fullyTarget = 5
 
 -- ========== BLINK FUNCTIONS ==========
 local function blinkMaju()
@@ -134,6 +135,23 @@ local function stepTeleport(targetPos)
             hrp.Anchored = false
         end
     end
+end
+
+local function vehicleTeleport(cf)
+    local char = player.Character
+    if not char then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    local seat = humanoid.SeatPart
+    if not seat then return end
+    local vehicle = seat:FindFirstAncestorOfClass("Model")
+    if not vehicle then return end
+    if not vehicle.PrimaryPart then vehicle.PrimaryPart = seat end
+    vehicle:SetPrimaryPartCFrame(cf)
+    task.wait(1)
+    seat.Throttle = 1
+    task.wait(0.5)
+    seat.Throttle = 0
 end
 
 -- ============================================================
@@ -512,60 +530,6 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     return wrap, valLbl
 end
 
-local function makeStepper(parent, labelText, minV, maxV, defaultV, order, callback)
-    local wrap = card(parent, 50, order)
-
-    local lbl = Instance.new("TextLabel", wrap)
-    lbl.Position = UDim2.new(0, 12, 0, 8)
-    lbl.Size = UDim2.new(0.5, 0, 0, 20)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = labelText
-    lbl.Font = Enum.Font.GothamSemibold
-    lbl.TextSize = 11
-    lbl.TextColor3 = C.textMid
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.TextStrokeTransparency = 1
-
-    local valLbl = Instance.new("TextLabel", wrap)
-    valLbl.Position = UDim2.new(0.5, 0, 0, 8)
-    valLbl.Size = UDim2.new(0, 50, 0, 20)
-    valLbl.BackgroundTransparency = 1
-    valLbl.Text = tostring(defaultV)
-    valLbl.Font = Enum.Font.GothamBold
-    valLbl.TextSize = 13
-    valLbl.TextColor3 = C.accentGlow
-    valLbl.TextXAlignment = Enum.TextXAlignment.Center
-    valLbl.TextStrokeTransparency = 1
-
-    local minusBtn = makeActionBtn(wrap, "-", C.accentDim, nil)
-    minusBtn.Size = UDim2.new(0, 36, 0, 30)
-    minusBtn.Position = UDim2.new(0.7, 0, 0.5, -15)
-    minusBtn.TextSize = 16
-
-    local plusBtn = makeActionBtn(wrap, "+", C.accentDim, nil)
-    plusBtn.Size = UDim2.new(0, 36, 0, 30)
-    plusBtn.Position = UDim2.new(0.85, 0, 0.5, -15)
-    plusBtn.TextSize = 16
-
-    local currentVal = defaultV
-
-    local function updateVal(newVal)
-        currentVal = math.clamp(newVal, minV, maxV)
-        valLbl.Text = tostring(currentVal)
-        if callback then callback(currentVal) end
-    end
-
-    minusBtn.MouseButton1Click:Connect(function()
-        updateVal(currentVal - 1)
-    end)
-
-    plusBtn.MouseButton1Click:Connect(function()
-        updateVal(currentVal + 1)
-    end)
-
-    return function() return currentVal end
-end
-
 -- ============================================================
 -- AUTO PAGE (MS Loop)
 -- ============================================================
@@ -686,30 +650,13 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (Auto Fully) - FIXED
+-- FULLY PAGE (Auto Fully) - SLIDER VERSION
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
-sectionLabel(fullyPage, "Auto Fully (AFK Loop)", 1)
+sectionLabel(fullyPage, "AUTO FULLY", 1)
 
-local fullyInfoCard = card(fullyPage, 50, 2)
-local fullyInfoLbl = Instance.new("TextLabel", fullyInfoCard)
-fullyInfoLbl.Size = UDim2.new(1, -20, 1, 0)
-fullyInfoLbl.Position = UDim2.new(0, 12, 0, 0)
-fullyInfoLbl.BackgroundTransparency = 1
-fullyInfoLbl.Text = "Loop: Beli bahan → Masak di posisi terakhir → Jual → Ulangi sampai bahan habis"
-fullyInfoLbl.Font = Enum.Font.Gotham
-fullyInfoLbl.TextSize = 10
-fullyInfoLbl.TextColor3 = C.textMid
-fullyInfoLbl.TextXAlignment = Enum.TextXAlignment.Left
-fullyInfoLbl.TextWrapped = true
-fullyInfoLbl.TextStrokeTransparency = 1
-
-sectionLabel(fullyPage, "Setting", 3)
-
-local targetStepper = makeStepper(fullyPage, "Target MS per loop", 1, 50, 5, 4, nil)
-
-local fullyStatusCard = card(fullyPage, 40, 5)
+local fullyStatusCard = card(fullyPage, 40, 2)
 local fullyStatusLbl = Instance.new("TextLabel", fullyStatusCard)
 fullyStatusLbl.Size = UDim2.new(1, -20, 1, 0)
 fullyStatusLbl.Position = UDim2.new(0, 12, 0, 0)
@@ -721,8 +668,13 @@ fullyStatusLbl.TextColor3 = C.red
 fullyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 fullyStatusLbl.TextStrokeTransparency = 1
 
-local fullyStartBtn = makeActionBtn(fullyPage, "⚡ START FULLY", C.green, 6)
-local fullyStopBtn = makeActionBtn(fullyPage, "■ STOP FULLY", C.red, 7)
+-- SLIDER untuk Target Fully
+local targetSliderWrap, targetValLbl = makeSlider(fullyPage, "TARGET FULLY", 1, 50, 5, 3, function(v)
+    fullyTarget = v
+end)
+
+local fullyStartBtn = makeActionBtn(fullyPage, "⚡ START FULLY", C.green, 4)
+local fullyStopBtn = makeActionBtn(fullyPage, "■ STOP FULLY", C.red, 5)
 
 -- FULLY LOGIC
 local fullyRunning = false
@@ -844,8 +796,7 @@ local function fullySell()
 end
 
 local function fullyLoop()
-    local targetPerLoop = targetStepper()
-    setFullyStatus("🔄 Target " .. targetPerLoop .. " MS per loop", Color3.fromRGB(100, 180, 255))
+    setFullyStatus("🔄 Target " .. fullyTarget .. " MS per loop", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
         -- Cek bahan
@@ -859,7 +810,7 @@ local function fullyLoop()
             stepTeleport(NPC_MS_POS)
             task.wait(1)
             
-            if not fullyBuy(targetPerLoop) then
+            if not fullyBuy(fullyTarget) then
                 if not fullyRunning then break end
                 setFullyStatus("❌ Gagal membeli!", C.red)
                 task.wait(2)
@@ -875,17 +826,17 @@ local function fullyLoop()
         
         -- Masak
         local cooked = 0
-        while fullyRunning and cooked < targetPerLoop do
+        while fullyRunning and cooked < fullyTarget do
             if countItem("Water") == 0 or countItem("Sugar Block Bag") == 0 or countItem("Gelatin") == 0 or countItem("Empty Bag") == 0 then
                 setFullyStatus("⚠️ Bahan habis saat masak!", Color3.fromRGB(255, 160, 40))
                 break
             end
             
-            setFullyStatus("🔥 Memasak MS ke-" .. (cooked + 1) .. "/" .. targetPerLoop, Color3.fromRGB(82, 130, 255))
+            setFullyStatus("🔥 Memasak MS ke-" .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
             
             if fullyCook() then
                 cooked = cooked + 1
-                setFullyStatus("✅ Selesai " .. cooked .. "/" .. targetPerLoop .. " MS", Color3.fromRGB(52, 210, 110))
+                setFullyStatus("✅ Selesai " .. cooked .. "/" .. fullyTarget .. " MS", Color3.fromRGB(52, 210, 110))
             else
                 if not fullyRunning then break end
                 setFullyStatus("⚠️ Gagal memasak!", Color3.fromRGB(255, 155, 35))
@@ -943,7 +894,7 @@ fullyStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- TP PAGE
+-- TP PAGE (dengan lokasi baru)
 -- ============================================================
 local tp = pages["TP"]
 
@@ -958,6 +909,9 @@ local LOCATIONS = {
     {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928)},
     {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77)},
     {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76)},
+    {name = "🎰 Apt Casino 1",    pos = Vector3.new(1202.30, 3.71, -220.91)},
+    {name = "🎰 Apt Casino 2",    pos = Vector3.new(1179.72, 3.71, -230.21)},
+    {name = "🎰 Apt Casino 3",    pos = Vector3.new(1202.31, 3.71, -182.55)},
 }
 
 for i, loc in ipairs(LOCATIONS) do

@@ -542,7 +542,7 @@ local function makeStatusRow(parent, label, order)
 end
 
 -- ============================================================
--- AUTO PAGE
+-- AUTO PAGE (MS LOOP)
 -- ============================================================
 local ap = pages["AUTO"]
 
@@ -579,7 +579,7 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- FUNGSI MASAK YANG AKAN DIPAKAI JUGA OLEH FULLY
+-- FUNGSI MASAK (dipakai AUTO dan FULLY)
 local function cookProcess()
     if equip("Water") then
         holdE(0.7)
@@ -662,7 +662,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (PAKAI FUNGSI MASAK YANG SAMA)
+-- FULLY PAGE (SIMPLIFIED)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -694,7 +694,7 @@ fullyStatusLbl.TextStrokeTransparency = 1
 local fullyStartBtn = makeActionBtn(fullyPage, "START FULLY", C.green, 9)
 local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 10)
 
--- FULLY LOGIC
+-- FULLY LOGIC SIMPLIFIED
 local fullyRunning = false
 local fullySavedPos = nil
 local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
@@ -717,7 +717,7 @@ local function fullyBuy(qty)
         return false
     end
     
-    local items = {"Water", "Sugar Block Bag", "Gelatin"}
+    local items = {"Water", "Sugar Block Bag", "Gelatin", "Empty Bag"}
     
     for _, item in ipairs(items) do
         if not fullyRunning then return false end
@@ -768,56 +768,37 @@ local function fullySell()
     return true
 end
 
+-- LOOP FULLY: BELI -> MASAK -> JUAL -> ULANG
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
-        updateFullyInventory()
+        -- STEP 1: BELI BAHAN
+        setFullyStatus("STEP 1: TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
+        stepTeleport(NPC_MS_POS)
+        task.wait(1)
         
-        -- CEK BAHAN
-        local needWater = countItem("Water") < fullyTarget
-        local needSugar = countItem("Sugar Block Bag") < fullyTarget
-        local needGelatin = countItem("Gelatin") < fullyTarget
-        local needEmpty = countItem("Empty Bag") < fullyTarget
+        setFullyStatus("STEP 2: BUYING INGREDIENTS", Color3.fromRGB(100, 180, 255))
+        if not fullyBuy(fullyTarget) then
+            if not fullyRunning then break end
+            setFullyStatus("FAILED TO BUY!", C.red)
+            task.wait(2)
+            break
+        end
         
-        if needWater or needSugar or needGelatin or needEmpty then
-            setFullyStatus("NEED MORE INGREDIENTS, GOING TO NPC...", Color3.fromRGB(255, 160, 40))
+        -- STEP 2: KEMBALI KE APART
+        if fullySavedPos then
+            setFullyStatus("STEP 3: RETURNING TO APARTMENT", Color3.fromRGB(148, 80, 255))
+            stepTeleport(fullySavedPos)
             task.wait(1)
-            
-            setFullyStatus("TELEPORTING TO NPC...", Color3.fromRGB(100, 180, 255))
-            stepTeleport(NPC_MS_POS)
-            task.wait(1)
-            
-            if not fullyBuy(fullyTarget) then
-                if not fullyRunning then break end
-                setFullyStatus("FAILED TO BUY!", C.red)
-                task.wait(2)
-                break
-            end
-            
-            if fullySavedPos then
-                setFullyStatus("RETURNING TO APARTMENT...", Color3.fromRGB(148, 80, 255))
-                stepTeleport(fullySavedPos)
-                task.wait(1)
-            end
         end
         
         updateFullyInventory()
         
-        -- MASAK (PAKAI FUNGSI YANG SAMA DENGAN AUTO MS)
+        -- STEP 3: MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
-            local waterCount = countItem("Water")
-            local sugarCount = countItem("Sugar Block Bag")
-            local gelatinCount = countItem("Gelatin")
-            local emptyCount = countItem("Empty Bag")
-            
-            if waterCount == 0 or sugarCount == 0 or gelatinCount == 0 or emptyCount == 0 then
-                setFullyStatus("OUT OF INGREDIENTS!", Color3.fromRGB(255, 160, 40))
-                break
-            end
-            
-            setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
+            setFullyStatus("STEP 4: COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
             
             if cookProcess() then
                 cooked = cooked + 1
@@ -834,11 +815,12 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
-        -- JUAL
-        setFullyStatus("TELEPORTING TO NPC FOR SELLING...", Color3.fromRGB(52, 210, 110))
+        -- STEP 4: JUAL
+        setFullyStatus("STEP 5: TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
+        setFullyStatus("STEP 6: SELLING ALL MS", Color3.fromRGB(52, 210, 110))
         fullySell()
         
         if not fullyRunning then break end

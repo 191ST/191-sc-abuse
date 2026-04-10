@@ -579,12 +579,15 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- FUNGSI MASAK SEDERHANA (GA PAKAI RETURN FALSE)
+-- FUNGSI MASAK SEDERHANA
 local function cookProcess()
     pcall(function()
         equip("Water")
         holdE(0.7)
-        for i = 20, 1, -1 do task.wait(1) end
+        for i = 20, 1, -1 do
+            if not msRunning and not fullyRunning then return end
+            task.wait(1)
+        end
         
         equip("Sugar Block Bag")
         holdE(0.7)
@@ -594,7 +597,10 @@ local function cookProcess()
         holdE(0.7)
         task.wait(1)
         
-        for i = 45, 1, -1 do task.wait(1) end
+        for i = 45, 1, -1 do
+            if not msRunning and not fullyRunning then return end
+            task.wait(1)
+        end
         
         equip("Empty Bag")
         holdE(0.7)
@@ -633,7 +639,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (PAKAI COOKPROCESS YANG SAMA)
+-- FULLY PAGE (FIXED STOP)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -669,6 +675,7 @@ local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 10)
 local fullyRunning = false
 local fullySavedPos = nil
 local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
+local fullyLoopThread = nil
 
 local function updateFullyInventory()
     waterValFully.Text = tostring(countItem("Water"))
@@ -683,15 +690,16 @@ local function setFullyStatus(msg, color)
 end
 
 local function fullyBuy(qty)
-    if not storePurchaseRE then return end
+    if not storePurchaseRE then return false end
+    if not fullyRunning then return false end
     
     local items = {"Water", "Sugar Block Bag", "Gelatin", "Empty Bag"}
     
     for _, item in ipairs(items) do
-        if not fullyRunning then break end
+        if not fullyRunning then return false end
         setFullyStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
         for i = 1, qty do
-            if not fullyRunning then break end
+            if not fullyRunning then return false end
             pcall(function() storePurchaseRE:FireServer(item, 1) end)
             task.wait(0.4)
         end
@@ -699,13 +707,16 @@ local function fullyBuy(qty)
     end
     setFullyStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
     task.wait(1)
+    return true
 end
 
 local function fullySell()
+    if not fullyRunning then return false end
+    
     local sellItems = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     
     for _, item in ipairs(sellItems) do
-        if not fullyRunning then break end
+        if not fullyRunning then return false end
         while countItem(item) > 0 and fullyRunning do
             setFullyStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
             pcall(function()
@@ -713,22 +724,63 @@ local function fullySell()
                 holdE(0.7)
                 task.wait(1)
             end)
+            if not fullyRunning then return false end
+            task.wait(0.1)
         end
     end
     setFullyStatus("SELLING COMPLETE!", Color3.fromRGB(52, 210, 110))
     task.wait(1)
+    return true
 end
 
--- LOOP FULLY
+local function fullyCook()
+    if not fullyRunning then return false end
+    
+    pcall(function()
+        equip("Water")
+        holdE(0.7)
+        for i = 20, 1, -1 do
+            if not fullyRunning then return end
+            task.wait(1)
+        end
+        
+        if not fullyRunning then return end
+        equip("Sugar Block Bag")
+        holdE(0.7)
+        task.wait(1)
+        
+        if not fullyRunning then return end
+        equip("Gelatin")
+        holdE(0.7)
+        task.wait(1)
+        
+        if not fullyRunning then return end
+        for i = 45, 1, -1 do
+            if not fullyRunning then return end
+            task.wait(1)
+        end
+        
+        if not fullyRunning then return end
+        equip("Empty Bag")
+        holdE(0.7)
+        task.wait(1)
+    end)
+    
+    return true
+end
+
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
+        if not fullyRunning then break end
+        
         -- BELI
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
+        if not fullyRunning then break end
         fullyBuy(fullyTarget)
         if not fullyRunning then break end
         
@@ -739,16 +791,18 @@ local function fullyLoop()
             task.wait(1)
         end
         
+        if not fullyRunning then break end
         updateFullyInventory()
         
         -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
-            cookProcess()
+            fullyCook()
             cooked = cooked + 1
             updateFullyInventory()
             task.wait(0.5)
+            if not fullyRunning then break end
         end
         
         if not fullyRunning then break end
@@ -758,6 +812,7 @@ local function fullyLoop()
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
+        if not fullyRunning then break end
         fullySell()
         if not fullyRunning then break end
         
@@ -765,10 +820,12 @@ local function fullyLoop()
         task.wait(2)
     end
     
+    -- TAMAT
     fullyRunning = false
     fullyStartBtn.Text = "START FULLY"
     TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
     setFullyStatus("STOPPED", C.red)
+    fullyLoopThread = nil
 end
 
 fullyStartBtn.MouseButton1Click:Connect(function()
@@ -788,11 +845,12 @@ fullyStartBtn.MouseButton1Click:Connect(function()
     TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
     setFullyStatus("RUNNING", C.green)
     
-    task.spawn(fullyLoop)
+    if fullyLoopThread then task.cancel(fullyLoopThread) end
+    fullyLoopThread = task.spawn(fullyLoop)
 end)
 
 fullyStopBtn.MouseButton1Click:Connect(function()
-    if not fullyRunning then return end
+    if not fullyRunning then return
     fullyRunning = false
     setFullyStatus("STOPPING...", C.orange)
 end)

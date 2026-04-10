@@ -35,13 +35,13 @@ repeat task.wait() until player.Character
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Variables
-local running = false
-local buyAmount = 1
-
+local buyAmount = 10
 local buyRemote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("StorePurchase")
+local blinkEnabled = true
 
 -- ========== BLINK SHORTCUT (KEY T) ==========
 local function blinkMajuShortcut()
+    if not blinkEnabled then return end
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
@@ -129,12 +129,6 @@ local function vehicleTeleport(cf)
     seat.Throttle = 0
 end
 
-local function fill(bar, time)
-    bar.Size = UDim2.new(0,0,1,0)
-    bar:TweenSize(UDim2.new(1,0,1,0), Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, time, true)
-    task.delay(time, function() bar.Size = UDim2.new(0,0,1,0) end)
-end
-
 -- ============================================================
 -- GUI SETUP
 -- ============================================================
@@ -163,7 +157,6 @@ local C = {
     green     = Color3.fromRGB(40, 200, 100),
     red       = Color3.fromRGB(220, 60, 70),
     border    = Color3.fromRGB(40, 45, 65),
-    borderAct = Color3.fromRGB(0, 110, 220),
 }
 
 -- ============================================================
@@ -227,17 +220,6 @@ do
     subLbl.TextColor3 = Color3.fromRGB(0, 90, 190)
     subLbl.TextXAlignment = Enum.TextXAlignment.Center
     subLbl.ZIndex = 12
-
-    local ver = Instance.new("TextLabel", bg)
-    ver.Size = UDim2.new(1, 0, 0, 18)
-    ver.Position = UDim2.new(0, 0, 1, -22)
-    ver.BackgroundTransparency = 1
-    ver.Text = "191 STORE v191  •  Blue Edition"
-    ver.Font = Enum.Font.Gotham
-    ver.TextSize = 11
-    ver.TextColor3 = Color3.fromRGB(60, 65, 90)
-    ver.TextXAlignment = Enum.TextXAlignment.Center
-    ver.ZIndex = 12
 
     task.spawn(function()
         local pats = {"Teleporting", "Teleporting.", "Teleporting..", "Teleporting..."}
@@ -363,15 +345,8 @@ local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Color = C.border
 mainStroke.Thickness = 1
 
-local topGlow = Instance.new("Frame", main)
-topGlow.Size = UDim2.new(1, 0, 0, 1)
-topGlow.BackgroundColor3 = C.accentSoft
-topGlow.BorderSizePixel = 0
-topGlow.ZIndex = 5
-topGlow.BackgroundTransparency = 0.3
-
 -- ============================================================
--- TOP BAR
+-- TOP BAR (tanpa garis/glow)
 -- ============================================================
 local topBar = Instance.new("Frame", main)
 topBar.Size = UDim2.new(1, 0, 0, 46)
@@ -385,12 +360,6 @@ do
     fix.Position = UDim2.new(0, 0, 1, -12)
     fix.BackgroundColor3 = C.surface
     fix.BorderSizePixel = 0
-
-    local accentLine = Instance.new("Frame", topBar)
-    accentLine.Size = UDim2.new(1, 0, 0, 1)
-    accentLine.Position = UDim2.new(0, 0, 1, -1)
-    accentLine.BackgroundColor3 = C.border
-    accentLine.BorderSizePixel = 0
 
     local sq = Instance.new("Frame", topBar)
     sq.Size = UDim2.new(0, 4, 0, 20)
@@ -408,20 +377,6 @@ do
     titleLbl.TextSize = 15
     titleLbl.TextColor3 = C.text
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local badge = Instance.new("Frame", topBar)
-    badge.Size = UDim2.new(0, 38, 0, 18)
-    badge.Position = UDim2.new(0, 190, 0.5, -9)
-    badge.BackgroundColor3 = C.accentDim
-    badge.BorderSizePixel = 0
-    Instance.new("UICorner", badge).CornerRadius = UDim.new(0, 4)
-    local badgeTxt = Instance.new("TextLabel", badge)
-    badgeTxt.Size = UDim2.new(1,0,1,0)
-    badgeTxt.BackgroundTransparency = 1
-    badgeTxt.Text = "v191"
-    badgeTxt.Font = Enum.Font.GothamBold
-    badgeTxt.TextSize = 10
-    badgeTxt.TextColor3 = C.accentGlow
 end
 
 local closeBtn = Instance.new("TextButton", topBar)
@@ -436,7 +391,6 @@ closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
 closeBtn.MouseButton1Click:Connect(function()
-    running = false
     notify("191 Store", "Script dihentikan.", "error")
     task.wait(0.4)
     gui:Destroy()
@@ -489,11 +443,6 @@ content.BackgroundColor3 = C.panel
 content.ClipsDescendants = true
 Instance.new("UICorner", content).CornerRadius = UDim.new(0, 0)
 
-local contentFix = Instance.new("Frame", content)
-contentFix.Size = UDim2.new(0, 12, 1, 0)
-contentFix.BackgroundColor3 = C.panel
-contentFix.BorderSizePixel = 0
-
 -- ============================================================
 -- TAB SYSTEM
 -- ============================================================
@@ -502,12 +451,12 @@ local tabBtns = {}
 local currentTab = nil
 
 local tabDefs = {
-    {label = "FARM",     order = 1},
-    {label = "AUTO",     order = 2},
-    {label = "STATUS",   order = 3},
-    {label = "TP",       order = 4},
-    {label = "MS POT",   order = 5},
-    {label = "BUY",      order = 6},
+    {label = "AUTO",     order = 1},
+    {label = "TP",       order = 2},
+    {label = "MS POT",   order = 3},
+    {label = "BUY",      order = 4},
+    {label = "SELL",     order = 5},
+    {label = "SETTINGS", order = 6},
 }
 
 local function switchTab(name)
@@ -618,52 +567,6 @@ local function card(parent, h, order)
     return f
 end
 
-local function makeToggleBtn(parent, text, order)
-    local f = card(parent, 38, order)
-    local btn = Instance.new("TextButton", f)
-    btn.Size = UDim2.new(1, 0, 1, 0)
-    btn.BackgroundTransparency = 1
-    btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 12
-    btn.TextColor3 = C.text
-    btn.Text = text
-    btn.BorderSizePixel = 0
-
-    local pill = Instance.new("Frame", f)
-    pill.Size = UDim2.new(0, 28, 0, 14)
-    pill.Position = UDim2.new(1, -40, 0.5, -7)
-    pill.BackgroundColor3 = C.textDim
-    pill.BorderSizePixel = 0
-    Instance.new("UICorner", pill).CornerRadius = UDim.new(1, 0)
-
-    local knob = Instance.new("Frame", pill)
-    knob.Size = UDim2.new(0, 10, 0, 10)
-    knob.Position = UDim2.new(0, 2, 0.5, -5)
-    knob.BackgroundColor3 = Color3.new(1,1,1)
-    knob.BorderSizePixel = 0
-    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
-
-    local state = false
-    local function setToggle(on)
-        state = on
-        if on then
-            TweenService:Create(pill, TweenInfo.new(0.18), {BackgroundColor3 = C.accent}):Play()
-            TweenService:Create(knob, TweenInfo.new(0.18), {Position = UDim2.new(1, -12, 0.5, -5)}):Play()
-            btn.TextColor3 = C.accentGlow
-        else
-            TweenService:Create(pill, TweenInfo.new(0.18), {BackgroundColor3 = C.textDim}):Play()
-            TweenService:Create(knob, TweenInfo.new(0.18), {Position = UDim2.new(0, 2, 0.5, -5)}):Play()
-            btn.TextColor3 = C.text
-        end
-    end
-
-    btn.MouseButton1Click:Connect(function()
-        setToggle(not state)
-    end)
-
-    return btn, f, setToggle
-end
-
 local function makeActionBtn(parent, text, color, order)
     local f = Instance.new("TextButton", parent)
     f.Size = UDim2.new(1, 0, 0, 36)
@@ -771,98 +674,6 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     return wrap, valLbl
 end
 
-local function makeStatusRow(parent, label, order)
-    local f = card(parent, 30, order)
-
-    local lbl2 = Instance.new("TextLabel", f)
-    lbl2.Position = UDim2.new(0, 12, 0, 0)
-    lbl2.Size = UDim2.new(0.6, 0, 1, 0)
-    lbl2.BackgroundTransparency = 1
-    lbl2.Text = label
-    lbl2.Font = Enum.Font.GothamSemibold
-    lbl2.TextSize = 11
-    lbl2.TextColor3 = C.textMid
-    lbl2.TextXAlignment = Enum.TextXAlignment.Left
-
-    local val2 = Instance.new("TextLabel", f)
-    val2.Position = UDim2.new(0.6, 0, 0, 0)
-    val2.Size = UDim2.new(0.4, -10, 1, 0)
-    val2.BackgroundTransparency = 1
-    val2.Text = "0"
-    val2.Font = Enum.Font.GothamBold
-    val2.TextSize = 12
-    val2.TextColor3 = C.accentGlow
-    val2.TextXAlignment = Enum.TextXAlignment.Right
-
-    return val2, f
-end
-
--- ============================================================
--- FARM PAGE
--- ============================================================
-local fp = pages["FARM"]
-
-sectionLabel(fp, "Status", 1)
-
-local statusCard = card(fp, 36, 2)
-local statusLabel = Instance.new("TextLabel", statusCard)
-statusLabel.Size = UDim2.new(1, -20, 1, 0)
-statusLabel.Position = UDim2.new(0, 12, 0, 0)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "IDLE"
-statusLabel.Font = Enum.Font.GothamBold
-statusLabel.TextSize = 12
-statusLabel.TextColor3 = C.textMid
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-sectionLabel(fp, "Inventory", 3)
-
-local waterVal, _  = makeStatusRow(fp, "Water",            4)
-local sugarVal, _  = makeStatusRow(fp, "Sugar Block Bag",  5)
-local gelatinVal,_ = makeStatusRow(fp, "Gelatin",          6)
-local bagVal, _    = makeStatusRow(fp, "Empty Bag",        7)
-
-sectionLabel(fp, "Controls", 8)
-
-local buySliderWrap, buyValLbl = makeSlider(fp, "BUY AMOUNT", 1, 25, 1, 9, function(v)
-    buyAmount = v
-end)
-
-local farmToggleBtn = makeActionBtn(fp, "START FARM", C.accentDim, 10)
-local buyNowBtn     = makeActionBtn(fp, "BUY NOW", C.card, 11)
-
-sectionLabel(fp, "Cook Progress", 12)
-
-local function makeProgressCard(label, order)
-    local f = card(fp, 34, order)
-    local lbl3 = Instance.new("TextLabel", f)
-    lbl3.Position = UDim2.new(0, 10, 0, 5)
-    lbl3.Size = UDim2.new(0.6, 0, 0, 13)
-    lbl3.BackgroundTransparency = 1
-    lbl3.Text = label
-    lbl3.Font = Enum.Font.GothamSemibold
-    lbl3.TextSize = 10
-    lbl3.TextColor3 = C.textMid
-    lbl3.TextXAlignment = Enum.TextXAlignment.Left
-    local bg2 = Instance.new("Frame", f)
-    bg2.Position = UDim2.new(0, 10, 0, 22)
-    bg2.Size = UDim2.new(1, -20, 0, 5)
-    bg2.BackgroundColor3 = C.border
-    bg2.BorderSizePixel = 0
-    Instance.new("UICorner", bg2).CornerRadius = UDim.new(1, 0)
-    local bar2 = Instance.new("Frame", bg2)
-    bar2.Size = UDim2.new(0, 0, 1, 0)
-    bar2.BackgroundColor3 = C.accent
-    bar2.BorderSizePixel = 0
-    Instance.new("UICorner", bar2).CornerRadius = UDim.new(1, 0)
-    return bar2
-end
-
-local waterBar   = makeProgressCard("Water (20s)",   13)
-local sugarBar   = makeProgressCard("Sugar (1s)",    14)
-local gelatinBar = makeProgressCard("Gelatin (1s)",  15)
-local bagBar     = makeProgressCard("Bag (45s)",     16)
-
 -- ============================================================
 -- AUTO PAGE (MS Loop dengan HP Safe)
 -- ============================================================
@@ -918,77 +729,7 @@ local msStartBtn = makeActionBtn(ap, "▶️ START MS LOOP", C.green, 6)
 local msStopBtn = makeActionBtn(ap, "⏹️ STOP MS LOOP", C.red, 7)
 
 -- ============================================================
--- STATUS PAGE
--- ============================================================
-local sp = pages["STATUS"]
-
-local avatarCard = card(sp, 70, 1)
-local avatarImg2 = Instance.new("ImageLabel", avatarCard)
-avatarImg2.Position = UDim2.new(0, 10, 0.5, -26)
-avatarImg2.Size = UDim2.new(0, 52, 0, 52)
-avatarImg2.BackgroundColor3 = C.border
-avatarImg2.BorderSizePixel = 0
-Instance.new("UICorner", avatarImg2).CornerRadius = UDim.new(0, 8)
-
-local usernameLbl = Instance.new("TextLabel", avatarCard)
-usernameLbl.Position = UDim2.new(0, 72, 0, 14)
-usernameLbl.Size = UDim2.new(1, -82, 0, 20)
-usernameLbl.BackgroundTransparency = 1
-usernameLbl.Text = player.Name
-usernameLbl.Font = Enum.Font.GothamBlack
-usernameLbl.TextSize = 15
-usernameLbl.TextColor3 = C.text
-usernameLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local displayLbl = Instance.new("TextLabel", avatarCard)
-displayLbl.Position = UDim2.new(0, 72, 0, 36)
-displayLbl.Size = UDim2.new(1, -82, 0, 14)
-displayLbl.BackgroundTransparency = 1
-displayLbl.Text = "@" .. player.DisplayName
-displayLbl.Font = Enum.Font.Gotham
-displayLbl.TextSize = 11
-displayLbl.TextColor3 = C.textDim
-displayLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-task.spawn(function()
-    local img, _ = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
-    avatarImg2.Image = img
-end)
-
-sectionLabel(sp, "Inventory", 2)
-local statWaterVal   = makeStatusRow(sp, "Water",           3)
-local statSugarVal   = makeStatusRow(sp, "Sugar Block Bag", 4)
-local statGelatinVal = makeStatusRow(sp, "Gelatin",         5)
-local statBagVal     = makeStatusRow(sp, "Empty Bag",       6)
-
-sectionLabel(sp, "Marshmallow Bags", 7)
-local statSmallVal  = makeStatusRow(sp, "Small Bag",  8)
-local statMedVal    = makeStatusRow(sp, "Medium Bag", 9)
-local statLargeVal  = makeStatusRow(sp, "Large Bag",  10)
-
-local totalCard2 = card(sp, 36, 11)
-local totalLblLeft = Instance.new("TextLabel", totalCard2)
-totalLblLeft.Position = UDim2.new(0,12,0,0)
-totalLblLeft.Size = UDim2.new(0.5,0,1,0)
-totalLblLeft.BackgroundTransparency = 1
-totalLblLeft.Text = "Total Bags"
-totalLblLeft.Font = Enum.Font.GothamBold
-totalLblLeft.TextSize = 12
-totalLblLeft.TextColor3 = C.text
-totalLblLeft.TextXAlignment = Enum.TextXAlignment.Left
-
-local totalVal = Instance.new("TextLabel", totalCard2)
-totalVal.Position = UDim2.new(0.5,0,0,0)
-totalVal.Size = UDim2.new(0.5,-12,1,0)
-totalVal.BackgroundTransparency = 1
-totalVal.Text = "0"
-totalVal.Font = Enum.Font.GothamBlack
-totalVal.TextSize = 15
-totalVal.TextColor3 = C.accentGlow
-totalVal.TextXAlignment = Enum.TextXAlignment.Right
-
--- ============================================================
--- TELEPORT PAGE
+-- TP PAGE (tanpa Material Storage)
 -- ============================================================
 local tp = pages["TP"]
 
@@ -1003,7 +744,6 @@ local LOCATIONS = {
     {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928)},
     {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77)},
     {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76)},
-    {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25)},
 }
 
 for i, loc in ipairs(LOCATIONS) do
@@ -1018,7 +758,7 @@ for i, loc in ipairs(LOCATIONS) do
 end
 
 -- ============================================================
--- MS POT PAGE (UNDERPOT)
+-- MS POT PAGE (tanpa indicator)
 -- ============================================================
 local mspot = pages["MS POT"]
 
@@ -1035,35 +775,177 @@ mspotStatusLbl.TextSize = 12
 mspotStatusLbl.TextColor3 = C.textMid
 mspotStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local undoCard2 = card(mspot, 30, 3)
-local undoCountLbl = Instance.new("TextLabel", undoCard2)
-undoCountLbl.Size = UDim2.new(1, -20, 1, 0)
-undoCountLbl.Position = UDim2.new(0, 12, 0, 0)
-undoCountLbl.BackgroundTransparency = 1
-undoCountLbl.Text = "Undo Stack: 0 object"
-undoCountLbl.Font = Enum.Font.Gotham
-undoCountLbl.TextSize = 11
-undoCountLbl.TextColor3 = C.textDim
-undoCountLbl.TextXAlignment = Enum.TextXAlignment.Left
+local deleteFloorBtn = makeActionBtn(mspot, "DELETE PART DI BAWAH", Color3.fromRGB(120, 20, 50), 3)
+local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 4)
 
-local deleteFloorBtn = makeActionBtn(mspot, "DELETE PART DI BAWAH", Color3.fromRGB(120, 20, 50), 4)
-local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 5)
+sectionLabel(mspot, "Find Cook (Prompt Scanner)", 5)
 
-sectionLabel(mspot, "Find Cook (Prompt Scanner)", 6)
+local findCookBtn = makeActionBtn(mspot, "FIND COOK", Color3.fromRGB(0, 100, 80), 6)
+local restoreCookBtn = makeActionBtn(mspot, "RESTORE COOK", C.card, 7)
 
-local promptCountCard = card(mspot, 30, 7)
-local promptCountLbl = Instance.new("TextLabel", promptCountCard)
-promptCountLbl.Size = UDim2.new(1, -20, 1, 0)
-promptCountLbl.Position = UDim2.new(0, 12, 0, 0)
-promptCountLbl.BackgroundTransparency = 1
-promptCountLbl.Text = "0 prompt ditemukan"
-promptCountLbl.Font = Enum.Font.Gotham
-promptCountLbl.TextSize = 11
-promptCountLbl.TextColor3 = C.textDim
-promptCountLbl.TextXAlignment = Enum.TextXAlignment.Left
+-- MS POT LOGIC
+local deletedStack = {}
+local scannedPrompts = {}
+local SCAN_RADIUS = 50
+local isDeleting = false
 
-local findCookBtn = makeActionBtn(mspot, "FIND COOK", Color3.fromRGB(0, 100, 80), 8)
-local restoreCookBtn = makeActionBtn(mspot, "RESTORE COOK", C.card, 9)
+local function getPromptPosition(prompt)
+    local p = prompt.Parent
+    if not p then return nil end
+    if p:IsA("BasePart") then return p.Position end
+    if p:IsA("Attachment") then return p.WorldPosition end
+    if p:IsA("Model") then
+        if p.PrimaryPart then return p.PrimaryPart.Position end
+        for _, child in ipairs(p:GetDescendants()) do
+            if child:IsA("BasePart") then return child.Position end
+        end
+    end
+    local gp = p.Parent
+    if gp then
+        if gp:IsA("BasePart") then return gp.Position end
+        if gp:IsA("Model") then
+            if gp.PrimaryPart then return gp.PrimaryPart.Position end
+            for _, child in ipairs(gp:GetDescendants()) do
+                if child:IsA("BasePart") then return child.Position end
+            end
+        end
+    end
+    return nil
+end
+
+local function doPromptScan()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then 
+        mspotStatusLbl.Text = "HumanoidRootPart tidak ada" 
+        return 
+    end
+
+    for prompt, data in pairs(scannedPrompts) do
+        if prompt and prompt.Parent then
+            prompt.MaxActivationDistance = data.maxDist
+            prompt.RequiresLineOfSight   = data.lineOfSight
+            prompt.Enabled               = data.enabled
+            prompt.HoldDuration          = data.holdDuration
+        end
+    end
+    scannedPrompts = {}
+
+    mspotStatusLbl.Text = "Scanning prompt..."
+    local found = 0
+
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            local pos = getPromptPosition(v)
+            if pos then
+                local dist = (hrp.Position - pos).Magnitude
+                if dist <= SCAN_RADIUS then
+                    scannedPrompts[v] = {
+                        maxDist      = v.MaxActivationDistance,
+                        lineOfSight  = v.RequiresLineOfSight,
+                        enabled      = v.Enabled,
+                        holdDuration = v.HoldDuration,
+                    }
+                    v.Enabled               = true
+                    v.MaxActivationDistance = 20
+                    v.RequiresLineOfSight   = false
+                    v.HoldDuration          = 0
+                    found += 1
+                end
+            end
+        end
+    end
+
+    mspotStatusLbl.Text = "Scan: " .. found .. " prompt dimodifikasi"
+    notify("MS POT", found .. " prompt ditemukan & dimodifikasi", "success")
+end
+
+local function doRestorePrompts()
+    local count = 0
+    for prompt, data in pairs(scannedPrompts) do
+        if prompt and prompt.Parent then
+            prompt.MaxActivationDistance = data.maxDist
+            prompt.RequiresLineOfSight   = data.lineOfSight
+            prompt.Enabled               = data.enabled
+            prompt.HoldDuration          = data.holdDuration
+            count += 1
+        end
+    end
+    scannedPrompts = {}
+    mspotStatusLbl.Text = count .. " prompt di-restore"
+    notify("MS POT", count .. " prompt di-restore", "info")
+end
+
+findCookBtn.MouseButton1Click:Connect(function()
+    findCookBtn.Text = "Scanning..."
+    TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 60, 50)}):Play()
+    task.spawn(function()
+        doPromptScan()
+        task.wait(0.3)
+        findCookBtn.Text = "FIND COOK"
+        TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 100, 80)}):Play()
+    end)
+end)
+
+restoreCookBtn.MouseButton1Click:Connect(function()
+    doRestorePrompts()
+end)
+
+deleteFloorBtn.MouseButton1Click:Connect(function()
+    if isDeleting then return end
+    isDeleting = true
+    deleteFloorBtn.Text = "Memproses..."
+    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 0, 30)}):Play()
+
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        mspotStatusLbl.Text = "HumanoidRootPart tidak ada"
+        isDeleting = false
+        deleteFloorBtn.Text = "DELETE PART DI BAWAH"
+        TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
+        return
+    end
+
+    mspotStatusLbl.Text = "Mencari object di bawah..."
+
+    local rayOrigin = hrp.Position
+    local rayDir = Vector3.new(0, -15, 0)
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {char}
+    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+
+    local result = workspace:Raycast(rayOrigin, rayDir, rayParams)
+    if result and result.Instance then
+        local hit = result.Instance
+        if hit and hit.Parent then
+            table.insert(deletedStack, {object = hit:Clone(), parent = hit.Parent})
+            hit:Destroy()
+            mspotStatusLbl.Text = "Deleted: " .. hit.Name
+            notify("MS POT", "Part dihapus! (" .. #deletedStack .. " item di undo stack)", "success")
+        end
+    else
+        mspotStatusLbl.Text = "Tidak ada object di bawah"
+        notify("MS POT", "Tidak ada object terdeteksi.", "error")
+    end
+
+    task.wait(0.3)
+    isDeleting = false
+    deleteFloorBtn.Text = "DELETE PART DI BAWAH"
+    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
+end)
+
+undoBtn.MouseButton1Click:Connect(function()
+    local last = table.remove(deletedStack)
+    if last and last.object then
+        last.object.Parent = last.parent
+        mspotStatusLbl.Text = "Undo berhasil (" .. #deletedStack .. " item tersisa)"
+        notify("MS POT", "Undo berhasil!", "success")
+    else
+        mspotStatusLbl.Text = "Tidak ada yang bisa di-undo"
+        notify("MS POT", "Tidak ada yang bisa di-undo.", "error")
+    end
+end)
 
 -- ============================================================
 -- BUY PAGE (Auto Buy dengan Slider)
@@ -1072,34 +954,253 @@ local buyp = pages["BUY"]
 
 sectionLabel(buyp, "Auto Buy Bahan", 1)
 
-local buyStatusCard2 = card(buyp, 50, 2)
-local buyStatusLbl2 = Instance.new("TextLabel", buyStatusCard2)
-buyStatusLbl2.Size = UDim2.new(1, -20, 1, 0)
-buyStatusLbl2.Position = UDim2.new(0, 12, 0, 0)
-buyStatusLbl2.BackgroundTransparency = 1
-buyStatusLbl2.Text = "⏹️ STOPPED"
-buyStatusLbl2.Font = Enum.Font.GothamBold
-buyStatusLbl2.TextSize = 13
-buyStatusLbl2.TextColor3 = C.red
-buyStatusLbl2.TextXAlignment = Enum.TextXAlignment.Left
+local buyStatusCard = card(buyp, 50, 2)
+local buyStatusLbl = Instance.new("TextLabel", buyStatusCard)
+buyStatusLbl.Size = UDim2.new(1, -20, 1, 0)
+buyStatusLbl.Position = UDim2.new(0, 12, 0, 0)
+buyStatusLbl.BackgroundTransparency = 1
+buyStatusLbl.Text = "⏹️ STOPPED"
+buyStatusLbl.Font = Enum.Font.GothamBold
+buyStatusLbl.TextSize = 13
+buyStatusLbl.TextColor3 = C.red
+buyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local buyTotalCard2 = card(buyp, 30, 3)
-local buyTotalLbl2 = Instance.new("TextLabel", buyTotalCard2)
-buyTotalLbl2.Size = UDim2.new(1, -20, 1, 0)
-buyTotalLbl2.Position = UDim2.new(0, 12, 0, 0)
-buyTotalLbl2.BackgroundTransparency = 1
-buyTotalLbl2.Text = "Total: 0 item"
-buyTotalLbl2.Font = Enum.Font.Gotham
-buyTotalLbl2.TextSize = 11
-buyTotalLbl2.TextColor3 = C.textMid
-buyTotalLbl2.TextXAlignment = Enum.TextXAlignment.Left
+local buyTotalCard = card(buyp, 30, 3)
+local buyTotalLbl = Instance.new("TextLabel", buyTotalCard)
+buyTotalLbl.Size = UDim2.new(1, -20, 1, 0)
+buyTotalLbl.Position = UDim2.new(0, 12, 0, 0)
+buyTotalLbl.BackgroundTransparency = 1
+buyTotalLbl.Text = "Total: 0 item"
+buyTotalLbl.Font = Enum.Font.Gotham
+buyTotalLbl.TextSize = 11
+buyTotalLbl.TextColor3 = C.textMid
+buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local buySliderWrap2, buyValLbl2 = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
+local buySliderWrap, buyValLbl = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
     buyAmount = v
 end)
 
-local buyStartBtn2 = makeActionBtn(buyp, "▶️ START BUY", C.green, 5)
-local buyStopBtn2 = makeActionBtn(buyp, "⏹️ STOP BUY", C.red, 6)
+local buyStartBtn = makeActionBtn(buyp, "▶️ START BUY", C.green, 5)
+local buyStopBtn = makeActionBtn(buyp, "⏹️ STOP BUY", C.red, 6)
+
+-- AUTO BUY LOGIC
+local autoBuyRunning = false
+local autoBuyTotalBought = 0
+
+local function startAutoBuy()
+    if autoBuyRunning then return end
+    if not storePurchaseRE then
+        buyStatusLbl.Text = "❌ RemoteEvent Error!"
+        buyStatusLbl.TextColor3 = C.red
+        task.wait(2)
+        buyStatusLbl.Text = "⏹️ STOPPED"
+        return
+    end
+    
+    autoBuyRunning = true
+    autoBuyTotalBought = 0
+    buyStatusLbl.Text = "▶️ RUNNING"
+    buyStatusLbl.TextColor3 = C.green
+    buyTotalLbl.Text = "Total: 0 item"
+    
+    local BUY_ITEMS = {"Water", "Sugar Block Bag", "Gelatin"}
+    
+    task.spawn(function()
+        local amount = buyAmount
+        
+        for _, itemName in ipairs(BUY_ITEMS) do
+            if not autoBuyRunning then break end
+            
+            buyStatusLbl.Text = "🛒 Buying " .. itemName .. " x" .. amount
+            buyStatusLbl.TextColor3 = Color3.fromRGB(255,255,100)
+            
+            for i = 1, amount do
+                if not autoBuyRunning then break end
+                
+                pcall(function()
+                    storePurchaseRE:FireServer(itemName, 1)
+                end)
+                
+                autoBuyTotalBought = autoBuyTotalBought + 1
+                buyTotalLbl.Text = "Total: " .. autoBuyTotalBought .. " items"
+                task.wait(0.5)
+            end
+            
+            task.wait(0.8)
+        end
+        
+        if autoBuyRunning then
+            buyStatusLbl.Text = "✅ Complete! " .. autoBuyTotalBought .. " items"
+            buyStatusLbl.TextColor3 = C.green
+            task.wait(2)
+            if autoBuyRunning then
+                buyStatusLbl.Text = "⏹️ STOPPED"
+                buyStatusLbl.TextColor3 = C.red
+                autoBuyRunning = false
+            end
+        end
+    end)
+end
+
+local function stopAutoBuy()
+    autoBuyRunning = false
+    buyStatusLbl.Text = "⏹️ STOPPED"
+    buyStatusLbl.TextColor3 = C.red
+end
+
+buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
+buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
+
+-- ============================================================
+-- SELL PAGE (Auto Sell dari Elixir)
+-- ============================================================
+local sellp = pages["SELL"]
+
+sectionLabel(sellp, "Auto Sell Bag", 1)
+
+local sellStatusCard = card(sellp, 50, 2)
+local sellStatusLbl = Instance.new("TextLabel", sellStatusCard)
+sellStatusLbl.Size = UDim2.new(1, -20, 1, 0)
+sellStatusLbl.Position = UDim2.new(0, 12, 0, 0)
+sellStatusLbl.BackgroundTransparency = 1
+sellStatusLbl.Text = "⏹️ STOPPED"
+sellStatusLbl.Font = Enum.Font.GothamBold
+sellStatusLbl.TextSize = 13
+sellStatusLbl.TextColor3 = C.red
+sellStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local sellCounterCard = card(sellp, 30, 3)
+local sellCounterLbl = Instance.new("TextLabel", sellCounterCard)
+sellCounterLbl.Size = UDim2.new(1, -20, 1, 0)
+sellCounterLbl.Position = UDim2.new(0, 12, 0, 0)
+sellCounterLbl.BackgroundTransparency = 1
+sellCounterLbl.Text = "Terjual: 0"
+sellCounterLbl.Font = Enum.Font.GothamBold
+sellCounterLbl.TextSize = 12
+sellCounterLbl.TextColor3 = C.accentGlow
+sellCounterLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local sellStartBtn = makeActionBtn(sellp, "▶️ START SELL", C.green, 4)
+local sellStopBtn = makeActionBtn(sellp, "⏹️ STOP SELL", C.red, 5)
+
+-- AUTO SELL LOGIC
+local autoSellRunning = false
+local autoSellCount = 0
+local SELL_TOOLS = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
+
+local function getSellTools()
+    local tools = {}
+    if player.Character then
+        for _, child in pairs(player.Character:GetChildren()) do
+            if child:IsA("Tool") then
+                for _, toolName in ipairs(SELL_TOOLS) do
+                    if child.Name == toolName then table.insert(tools, child) break end
+                end
+            end
+        end
+    end
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, child in pairs(backpack:GetChildren()) do
+            if child:IsA("Tool") then
+                for _, toolName in ipairs(SELL_TOOLS) do
+                    if child.Name == toolName then table.insert(tools, child) break end
+                end
+            end
+        end
+    end
+    return tools
+end
+
+local function startAutoSell()
+    if autoSellRunning then return end
+    autoSellRunning = true
+    autoSellCount = 0
+    sellStatusLbl.Text = "▶️ RUNNING"
+    sellStatusLbl.TextColor3 = C.green
+    
+    task.spawn(function()
+        while autoSellRunning do
+            local tools = getSellTools()
+            
+            if #tools > 0 then
+                for _, tool in ipairs(tools) do
+                    if not autoSellRunning then break end
+                    if tool and tool.Parent then
+                        if tool.Parent == player:FindFirstChild("Backpack") then
+                            local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+                            if humanoid then humanoid:EquipTool(tool) task.wait(0.3) end
+                        end
+                        sellStatusLbl.Text = "▶️ SELLING..."
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                        local holdStart = tick()
+                        while autoSellRunning and (tick() - holdStart) < 2 do task.wait(0.1) end
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                        autoSellCount = autoSellCount + 1
+                        sellCounterLbl.Text = "Terjual: " .. autoSellCount
+                        sellStatusLbl.Text = "▶️ RUNNING"
+                        task.wait(1)
+                    end
+                end
+            else
+                task.wait(2)
+            end
+            task.wait(0.5)
+        end
+    end)
+end
+
+local function stopAutoSell()
+    autoSellRunning = false
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    sellStatusLbl.Text = "⏹️ STOPPED"
+    sellStatusLbl.TextColor3 = C.red
+end
+
+sellStartBtn.MouseButton1Click:Connect(startAutoSell)
+sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
+
+-- ============================================================
+-- SETTINGS PAGE
+-- ============================================================
+local settingsp = pages["SETTINGS"]
+
+sectionLabel(settingsp, "Shortcut Settings", 1)
+
+local blinkCard = card(settingsp, 50, 2)
+local blinkTitle = Instance.new("TextLabel", blinkCard)
+blinkTitle.Size = UDim2.new(0.6, 0, 1, 0)
+blinkTitle.Position = UDim2.new(0, 12, 0, 0)
+blinkTitle.BackgroundTransparency = 1
+blinkTitle.Text = "Shortcut T (Blink Maju 8 studs)"
+blinkTitle.Font = Enum.Font.GothamSemibold
+blinkTitle.TextSize = 12
+blinkTitle.TextColor3 = C.text
+blinkTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local blinkToggleBtn = Instance.new("TextButton", blinkCard)
+blinkToggleBtn.Size = UDim2.new(0, 80, 0, 32)
+blinkToggleBtn.Position = UDim2.new(1, -92, 0.5, -16)
+blinkToggleBtn.BackgroundColor3 = C.green
+blinkToggleBtn.Text = "ON"
+blinkToggleBtn.Font = Enum.Font.GothamBold
+blinkToggleBtn.TextSize = 12
+blinkToggleBtn.TextColor3 = C.text
+blinkToggleBtn.BorderSizePixel = 0
+Instance.new("UICorner", blinkToggleBtn).CornerRadius = UDim.new(0, 6)
+
+blinkToggleBtn.MouseButton1Click:Connect(function()
+    blinkEnabled = not blinkEnabled
+    if blinkEnabled then
+        blinkToggleBtn.Text = "ON"
+        blinkToggleBtn.BackgroundColor3 = C.green
+        notify("Settings", "Shortcut T (Blink) diaktifkan", "success")
+    else
+        blinkToggleBtn.Text = "OFF"
+        blinkToggleBtn.BackgroundColor3 = C.red
+        notify("Settings", "Shortcut T (Blink) dimatikan", "error")
+    end
+end)
 
 -- ============================================================
 -- HP SAFE LOGIC (otomatis saat MS start/stop)
@@ -1273,79 +1374,7 @@ local function stopHPMonitoring()
 end
 
 -- ============================================================
--- FARM LOGIC
--- ============================================================
-local function cook()
-    while running do
-        if equip("Water") then
-            statusLabel.Text = "Cooking Water..."
-            statusLabel.TextColor3 = C.accentGlow
-            if waterBar then fill(waterBar, 20) end
-            holdE(0.7)
-            task.wait(20)
-        end
-        if equip("Sugar Block Bag") then
-            statusLabel.Text = "Cooking Sugar..."
-            if sugarBar then fill(sugarBar, 1) end
-            holdE(0.7)
-            task.wait(1)
-        end
-        if equip("Gelatin") then
-            statusLabel.Text = "Cooking Gelatin..."
-            if gelatinBar then fill(gelatinBar, 1) end
-            holdE(0.7)
-            task.wait(1)
-        end
-        statusLabel.Text = "Waiting..."
-        if bagBar then fill(bagBar, 45) end
-        task.wait(45)
-        if equip("Empty Bag") then
-            statusLabel.Text = "Collecting..."
-            holdE(0.7)
-            task.wait(1)
-        end
-    end
-    statusLabel.Text = "IDLE"
-    statusLabel.TextColor3 = C.textMid
-end
-
-local buying = false
-local function autoBuyFarm()
-    if buying then return end
-    buying = true
-    notify("Buy", "Membeli x" .. buyAmount, "info")
-    for i = 1, buyAmount do
-        if buyRemote then
-            buyRemote:FireServer("Water") task.wait(.35)
-            buyRemote:FireServer("Sugar Block Bag") task.wait(.35)
-            buyRemote:FireServer("Gelatin") task.wait(.35)
-            buyRemote:FireServer("Empty Bag") task.wait(.45)
-        end
-    end
-    notify("Buy", "Selesai beli x" .. buyAmount, "success")
-    buying = false
-end
-
-farmToggleBtn.MouseButton1Click:Connect(function()
-    running = not running
-    if running then
-        farmToggleBtn.Text = "STOP FARM"
-        TweenService:Create(farmToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
-        notify("Farm", "Auto farm dimulai!", "success")
-        task.spawn(cook)
-    else
-        farmToggleBtn.Text = "START FARM"
-        TweenService:Create(farmToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
-        notify("Farm", "Auto farm dihentikan.", "error")
-    end
-end)
-
-buyNowBtn.MouseButton1Click:Connect(function()
-    task.spawn(autoBuyFarm)
-end)
-
--- ============================================================
--- MS LOOP LOGIC (dengan HP Safe otomatis)
+-- MS LOOP LOGIC (pakai script punya user)
 -- ============================================================
 local loopRunning = false
 
@@ -1366,15 +1395,6 @@ local function startMSLoop()
     
     task.spawn(function()
         while loopRunning do
-            -- Update inventory display di status page
-            local w = countItem("Water")
-            local sg = countItem("Sugar Block Bag")
-            local ge = countItem("Gelatin")
-            if waterVal then waterVal.Text = tostring(w) end
-            if sugarVal then sugarVal.Text = tostring(sg) end
-            if gelatinVal then gelatinVal.Text = tostring(ge) end
-            if bagVal then bagVal.Text = tostring(countItem("Empty Bag")) end
-            
             -- Masak Water (20 detik)
             local waterTool = findTool("water")
             if waterTool and equip(waterTool.Name) then
@@ -1480,276 +1500,6 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- MS POT LOGIC (DELETE PART DI BAWAH, UNDO, FIND COOK)
--- ============================================================
-local deletedStack = {}
-local scannedPrompts = {}
-local SCAN_RADIUS = 50
-local isDeleting = false
-
-local function getPromptPosition(prompt)
-    local p = prompt.Parent
-    if not p then return nil end
-    if p:IsA("BasePart") then return p.Position end
-    if p:IsA("Attachment") then return p.WorldPosition end
-    if p:IsA("Model") then
-        if p.PrimaryPart then return p.PrimaryPart.Position end
-        for _, child in ipairs(p:GetDescendants()) do
-            if child:IsA("BasePart") then return child.Position end
-        end
-    end
-    local gp = p.Parent
-    if gp then
-        if gp:IsA("BasePart") then return gp.Position end
-        if gp:IsA("Model") then
-            if gp.PrimaryPart then return gp.PrimaryPart.Position end
-            for _, child in ipairs(gp:GetDescendants()) do
-                if child:IsA("BasePart") then return child.Position end
-            end
-        end
-    end
-    return nil
-end
-
-local function doPromptScan()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then 
-        mspotStatusLbl.Text = "HumanoidRootPart tidak ada" 
-        return 
-    end
-
-    for prompt, data in pairs(scannedPrompts) do
-        if prompt and prompt.Parent then
-            prompt.MaxActivationDistance = data.maxDist
-            prompt.RequiresLineOfSight   = data.lineOfSight
-            prompt.Enabled               = data.enabled
-            prompt.HoldDuration          = data.holdDuration
-        end
-    end
-    scannedPrompts = {}
-
-    mspotStatusLbl.Text = "Scanning prompt..."
-    local found = 0
-
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            local pos = getPromptPosition(v)
-            if pos then
-                local dist = (hrp.Position - pos).Magnitude
-                if dist <= SCAN_RADIUS then
-                    scannedPrompts[v] = {
-                        maxDist      = v.MaxActivationDistance,
-                        lineOfSight  = v.RequiresLineOfSight,
-                        enabled      = v.Enabled,
-                        holdDuration = v.HoldDuration,
-                    }
-                    v.Enabled               = true
-                    v.MaxActivationDistance = 20
-                    v.RequiresLineOfSight   = false
-                    v.HoldDuration          = 0
-                    found += 1
-                end
-            end
-        end
-    end
-
-    promptCountLbl.Text = found .. " prompt ditemukan"
-    mspotStatusLbl.Text = "Scan: " .. found .. " prompt dimodifikasi"
-end
-
-local function doRestorePrompts()
-    local count = 0
-    for prompt, data in pairs(scannedPrompts) do
-        if prompt and prompt.Parent then
-            prompt.MaxActivationDistance = data.maxDist
-            prompt.RequiresLineOfSight   = data.lineOfSight
-            prompt.Enabled               = data.enabled
-            prompt.HoldDuration          = data.holdDuration
-            count += 1
-        end
-    end
-    scannedPrompts = {}
-    promptCountLbl.Text = "0 prompt ditemukan"
-    mspotStatusLbl.Text = count .. " prompt di-restore"
-end
-
-findCookBtn.MouseButton1Click:Connect(function()
-    findCookBtn.Text = "Scanning..."
-    TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 60, 50)}):Play()
-    task.spawn(function()
-        doPromptScan()
-        notify("MS POT", promptCountLbl.Text, "success")
-        task.wait(0.3)
-        findCookBtn.Text = "FIND COOK"
-        TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 100, 80)}):Play()
-    end)
-end)
-
-restoreCookBtn.MouseButton1Click:Connect(function()
-    doRestorePrompts()
-    notify("MS POT", "Prompt di-restore.", "info")
-end)
-
-deleteFloorBtn.MouseButton1Click:Connect(function()
-    if isDeleting then return end
-    isDeleting = true
-    deleteFloorBtn.Text = "Memproses..."
-    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 0, 30)}):Play()
-
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        mspotStatusLbl.Text = "HumanoidRootPart tidak ada"
-        isDeleting = false
-        deleteFloorBtn.Text = "DELETE PART DI BAWAH"
-        TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
-        return
-    end
-
-    mspotStatusLbl.Text = "Mencari object di bawah..."
-
-    local rayOrigin = hrp.Position
-    local rayDir = Vector3.new(0, -15, 0)
-    local rayParams = RaycastParams.new()
-    rayParams.FilterDescendantsInstances = {char}
-    rayParams.FilterType = Enum.RaycastFilterType.Exclude
-
-    local result = workspace:Raycast(rayOrigin, rayDir, rayParams)
-    if result and result.Instance then
-        local hit = result.Instance
-        if hit and hit.Parent then
-            table.insert(deletedStack, {object = hit:Clone(), parent = hit.Parent})
-            hit:Destroy()
-            undoCountLbl.Text = "Undo Stack: " .. #deletedStack .. " object"
-            mspotStatusLbl.Text = "Deleted: " .. hit.Name
-            notify("MS POT", "Part dihapus!", "success")
-        end
-    else
-        mspotStatusLbl.Text = "Tidak ada object di bawah"
-        notify("MS POT", "Tidak ada object terdeteksi.", "error")
-    end
-
-    task.wait(0.3)
-    isDeleting = false
-    deleteFloorBtn.Text = "DELETE PART DI BAWAH"
-    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
-end)
-
-undoBtn.MouseButton1Click:Connect(function()
-    local last = table.remove(deletedStack)
-    if last and last.object then
-        last.object.Parent = last.parent
-        undoCountLbl.Text = "Undo Stack: " .. #deletedStack .. " object"
-        mspotStatusLbl.Text = "Undo berhasil"
-        notify("MS POT", "Undo berhasil!", "success")
-    else
-        mspotStatusLbl.Text = "Tidak ada yang bisa di-undo"
-        notify("MS POT", "Tidak ada yang bisa di-undo.", "error")
-    end
-end)
-
--- ============================================================
--- AUTO BUY LOGIC (BUY PAGE)
--- ============================================================
-local autoBuyRunning = false
-local autoBuyTotalBought = 0
-
-local function startAutoBuy()
-    if autoBuyRunning then return end
-    if not storePurchaseRE then
-        buyStatusLbl2.Text = "❌ RemoteEvent Error!"
-        buyStatusLbl2.TextColor3 = C.red
-        task.wait(2)
-        buyStatusLbl2.Text = "⏹️ STOPPED"
-        return
-    end
-    
-    autoBuyRunning = true
-    autoBuyTotalBought = 0
-    buyStatusLbl2.Text = "▶️ RUNNING"
-    buyStatusLbl2.TextColor3 = C.green
-    buyTotalLbl2.Text = "Total: 0 item"
-    
-    local BUY_ITEMS = {"Water", "Sugar Block Bag", "Gelatin"}
-    
-    task.spawn(function()
-        local amount = buyAmount
-        
-        for _, itemName in ipairs(BUY_ITEMS) do
-            if not autoBuyRunning then break end
-            
-            buyStatusLbl2.Text = "🛒 Buying " .. itemName .. " x" .. amount
-            buyStatusLbl2.TextColor3 = Color3.fromRGB(255,255,100)
-            
-            for i = 1, amount do
-                if not autoBuyRunning then break end
-                
-                pcall(function()
-                    storePurchaseRE:FireServer(itemName, 1)
-                end)
-                
-                autoBuyTotalBought = autoBuyTotalBought + 1
-                buyTotalLbl2.Text = "Total: " .. autoBuyTotalBought .. " items"
-                task.wait(0.5)
-            end
-            
-            task.wait(0.8)
-        end
-        
-        if autoBuyRunning then
-            buyStatusLbl2.Text = "✅ Complete! " .. autoBuyTotalBought .. " items"
-            buyStatusLbl2.TextColor3 = C.green
-            task.wait(2)
-            if autoBuyRunning then
-                buyStatusLbl2.Text = "⏹️ STOPPED"
-                buyStatusLbl2.TextColor3 = C.red
-                autoBuyRunning = false
-            end
-        end
-    end)
-end
-
-local function stopAutoBuy()
-    autoBuyRunning = false
-    buyStatusLbl2.Text = "⏹️ STOPPED"
-    buyStatusLbl2.TextColor3 = C.red
-end
-
-buyStartBtn2.MouseButton1Click:Connect(startAutoBuy)
-buyStopBtn2.MouseButton1Click:Connect(stopAutoBuy)
-
--- ============================================================
--- STATUS LOOP
--- ============================================================
-task.spawn(function()
-    while gui and gui.Parent do
-        local w  = countItem("Water")
-        local sg = countItem("Sugar Block Bag")
-        local ge = countItem("Gelatin")
-        local bg = countItem("Empty Bag")
-        local sm = countItem("Small Marshmallow Bag")
-        local md = countItem("Medium Marshmallow Bag")
-        local lg = countItem("Large Marshmallow Bag")
-
-        if waterVal    then waterVal.Text    = tostring(w)  end
-        if sugarVal    then sugarVal.Text    = tostring(sg) end
-        if gelatinVal  then gelatinVal.Text  = tostring(ge) end
-        if bagVal      then bagVal.Text      = tostring(bg) end
-        if statWaterVal   then statWaterVal.Text   = tostring(w)  end
-        if statSugarVal   then statSugarVal.Text   = tostring(sg) end
-        if statGelatinVal then statGelatinVal.Text = tostring(ge) end
-        if statBagVal     then statBagVal.Text     = tostring(bg) end
-        if statSmallVal   then statSmallVal.Text   = tostring(sm) end
-        if statMedVal     then statMedVal.Text     = tostring(md) end
-        if statLargeVal   then statLargeVal.Text   = tostring(lg) end
-        if totalVal       then totalVal.Text        = tostring(sm+md+lg) end
-
-        task.wait(0.5)
-    end
-end)
-
--- ============================================================
 -- MINIMIZE BUTTON
 -- ============================================================
 local bodyVisible = true
@@ -1794,7 +1544,7 @@ end, false, Enum.KeyCode.Z)
 -- ============================================================
 -- STARTUP
 -- ============================================================
-switchTab("FARM")
+switchTab("AUTO")
 task.wait(0.3)
-notify("191 STORE", "Script berhasil diload! v191", "success")
+notify("191 STORE", "Script berhasil diload!", "success")
 notify("Shortcut", "Tekan T untuk blink maju 8 studs", "info")

@@ -36,17 +36,9 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Variables
 local running = false
-local autoSellEnabled = false
-local buyAmount = 1
-
-local autoFarmRunning = false
-local autoFarmStopping = false
-local cookAmount = 5
+local buyAmount = 10
 
 local buyRemote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("StorePurchase")
-
-local npcPos = CFrame.new(510.762817,3.58721066,600.791504)
-local tierPos = CFrame.new(1110.18726,4.28433371,117.139168)
 
 -- ============================================================
 -- ANTI AFK
@@ -122,12 +114,6 @@ local function vehicleTeleport(cf)
 	seat.Throttle = 0
 end
 
-local function fill(bar, time)
-	bar.Size = UDim2.new(0,0,1,0)
-	bar:TweenSize(UDim2.new(1,0,1,0), Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, time, true)
-	task.delay(time, function() bar.Size = UDim2.new(0,0,1,0) end)
-end
-
 -- ============================================================
 -- GUI SETUP
 -- ============================================================
@@ -138,25 +124,24 @@ gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- ============================================================
--- COLOR PALETTE
+-- COLOR PALETTE (BIRU & HITAM)
 -- ============================================================
 local C = {
-	bg        = Color3.fromRGB(8,  7,  14),
-	surface   = Color3.fromRGB(14, 12, 24),
-	panel     = Color3.fromRGB(18, 16, 30),
-	card      = Color3.fromRGB(24, 21, 40),
-	sidebar   = Color3.fromRGB(11,  9, 20),
-	accent    = Color3.fromRGB(130, 60, 240),
-	accentDim = Color3.fromRGB(75,  35, 140),
-	accentGlow= Color3.fromRGB(175, 120, 255),
-	accentSoft= Color3.fromRGB(100, 55, 190),
-	text      = Color3.fromRGB(220, 215, 245),
-	textMid   = Color3.fromRGB(145, 138, 175),
-	textDim   = Color3.fromRGB(75,  68, 100),
-	green     = Color3.fromRGB(55,  200, 110),
-	red       = Color3.fromRGB(220, 60,  75),
-	border    = Color3.fromRGB(38,  32,  62),
-	borderAct = Color3.fromRGB(100, 55, 190),
+	bg        = Color3.fromRGB(10, 10, 18),
+	surface   = Color3.fromRGB(15, 15, 25),
+	panel     = Color3.fromRGB(18, 20, 30),
+	card      = Color3.fromRGB(22, 24, 36),
+	sidebar   = Color3.fromRGB(12, 12, 22),
+	accent    = Color3.fromRGB(0, 120, 215),
+	accentDim = Color3.fromRGB(0, 80, 150),
+	accentGlow= Color3.fromRGB(50, 160, 255),
+	accentSoft= Color3.fromRGB(0, 100, 190),
+	text      = Color3.fromRGB(235, 240, 255),
+	textMid   = Color3.fromRGB(160, 170, 200),
+	textDim   = Color3.fromRGB(90, 95, 120),
+	green     = Color3.fromRGB(40, 200, 100),
+	red       = Color3.fromRGB(220, 60, 70),
+	border    = Color3.fromRGB(40, 45, 65),
 }
 
 -- ============================================================
@@ -184,7 +169,7 @@ do
 	local glow = Instance.new("Frame", bg)
 	glow.Size = UDim2.new(0, 400, 0, 180)
 	glow.Position = UDim2.new(0.5, -200, 0.5, -90)
-	glow.BackgroundColor3 = Color3.fromRGB(80, 30, 160)
+	glow.BackgroundColor3 = Color3.fromRGB(0, 80, 160)
 	glow.BackgroundTransparency = 0.88
 	glow.BorderSizePixel = 0
 	glow.ZIndex = 11
@@ -197,23 +182,14 @@ do
 	title.Text = "191 STORE"
 	title.Font = Enum.Font.GothamBlack
 	title.TextSize = 44
-	title.TextColor3 = Color3.fromRGB(220, 215, 245)
+	title.TextColor3 = Color3.fromRGB(50, 160, 255)
 	title.TextXAlignment = Enum.TextXAlignment.Center
 	title.ZIndex = 12
-	do
-		local g = Instance.new("UIGradient", title)
-		g.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(175, 120, 255)),
-			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 215, 245)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(130, 60, 240)),
-		})
-		g.Rotation = 0
-	end
 
 	local line = Instance.new("Frame", bg)
 	line.Size = UDim2.new(0, 200, 0, 1)
 	line.Position = UDim2.new(0.5, -100, 0.5, 14)
-	line.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+	line.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 	line.BackgroundTransparency = 0.3
 	line.BorderSizePixel = 0
 	line.ZIndex = 12
@@ -226,7 +202,7 @@ do
 	subLbl.Text = "Teleporting..."
 	subLbl.Font = Enum.Font.Gotham
 	subLbl.TextSize = 13
-	subLbl.TextColor3 = Color3.fromRGB(100, 55, 190)
+	subLbl.TextColor3 = Color3.fromRGB(0, 100, 190)
 	subLbl.TextXAlignment = Enum.TextXAlignment.Center
 	subLbl.ZIndex = 12
 
@@ -234,10 +210,10 @@ do
 	ver.Size = UDim2.new(1, 0, 0, 18)
 	ver.Position = UDim2.new(0, 0, 1, -22)
 	ver.BackgroundTransparency = 1
-	ver.Text = "191 STORE v191  •  Deep Purple Edition"
+	ver.Text = "191 STORE v191  •  Blue Edition"
 	ver.Font = Enum.Font.Gotham
 	ver.TextSize = 11
-	ver.TextColor3 = Color3.fromRGB(45, 38, 70)
+	ver.TextColor3 = Color3.fromRGB(60, 65, 90)
 	ver.TextXAlignment = Enum.TextXAlignment.Center
 	ver.ZIndex = 12
 
@@ -352,8 +328,8 @@ end
 -- MAIN WINDOW
 -- ============================================================
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 660, 0, 430)
-main.Position = UDim2.new(0.5, -330, 0.5, -215)
+main.Size = UDim2.new(0, 500, 0, 450)
+main.Position = UDim2.new(0.5, -250, 0.5, -225)
 main.BackgroundColor3 = C.bg
 main.Active = true
 main.Draggable = true
@@ -439,7 +415,6 @@ Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
 closeBtn.MouseButton1Click:Connect(function()
 	running = false
-	autoSellEnabled = false
 	notify("191 Store", "Script dihentikan.", "error")
 	task.wait(0.4)
 	gui:Destroy()
@@ -457,565 +432,122 @@ minBtn.BorderSizePixel = 0
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
 -- ============================================================
--- TEXT SIDEBAR
+-- TAB BUTTONS
 -- ============================================================
-local sidebar = Instance.new("Frame", main)
-sidebar.Size = UDim2.new(0, 80, 1, -46)
-sidebar.Position = UDim2.new(0, 0, 0, 46)
-sidebar.BackgroundColor3 = C.sidebar
-sidebar.ZIndex = 2
-sidebar.ClipsDescendants = false
+local TabFrame = Instance.new("Frame", main)
+TabFrame.Size = UDim2.new(1, 0, 0, 40)
+TabFrame.Position = UDim2.new(0, 0, 0, 46)
+TabFrame.BackgroundColor3 = C.surface
+TabFrame.BorderSizePixel = 0
 
-local sidebarLine = Instance.new("Frame", main)
-sidebarLine.Size = UDim2.new(0, 1, 1, -46)
-sidebarLine.Position = UDim2.new(0, 79, 0, 46)
-sidebarLine.BackgroundColor3 = C.border
-sidebarLine.BorderSizePixel = 0
-sidebarLine.ZIndex = 3
+local tpTab = Instance.new("TextButton", TabFrame)
+tpTab.Size = UDim2.new(0.25, 0, 1, 0)
+tpTab.Position = UDim2.new(0, 0, 0, 0)
+tpTab.BackgroundColor3 = C.accentDim
+tpTab.Text = "TELEPORT"
+tpTab.TextColor3 = C.text
+tpTab.Font = Enum.Font.GothamBold
+tpTab.TextSize = 12
+tpTab.BorderSizePixel = 0
 
-local sidebarLayout = Instance.new("UIListLayout", sidebar)
-sidebarLayout.Padding = UDim.new(0, 4)
-sidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-sidebarLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local msTab = Instance.new("TextButton", TabFrame)
+msTab.Size = UDim2.new(0.25, 0, 1, 0)
+msTab.Position = UDim2.new(0.25, 0, 0, 0)
+msTab.BackgroundColor3 = C.card
+msTab.Text = "AUTO MS"
+msTab.TextColor3 = C.textMid
+msTab.Font = Enum.Font.GothamBold
+msTab.TextSize = 12
+msTab.BorderSizePixel = 0
 
-local sidebarPad = Instance.new("UIPadding", sidebar)
-sidebarPad.PaddingTop = UDim.new(0, 10)
+local buyTab = Instance.new("TextButton", TabFrame)
+buyTab.Size = UDim2.new(0.25, 0, 1, 0)
+buyTab.Position = UDim2.new(0.5, 0, 0, 0)
+buyTab.BackgroundColor3 = C.card
+buyTab.Text = "AUTO BUY"
+buyTab.TextColor3 = C.textMid
+buyTab.Font = Enum.Font.GothamBold
+buyTab.TextSize = 12
+buyTab.BorderSizePixel = 0
+
+local sellTab = Instance.new("TextButton", TabFrame)
+sellTab.Size = UDim2.new(0.25, 0, 1, 0)
+sellTab.Position = UDim2.new(0.75, 0, 0, 0)
+sellTab.BackgroundColor3 = C.card
+sellTab.Text = "AUTO SELL"
+sellTab.TextColor3 = C.textMid
+sellTab.Font = Enum.Font.GothamBold
+sellTab.TextSize = 12
+sellTab.BorderSizePixel = 0
 
 -- ============================================================
 -- CONTENT AREA
 -- ============================================================
-local content = Instance.new("Frame", main)
-content.Size = UDim2.new(1, -80, 1, -46)
-content.Position = UDim2.new(0, 80, 0, 46)
-content.BackgroundColor3 = C.panel
-content.ClipsDescendants = true
-Instance.new("UICorner", content).CornerRadius = UDim.new(0, 0)
-
-local contentFix = Instance.new("Frame", content)
-contentFix.Size = UDim2.new(0, 12, 1, 0)
-contentFix.BackgroundColor3 = C.panel
-contentFix.BorderSizePixel = 0
-
--- ============================================================
--- TAB SYSTEM
--- ============================================================
-local pages = {}
-local tabBtns = {}
-local currentTab = nil
-
-local tabDefs = {
-	{label = "FARM",     order = 1},
-	{label = "AUTO",     order = 2},
-	{label = "STATUS",   order = 3},
-	{label = "TP",       order = 4},
-	{label = "SELL",     order = 5},
-	{label = "SAFETY",   order = 6},
-	{label = "BUY",      order = 7},
-}
-
-local function switchTab(name)
-	for n, p in pairs(pages) do
-		p.Visible = (n == name)
-	end
-	for n, b in pairs(tabBtns) do
-		if n == name then
-			b.BackgroundColor3 = C.accentDim
-			b.BackgroundTransparency = 0
-			b.TextColor3 = C.accentGlow
-		else
-			b.BackgroundTransparency = 1
-			b.TextColor3 = C.textDim
-		end
-	end
-	currentTab = name
-end
-
-for i, def in ipairs(tabDefs) do
-	local btn = Instance.new("TextButton", sidebar)
-	btn.Size = UDim2.new(0, 68, 0, 36)
-	btn.BackgroundTransparency = 1
-	btn.Text = def.label
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 10
-	btn.TextColor3 = C.textDim
-	btn.BorderSizePixel = 0
-	btn.LayoutOrder = def.order
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
-
-	local indicator = Instance.new("Frame", btn)
-	indicator.Size = UDim2.new(0, 2, 0, 18)
-	indicator.Position = UDim2.new(0, 0, 0.5, -9)
-	indicator.BackgroundColor3 = C.accent
-	indicator.BorderSizePixel = 0
-	indicator.Visible = false
-	Instance.new("UICorner", indicator).CornerRadius = UDim.new(0, 2)
-
-	local page = Instance.new("ScrollingFrame", content)
-	page.Size = UDim2.new(1, 0, 1, 0)
-	page.BackgroundTransparency = 1
-	page.ScrollBarThickness = 3
-	page.ScrollBarImageColor3 = C.accentSoft
-	page.Visible = false
-	page.BorderSizePixel = 0
-
-	local layout = Instance.new("UIListLayout", page)
-	layout.Padding = UDim.new(0, 7)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-	local pad = Instance.new("UIPadding", page)
-	pad.PaddingTop = UDim.new(0, 14)
-	pad.PaddingLeft = UDim.new(0, 12)
-	pad.PaddingRight = UDim.new(0, 12)
-	pad.PaddingBottom = UDim.new(0, 14)
-
-	pages[def.label] = page
-	tabBtns[def.label] = btn
-
-	btn.MouseButton1Click:Connect(function()
-		switchTab(def.label)
-		for _, b2 in pairs(tabBtns) do
-			local ind = b2:FindFirstChild("Frame")
-			if ind then ind.Visible = (b2 == btn) end
-		end
-	end)
-end
-
--- ============================================================
--- UI COMPONENT BUILDERS
--- ============================================================
-local function sectionLabel(parent, text, order)
-	local wrap = Instance.new("Frame", parent)
-	wrap.Size = UDim2.new(1, 0, 0, 22)
-	wrap.BackgroundTransparency = 1
-	wrap.LayoutOrder = order or 0
-
-	local lbl = Instance.new("TextLabel", wrap)
-	lbl.Size = UDim2.new(1, 0, 1, 0)
-	lbl.BackgroundTransparency = 1
-	lbl.Text = text:upper()
-	lbl.Font = Enum.Font.GothamBold
-	lbl.TextSize = 9
-	lbl.TextColor3 = C.textDim
-	lbl.TextXAlignment = Enum.TextXAlignment.Left
-	lbl.LayoutOrder = order or 0
-
-	local line = Instance.new("Frame", wrap)
-	line.Size = UDim2.new(1, 0, 0, 1)
-	line.Position = UDim2.new(0, 0, 1, -1)
-	line.BackgroundColor3 = C.border
-	line.BorderSizePixel = 0
-
-	return wrap
-end
-
-local function card(parent, h, order)
-	local f = Instance.new("Frame", parent)
-	f.Size = UDim2.new(1, 0, 0, h or 46)
-	f.BackgroundColor3 = C.card
-	f.BorderSizePixel = 0
-	f.LayoutOrder = order or 0
-	Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
-	local s = Instance.new("UIStroke", f)
-	s.Color = C.border
-	s.Thickness = 1
-	return f
-end
-
-local function makeToggleBtn(parent, text, order)
-	local f = card(parent, 38, order)
-	local btn = Instance.new("TextButton", f)
-	btn.Size = UDim2.new(1, 0, 1, 0)
-	btn.BackgroundTransparency = 1
-	btn.Font = Enum.Font.GothamSemibold
-	btn.TextSize = 12
-	btn.TextColor3 = C.text
-	btn.Text = text
-	btn.BorderSizePixel = 0
-
-	local pill = Instance.new("Frame", f)
-	pill.Size = UDim2.new(0, 28, 0, 14)
-	pill.Position = UDim2.new(1, -40, 0.5, -7)
-	pill.BackgroundColor3 = C.textDim
-	pill.BorderSizePixel = 0
-	Instance.new("UICorner", pill).CornerRadius = UDim.new(1, 0)
-
-	local knob = Instance.new("Frame", pill)
-	knob.Size = UDim2.new(0, 10, 0, 10)
-	knob.Position = UDim2.new(0, 2, 0.5, -5)
-	knob.BackgroundColor3 = Color3.new(1,1,1)
-	knob.BorderSizePixel = 0
-	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
-
-	local state = false
-	local function setToggle(on)
-		state = on
-		if on then
-			TweenService:Create(pill, TweenInfo.new(0.18), {BackgroundColor3 = C.accent}):Play()
-			TweenService:Create(knob, TweenInfo.new(0.18), {Position = UDim2.new(1, -12, 0.5, -5)}):Play()
-			btn.TextColor3 = C.accentGlow
-		else
-			TweenService:Create(pill, TweenInfo.new(0.18), {BackgroundColor3 = C.textDim}):Play()
-			TweenService:Create(knob, TweenInfo.new(0.18), {Position = UDim2.new(0, 2, 0.5, -5)}):Play()
-			btn.TextColor3 = C.text
-		end
-	end
-
-	btn.MouseButton1Click:Connect(function()
-		setToggle(not state)
-	end)
-
-	return btn, f, setToggle
-end
-
-local function makeActionBtn(parent, text, color, order)
-	local f = Instance.new("TextButton", parent)
-	f.Size = UDim2.new(1, 0, 0, 36)
-	f.BackgroundColor3 = color or C.accentDim
-	f.Font = Enum.Font.GothamBold
-	f.TextSize = 12
-	f.TextColor3 = C.text
-	f.Text = text
-	f.BorderSizePixel = 0
-	f.LayoutOrder = order or 0
-	Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
-
-	local s = Instance.new("UIStroke", f)
-	s.Color = C.border
-	s.Thickness = 1
-
-	f.MouseEnter:Connect(function()
-		TweenService:Create(f, TweenInfo.new(0.12), {BackgroundColor3 = C.accent}):Play()
-	end)
-	f.MouseLeave:Connect(function()
-		TweenService:Create(f, TweenInfo.new(0.12), {BackgroundColor3 = color or C.accentDim}):Play()
-	end)
-	return f
-end
-
-local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callback)
-	local wrap = card(parent, 54, order)
-
-	local lbl = Instance.new("TextLabel", wrap)
-	lbl.Position = UDim2.new(0, 12, 0, 8)
-	lbl.Size = UDim2.new(1, -80, 0, 16)
-	lbl.BackgroundTransparency = 1
-	lbl.Text = labelText
-	lbl.Font = Enum.Font.GothamSemibold
-	lbl.TextSize = 11
-	lbl.TextColor3 = C.textMid
-	lbl.TextXAlignment = Enum.TextXAlignment.Left
-
-	local valLbl = Instance.new("TextLabel", wrap)
-	valLbl.Position = UDim2.new(1, -52, 0, 8)
-	valLbl.Size = UDim2.new(0, 42, 0, 16)
-	valLbl.BackgroundTransparency = 1
-	valLbl.Text = tostring(defaultV)
-	valLbl.Font = Enum.Font.GothamBold
-	valLbl.TextSize = 12
-	valLbl.TextColor3 = C.accentGlow
-	valLbl.TextXAlignment = Enum.TextXAlignment.Right
-
-	local track = Instance.new("Frame", wrap)
-	track.Position = UDim2.new(0, 12, 0, 34)
-	track.Size = UDim2.new(1, -24, 0, 5)
-	track.BackgroundColor3 = C.border
-	track.BorderSizePixel = 0
-	track.Active = true
-	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
-
-	local fill2 = Instance.new("Frame", track)
-	fill2.Size = UDim2.new((defaultV - minV)/(maxV - minV), 0, 1, 0)
-	fill2.BackgroundColor3 = C.accent
-	fill2.BorderSizePixel = 0
-	Instance.new("UICorner", fill2).CornerRadius = UDim.new(1, 0)
-
-	local knob2 = Instance.new("Frame", track)
-	local kp = (defaultV - minV)/(maxV - minV)
-	knob2.Size = UDim2.new(0, 14, 0, 14)
-	knob2.Position = UDim2.new(kp, -7, 0.5, -7)
-	knob2.BackgroundColor3 = Color3.new(1,1,1)
-	knob2.BorderSizePixel = 0
-	Instance.new("UICorner", knob2).CornerRadius = UDim.new(1, 0)
-
-	local ks = Instance.new("UIStroke", knob2)
-	ks.Color = C.accent
-	ks.Thickness = 2
-
-	local dragging = false
-
-	local function update(x)
-		local pos = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
-		local val = math.floor(minV + pos * (maxV - minV))
-		knob2.Position = UDim2.new(pos, -7, 0.5, -7)
-		fill2.Size = UDim2.new(pos, 0, 1, 0)
-		valLbl.Text = tostring(val)
-		if callback then callback(val) end
-	end
-
-	track.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			update(input.Position.X)
-		end
-	end)
-
-	UIS.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			update(input.Position.X)
-		end
-	end)
-
-	UIS.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
-
-	return wrap, valLbl
-end
-
-local function makeStatusRow(parent, label, order)
-	local f = card(parent, 30, order)
-
-	local lbl2 = Instance.new("TextLabel", f)
-	lbl2.Position = UDim2.new(0, 12, 0, 0)
-	lbl2.Size = UDim2.new(0.6, 0, 1, 0)
-	lbl2.BackgroundTransparency = 1
-	lbl2.Text = label
-	lbl2.Font = Enum.Font.GothamSemibold
-	lbl2.TextSize = 11
-	lbl2.TextColor3 = C.textMid
-	lbl2.TextXAlignment = Enum.TextXAlignment.Left
-
-	local val2 = Instance.new("TextLabel", f)
-	val2.Position = UDim2.new(0.6, 0, 0, 0)
-	val2.Size = UDim2.new(0.4, -10, 1, 0)
-	val2.BackgroundTransparency = 1
-	val2.Text = "0"
-	val2.Font = Enum.Font.GothamBold
-	val2.TextSize = 12
-	val2.TextColor3 = C.accentGlow
-	val2.TextXAlignment = Enum.TextXAlignment.Right
-
-	return val2, f
-end
-
--- ============================================================
--- FARM PAGE
--- ============================================================
-local fp = pages["FARM"]
-
-sectionLabel(fp, "Status", 1)
-
-local statusCard = card(fp, 36, 2)
-local statusLabel = Instance.new("TextLabel", statusCard)
-statusLabel.Size = UDim2.new(1, -20, 1, 0)
-statusLabel.Position = UDim2.new(0, 12, 0, 0)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "IDLE"
-statusLabel.Font = Enum.Font.GothamBold
-statusLabel.TextSize = 12
-statusLabel.TextColor3 = C.textMid
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-sectionLabel(fp, "Inventory", 3)
-
-local waterVal, _  = makeStatusRow(fp, "Water",            4)
-local sugarVal, _  = makeStatusRow(fp, "Sugar Block Bag",  5)
-local gelatinVal,_ = makeStatusRow(fp, "Gelatin",          6)
-local bagVal, _    = makeStatusRow(fp, "Empty Bag",        7)
-
-sectionLabel(fp, "Controls", 8)
-
-local buySliderWrap, buyValLbl = makeSlider(fp, "BUY AMOUNT", 1, 25, 1, 9, function(v)
-	buyAmount = v
-end)
-
-local farmToggleBtn = makeActionBtn(fp, "START FARM", C.accentDim, 10)
-local sellToggleBtn = makeActionBtn(fp, "AUTO SELL : OFF", C.card, 11)
-local buyNowBtn     = makeActionBtn(fp, "BUY NOW", C.card, 12)
-
-sectionLabel(fp, "Cook Progress", 13)
-
-local function makeProgressCard(label, order)
-	local f = card(fp, 34, order)
-	local lbl3 = Instance.new("TextLabel", f)
-	lbl3.Position = UDim2.new(0, 10, 0, 5)
-	lbl3.Size = UDim2.new(0.6, 0, 0, 13)
-	lbl3.BackgroundTransparency = 1
-	lbl3.Text = label
-	lbl3.Font = Enum.Font.GothamSemibold
-	lbl3.TextSize = 10
-	lbl3.TextColor3 = C.textMid
-	lbl3.TextXAlignment = Enum.TextXAlignment.Left
-	local bg2 = Instance.new("Frame", f)
-	bg2.Position = UDim2.new(0, 10, 0, 22)
-	bg2.Size = UDim2.new(1, -20, 0, 5)
-	bg2.BackgroundColor3 = C.border
-	bg2.BorderSizePixel = 0
-	Instance.new("UICorner", bg2).CornerRadius = UDim.new(1, 0)
-	local bar2 = Instance.new("Frame", bg2)
-	bar2.Size = UDim2.new(0, 0, 1, 0)
-	bar2.BackgroundColor3 = C.accent
-	bar2.BorderSizePixel = 0
-	Instance.new("UICorner", bar2).CornerRadius = UDim.new(1, 0)
-	return bar2
-end
-
-local waterBar   = makeProgressCard("Water (20s)",   14)
-local sugarBar   = makeProgressCard("Sugar (1s)",    15)
-local gelatinBar = makeProgressCard("Gelatin (1s)",  16)
-local bagBar     = makeProgressCard("Bag (45s)",     17)
-
--- ============================================================
--- AUTO PAGE (MS LOOP)
--- ============================================================
-local ap = pages["AUTO"]
-
-sectionLabel(ap, "MS Loop (Auto Tools)", 1)
-
-local msLoopStatus = card(ap, 36, 2)
-local msLoopStatusLbl = Instance.new("TextLabel", msLoopStatus)
-msLoopStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-msLoopStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-msLoopStatusLbl.BackgroundTransparency = 1
-msLoopStatusLbl.Text = "⏹️ LOOP STOPPED"
-msLoopStatusLbl.Font = Enum.Font.GothamBold
-msLoopStatusLbl.TextSize = 12
-msLoopStatusLbl.TextColor3 = C.red
-
-local msLoopStepLabel = card(ap, 30, 3)
-local stepLbl = Instance.new("TextLabel", msLoopStepLabel)
-stepLbl.Size = UDim2.new(1, -20, 1, 0)
-stepLbl.Position = UDim2.new(0, 12, 0, 0)
-stepLbl.BackgroundTransparency = 1
-stepLbl.Text = "Step: Waiting..."
-stepLbl.Font = Enum.Font.Gotham
-stepLbl.TextSize = 11
-stepLbl.TextColor3 = C.textMid
-stepLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local msLoopTimer = card(ap, 30, 4)
-local timerLbl = Instance.new("TextLabel", msLoopTimer)
-timerLbl.Size = UDim2.new(1, -20, 1, 0)
-timerLbl.Position = UDim2.new(0, 12, 0, 0)
-timerLbl.BackgroundTransparency = 1
-timerLbl.Text = "Timer: 0s"
-timerLbl.Font = Enum.Font.Gotham
-timerLbl.TextSize = 11
-timerLbl.TextColor3 = C.textMid
-timerLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local toolStatus = card(ap, 30, 5)
-local toolLbl = Instance.new("TextLabel", toolStatus)
-toolLbl.Size = UDim2.new(1, -20, 1, 0)
-toolLbl.Position = UDim2.new(0, 12, 0, 0)
-toolLbl.BackgroundTransparency = 1
-toolLbl.Text = "Tool: -"
-toolLbl.Font = Enum.Font.GothamBold
-toolLbl.TextSize = 11
-toolLbl.TextColor3 = C.accentGlow
-toolLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local _, cookValLbl = makeSlider(ap, "COOK AMOUNT", 1, 50, 5, 6, function(v)
-	cookAmount = v
-end)
-
-local msLoopStartBtn = makeActionBtn(ap, "▶️ START LOOP", C.green, 7)
-local msLoopStopBtn = makeActionBtn(ap, "⏹️ STOP LOOP", C.red, 8)
-
--- ============================================================
--- STATUS PAGE
--- ============================================================
-local sp = pages["STATUS"]
-
-local avatarCard = card(sp, 70, 1)
-local avatarImg2 = Instance.new("ImageLabel", avatarCard)
-avatarImg2.Position = UDim2.new(0, 10, 0.5, -26)
-avatarImg2.Size = UDim2.new(0, 52, 0, 52)
-avatarImg2.BackgroundColor3 = C.border
-avatarImg2.BorderSizePixel = 0
-Instance.new("UICorner", avatarImg2).CornerRadius = UDim.new(0, 8)
-
-local usernameLbl = Instance.new("TextLabel", avatarCard)
-usernameLbl.Position = UDim2.new(0, 72, 0, 14)
-usernameLbl.Size = UDim2.new(1, -82, 0, 20)
-usernameLbl.BackgroundTransparency = 1
-usernameLbl.Text = player.Name
-usernameLbl.Font = Enum.Font.GothamBlack
-usernameLbl.TextSize = 15
-usernameLbl.TextColor3 = C.text
-usernameLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local displayLbl = Instance.new("TextLabel", avatarCard)
-displayLbl.Position = UDim2.new(0, 72, 0, 36)
-displayLbl.Size = UDim2.new(1, -82, 0, 14)
-displayLbl.BackgroundTransparency = 1
-displayLbl.Text = "@" .. player.DisplayName
-displayLbl.Font = Enum.Font.Gotham
-displayLbl.TextSize = 11
-displayLbl.TextColor3 = C.textDim
-displayLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-task.spawn(function()
-	local img, _ = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
-	avatarImg2.Image = img
-end)
-
-sectionLabel(sp, "Inventory", 2)
-local statWaterVal   = makeStatusRow(sp, "Water",           3)
-local statSugarVal   = makeStatusRow(sp, "Sugar Block Bag", 4)
-local statGelatinVal = makeStatusRow(sp, "Gelatin",         5)
-local statBagVal     = makeStatusRow(sp, "Empty Bag",       6)
-
-sectionLabel(sp, "Marshmallow Bags", 7)
-local statSmallVal  = makeStatusRow(sp, "Small Bag",  8)
-local statMedVal    = makeStatusRow(sp, "Medium Bag", 9)
-local statLargeVal  = makeStatusRow(sp, "Large Bag",  10)
-
-local totalCard2 = card(sp, 36, 11)
-local totalLblLeft = Instance.new("TextLabel", totalCard2)
-totalLblLeft.Position = UDim2.new(0,12,0,0)
-totalLblLeft.Size = UDim2.new(0.5,0,1,0)
-totalLblLeft.BackgroundTransparency = 1
-totalLblLeft.Text = "Total Bags"
-totalLblLeft.Font = Enum.Font.GothamBold
-totalLblLeft.TextSize = 12
-totalLblLeft.TextColor3 = C.text
-totalLblLeft.TextXAlignment = Enum.TextXAlignment.Left
-
-local totalVal = Instance.new("TextLabel", totalCard2)
-totalVal.Position = UDim2.new(0.5,0,0,0)
-totalVal.Size = UDim2.new(0.5,-12,1,0)
-totalVal.BackgroundTransparency = 1
-totalVal.Text = "0"
-totalVal.Font = Enum.Font.GothamBlack
-totalVal.TextSize = 15
-totalVal.TextColor3 = C.accentGlow
-totalVal.TextXAlignment = Enum.TextXAlignment.Right
+local Content = Instance.new("Frame", main)
+Content.Size = UDim2.new(1, 0, 1, -86)
+Content.Position = UDim2.new(0, 0, 0, 86)
+Content.BackgroundColor3 = C.panel
+Content.BorderSizePixel = 0
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0, 0)
 
 -- ============================================================
 -- TELEPORT PAGE
 -- ============================================================
-local tp = pages["TP"]
+local tpPage = Instance.new("ScrollingFrame", Content)
+tpPage.Size = UDim2.new(1, 0, 1, 0)
+tpPage.BackgroundTransparency = 1
+tpPage.Visible = true
+tpPage.ScrollBarThickness = 4
+tpPage.ScrollBarImageColor3 = C.accentSoft
+tpPage.CanvasSize = UDim2.new(0, 0, 0, 520)
+
+local tpLayout = Instance.new("UIListLayout", tpPage)
+tpLayout.Padding = UDim.new(0, 6)
+tpLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local tpPadding = Instance.new("UIPadding", tpPage)
+tpPadding.PaddingLeft = UDim.new(0, 10)
+tpPadding.PaddingRight = UDim.new(0, 10)
+tpPadding.PaddingTop = UDim.new(0, 10)
+tpPadding.PaddingBottom = UDim.new(0, 10)
 
 local LOCATIONS = {
-    {name = "🏪 Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75), desc = "Dealer Mobil"},
-    {name = "🍬 NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548), desc = "Tempat Jual/Beli MS"},
-    {name = "🏠 Apart 1",         pos = Vector3.new(1137.992, 9.932, 449.753), desc = "Apartemen 1"},
-    {name = "🏠 Apart 2",         pos = Vector3.new(1139.174, 9.932, 420.556), desc = "Apartemen 2"},
-    {name = "🏠 Apart 3",         pos = Vector3.new(984.856, 9.932, 247.280), desc = "Apartemen 3"},
-    {name = "🏠 Apart 4",         pos = Vector3.new(988.311, 9.932, 221.664), desc = "Apartemen 4"},
-    {name = "🏠 Apart 5",         pos = Vector3.new(923.954, 9.932, 42.202), desc = "Apartemen 5"},
-    {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928), desc = "Apartemen 6"},
-    {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77), desc = "Casino"},
-    {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76), desc = "Rumah Sakit"},
-    {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25), desc = "Tempat Bahan"},
+    {name = "🏪 Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75)},
+    {name = "🍬 NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548)},
+    {name = "🏠 Apart 1",         pos = Vector3.new(1137.992, 9.932, 449.753)},
+    {name = "🏠 Apart 2",         pos = Vector3.new(1139.174, 9.932, 420.556)},
+    {name = "🏠 Apart 3",         pos = Vector3.new(984.856, 9.932, 247.280)},
+    {name = "🏠 Apart 4",         pos = Vector3.new(988.311, 9.932, 221.664)},
+    {name = "🏠 Apart 5",         pos = Vector3.new(923.954, 9.932, 42.202)},
+    {name = "🏠 Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928)},
+    {name = "🎰 Casino",          pos = Vector3.new(1166.33, 3.36, -29.77)},
+    {name = "🏥 Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76)},
+    {name = "⚒️ Material Storage", pos = Vector3.new(521.32, 47.79, 617.25)},
 }
 
 for i, loc in ipairs(LOCATIONS) do
-	local btn = makeActionBtn(tp, loc.name, C.card, i)
+	local btn = Instance.new("TextButton", tpPage)
+	btn.Size = UDim2.new(1, 0, 0, 45)
+	btn.BackgroundColor3 = C.card
+	btn.Text = loc.name
+	btn.TextColor3 = C.text
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 13
+	btn.BorderSizePixel = 0
+	btn.LayoutOrder = i
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+	
+	local stroke = Instance.new("UIStroke", btn)
+	stroke.Color = C.border
+	stroke.Thickness = 1
+	
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = C.accentDim}):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = C.card}):Play()
+	end)
+	
 	btn.MouseButton1Click:Connect(function()
 		notify("Teleport", "Menuju "..loc.name.."...", "info")
 		showLoading("Menuju " .. loc.name)
@@ -1026,124 +558,370 @@ for i, loc in ipairs(LOCATIONS) do
 end
 
 -- ============================================================
--- SELL PAGE (AUTO SELL)
+-- AUTO MS PAGE
 -- ============================================================
-local sellp = pages["SELL"]
+local msPage = Instance.new("ScrollingFrame", Content)
+msPage.Size = UDim2.new(1, 0, 1, 0)
+msPage.BackgroundTransparency = 1
+msPage.Visible = false
+msPage.ScrollBarThickness = 4
+msPage.ScrollBarImageColor3 = C.accentSoft
+msPage.CanvasSize = UDim2.new(0, 0, 0, 380)
 
-sectionLabel(sellp, "Auto Sell", 1)
+local msPadding = Instance.new("UIPadding", msPage)
+msPadding.PaddingLeft = UDim.new(0, 10)
+msPadding.PaddingRight = UDim.new(0, 10)
+msPadding.PaddingTop = UDim.new(0, 10)
 
-local sellStatusCard = card(sellp, 36, 2)
-local sellStatusLbl = Instance.new("TextLabel", sellStatusCard)
-sellStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-sellStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-sellStatusLbl.BackgroundTransparency = 1
-sellStatusLbl.Text = "⏹️ STOPPED"
-sellStatusLbl.Font = Enum.Font.GothamBold
-sellStatusLbl.TextSize = 12
-sellStatusLbl.TextColor3 = C.red
-sellStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+-- Status Card
+local msStatusCard = Instance.new("Frame", msPage)
+msStatusCard.Size = UDim2.new(1, 0, 0, 50)
+msStatusCard.BackgroundColor3 = C.card
+msStatusCard.BorderSizePixel = 0
+Instance.new("UICorner", msStatusCard).CornerRadius = UDim.new(0, 8)
 
-local sellCounterCard = card(sellp, 30, 3)
-local sellCounterLbl = Instance.new("TextLabel", sellCounterCard)
-sellCounterLbl.Size = UDim2.new(1, -20, 1, 0)
-sellCounterLbl.Position = UDim2.new(0, 12, 0, 0)
-sellCounterLbl.BackgroundTransparency = 1
-sellCounterLbl.Text = "Terjual: 0"
-sellCounterLbl.Font = Enum.Font.GothamBold
-sellCounterLbl.TextSize = 11
-sellCounterLbl.TextColor3 = C.accentGlow
-sellCounterLbl.TextXAlignment = Enum.TextXAlignment.Left
+local msStatusLbl = Instance.new("TextLabel", msStatusCard)
+msStatusLbl.Size = UDim2.new(1, -20, 1, 0)
+msStatusLbl.Position = UDim2.new(0, 12, 0, 0)
+msStatusLbl.BackgroundTransparency = 1
+msStatusLbl.Text = "⏹️ STOPPED"
+msStatusLbl.Font = Enum.Font.GothamBold
+msStatusLbl.TextSize = 14
+msStatusLbl.TextColor3 = C.red
+msStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local sellToolsCard = card(sellp, 30, 4)
-local sellToolsLbl = Instance.new("TextLabel", sellToolsCard)
-sellToolsLbl.Size = UDim2.new(1, -20, 1, 0)
-sellToolsLbl.Position = UDim2.new(0, 12, 0, 0)
-sellToolsLbl.BackgroundTransparency = 1
-sellToolsLbl.Text = "Tools: 0"
-sellToolsLbl.Font = Enum.Font.Gotham
-sellToolsLbl.TextSize = 11
-sellToolsLbl.TextColor3 = C.textMid
-sellToolsLbl.TextXAlignment = Enum.TextXAlignment.Left
+-- Step Card
+local stepCard = Instance.new("Frame", msPage)
+stepCard.Size = UDim2.new(1, 0, 0, 36)
+stepCard.Position = UDim2.new(0, 0, 0, 60)
+stepCard.BackgroundColor3 = C.card
+stepCard.BorderSizePixel = 0
+Instance.new("UICorner", stepCard).CornerRadius = UDim.new(0, 8)
 
-local sellStartBtn = makeActionBtn(sellp, "▶️ START SELL", C.green, 5)
-local sellStopBtn = makeActionBtn(sellp, "⏹️ STOP SELL", C.red, 6)
+local stepLbl = Instance.new("TextLabel", stepCard)
+stepLbl.Size = UDim2.new(1, -20, 1, 0)
+stepLbl.Position = UDim2.new(0, 12, 0, 0)
+stepLbl.BackgroundTransparency = 1
+stepLbl.Text = "Step: Waiting..."
+stepLbl.Font = Enum.Font.Gotham
+stepLbl.TextSize = 12
+stepLbl.TextColor3 = C.textMid
+stepLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Timer Card
+local timerCard = Instance.new("Frame", msPage)
+timerCard.Size = UDim2.new(1, 0, 0, 36)
+timerCard.Position = UDim2.new(0, 0, 0, 104)
+timerCard.BackgroundColor3 = C.card
+timerCard.BorderSizePixel = 0
+Instance.new("UICorner", timerCard).CornerRadius = UDim.new(0, 8)
+
+local timerLbl = Instance.new("TextLabel", timerCard)
+timerLbl.Size = UDim2.new(1, -20, 1, 0)
+timerLbl.Position = UDim2.new(0, 12, 0, 0)
+timerLbl.BackgroundTransparency = 1
+timerLbl.Text = "Timer: 0s"
+timerLbl.Font = Enum.Font.Gotham
+timerLbl.TextSize = 12
+timerLbl.TextColor3 = C.textMid
+timerLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Tool Card
+local toolCard = Instance.new("Frame", msPage)
+toolCard.Size = UDim2.new(1, 0, 0, 36)
+toolCard.Position = UDim2.new(0, 0, 0, 148)
+toolCard.BackgroundColor3 = C.card
+toolCard.BorderSizePixel = 0
+Instance.new("UICorner", toolCard).CornerRadius = UDim.new(0, 8)
+
+local toolLbl = Instance.new("TextLabel", toolCard)
+toolLbl.Size = UDim2.new(1, -20, 1, 0)
+toolLbl.Position = UDim2.new(0, 12, 0, 0)
+toolLbl.BackgroundTransparency = 1
+toolLbl.Text = "Tool: -"
+toolLbl.Font = Enum.Font.GothamBold
+toolLbl.TextSize = 12
+toolLbl.TextColor3 = C.accentGlow
+toolLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Inventory Card
+local invCard = Instance.new("Frame", msPage)
+invCard.Size = UDim2.new(1, 0, 0, 80)
+invCard.Position = UDim2.new(0, 0, 0, 192)
+invCard.BackgroundColor3 = C.card
+invCard.BorderSizePixel = 0
+Instance.new("UICorner", invCard).CornerRadius = UDim.new(0, 8)
+
+local invTitle = Instance.new("TextLabel", invCard)
+invTitle.Size = UDim2.new(1, -20, 0, 20)
+invTitle.Position = UDim2.new(0, 12, 0, 5)
+invTitle.BackgroundTransparency = 1
+invTitle.Text = "INVENTORY"
+invTitle.Font = Enum.Font.GothamBold
+invTitle.TextSize = 11
+invTitle.TextColor3 = C.textMid
+invTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local waterLbl = Instance.new("TextLabel", invCard)
+waterLbl.Size = UDim2.new(1, -20, 0, 18)
+waterLbl.Position = UDim2.new(0, 12, 0, 28)
+waterLbl.BackgroundTransparency = 1
+waterLbl.Text = "💧 Water: 0"
+waterLbl.Font = Enum.Font.Gotham
+waterLbl.TextSize = 11
+waterLbl.TextColor3 = C.text
+waterLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local sugarLbl = Instance.new("TextLabel", invCard)
+sugarLbl.Size = UDim2.new(1, -20, 0, 18)
+sugarLbl.Position = UDim2.new(0, 12, 0, 46)
+sugarLbl.BackgroundTransparency = 1
+sugarLbl.Text = "🍚 Sugar: 0"
+sugarLbl.Font = Enum.Font.Gotham
+sugarLbl.TextSize = 11
+sugarLbl.TextColor3 = C.text
+sugarLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local gelatinLbl = Instance.new("TextLabel", invCard)
+gelatinLbl.Size = UDim2.new(1, -20, 0, 18)
+gelatinLbl.Position = UDim2.new(0, 12, 0, 64)
+gelatinLbl.BackgroundTransparency = 1
+gelatinLbl.Text = "🧪 Gelatin: 0"
+gelatinLbl.Font = Enum.Font.Gotham
+gelatinLbl.TextSize = 11
+gelatinLbl.TextColor3 = C.text
+gelatinLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Buttons
+local msStartBtn = Instance.new("TextButton", msPage)
+msStartBtn.Size = UDim2.new(0.48, 0, 0, 42)
+msStartBtn.Position = UDim2.new(0, 0, 0, 282)
+msStartBtn.BackgroundColor3 = C.green
+msStartBtn.Text = "▶️ START MS"
+msStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
+msStartBtn.Font = Enum.Font.GothamBold
+msStartBtn.TextSize = 13
+msStartBtn.BorderSizePixel = 0
+Instance.new("UICorner", msStartBtn).CornerRadius = UDim.new(0, 8)
+
+local msStopBtn = Instance.new("TextButton", msPage)
+msStopBtn.Size = UDim2.new(0.48, 0, 0, 42)
+msStopBtn.Position = UDim2.new(0.52, 0, 0, 282)
+msStopBtn.BackgroundColor3 = C.red
+msStopBtn.Text = "⏹️ STOP MS"
+msStopBtn.TextColor3 = Color3.fromRGB(255,255,255)
+msStopBtn.Font = Enum.Font.GothamBold
+msStopBtn.TextSize = 13
+msStopBtn.BorderSizePixel = 0
+Instance.new("UICorner", msStopBtn).CornerRadius = UDim.new(0, 8)
 
 -- ============================================================
--- SAFETY PAGE (HP SAFE + BLINK)
+-- AUTO BUY PAGE
 -- ============================================================
-local safetyp = pages["SAFETY"]
+local buyPage = Instance.new("ScrollingFrame", Content)
+buyPage.Size = UDim2.new(1, 0, 1, 0)
+buyPage.BackgroundTransparency = 1
+buyPage.Visible = false
+buyPage.ScrollBarThickness = 4
+buyPage.ScrollBarImageColor3 = C.accentSoft
+buyPage.CanvasSize = UDim2.new(0, 0, 0, 280)
 
-sectionLabel(safetyp, "HP Safe Zone", 1)
+local buyPadding = Instance.new("UIPadding", buyPage)
+buyPadding.PaddingLeft = UDim.new(0, 10)
+buyPadding.PaddingRight = UDim.new(0, 10)
+buyPadding.PaddingTop = UDim.new(0, 10)
 
-local hpSafeStatusCard = card(safetyp, 36, 2)
-local hpSafeStatusLbl = Instance.new("TextLabel", hpSafeStatusCard)
-hpSafeStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-hpSafeStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-hpSafeStatusLbl.BackgroundTransparency = 1
-hpSafeStatusLbl.Text = "🛡️ HP SAFE: INACTIVE"
-hpSafeStatusLbl.Font = Enum.Font.GothamBold
-hpSafeStatusLbl.TextSize = 12
-hpSafeStatusLbl.TextColor3 = C.textDim
-hpSafeStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+-- Buy Status Card
+local buyStatusCard = Instance.new("Frame", buyPage)
+buyStatusCard.Size = UDim2.new(1, 0, 0, 50)
+buyStatusCard.BackgroundColor3 = C.card
+buyStatusCard.BorderSizePixel = 0
+Instance.new("UICorner", buyStatusCard).CornerRadius = UDim.new(0, 8)
 
-local hpSafeToggleBtn = makeActionBtn(safetyp, "ACTIVATE HP SAFE", C.accentDim, 3)
-
-sectionLabel(safetyp, "Blink / Teleport Mini", 4)
-
-local blinkStatusCard = card(safetyp, 30, 5)
-local blinkStatusLbl = Instance.new("TextLabel", blinkStatusCard)
-blinkStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-blinkStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-blinkStatusLbl.BackgroundTransparency = 1
-blinkStatusLbl.Text = "Klik tombol di bawah untuk blink"
-blinkStatusLbl.Font = Enum.Font.Gotham
-blinkStatusLbl.TextSize = 11
-blinkStatusLbl.TextColor3 = C.textMid
-blinkStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local blinkAtasBtn = makeActionBtn(safetyp, "⬆️ BLINK ATAS (Naik 2 studs)", C.card, 6)
-local blinkBawahBtn = makeActionBtn(safetyp, "⬇️ BLINK BAWAH (Turun 4 studs)", C.card, 7)
-local blinkMajuBtn = makeActionBtn(safetyp, "➡️ BLINK MAJU (Maju 5 studs)", C.card, 8)
-local blinkMundurBtn = makeActionBtn(safetyp, "⬅️ BLINK MUNDUR (Mundur 5 studs)", C.card, 9)
-
--- ============================================================
--- BUY PAGE (AUTO BUY)
--- ============================================================
-local buyp = pages["BUY"]
-
-sectionLabel(buyp, "Auto Buy Bahan", 1)
-
-local buyStatusCard = card(buyp, 50, 2)
 local buyStatusLbl = Instance.new("TextLabel", buyStatusCard)
 buyStatusLbl.Size = UDim2.new(1, -20, 1, 0)
 buyStatusLbl.Position = UDim2.new(0, 12, 0, 0)
 buyStatusLbl.BackgroundTransparency = 1
-buyStatusLbl.Text = "⏹️ BELUM MULAI"
+buyStatusLbl.Text = "⏹️ STOPPED"
 buyStatusLbl.Font = Enum.Font.GothamBold
-buyStatusLbl.TextSize = 12
+buyStatusLbl.TextSize = 14
 buyStatusLbl.TextColor3 = C.red
 buyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local buyTotalCard = card(buyp, 30, 3)
+-- Amount Card
+local amountCard = Instance.new("Frame", buyPage)
+amountCard.Size = UDim2.new(1, 0, 0, 80)
+amountCard.Position = UDim2.new(0, 0, 0, 60)
+amountCard.BackgroundColor3 = C.card
+amountCard.BorderSizePixel = 0
+Instance.new("UICorner", amountCard).CornerRadius = UDim.new(0, 8)
+
+local amountTitle = Instance.new("TextLabel", amountCard)
+amountTitle.Size = UDim2.new(1, -20, 0, 20)
+amountTitle.Position = UDim2.new(0, 12, 0, 5)
+amountTitle.BackgroundTransparency = 1
+amountTitle.Text = "JUMLAH BELI PER ITEM"
+amountTitle.Font = Enum.Font.GothamBold
+amountTitle.TextSize = 11
+amountTitle.TextColor3 = C.textMid
+amountTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local amountValue = Instance.new("TextLabel", amountCard)
+amountValue.Size = UDim2.new(0.2, 0, 0, 30)
+amountValue.Position = UDim2.new(0.8, -10, 0, 45)
+amountValue.BackgroundTransparency = 1
+amountValue.Text = "10x"
+amountValue.Font = Enum.Font.GothamBold
+amountValue.TextSize = 16
+amountValue.TextColor3 = C.accentGlow
+amountValue.TextXAlignment = Enum.TextXAlignment.Right
+
+local sliderBg = Instance.new("Frame", amountCard)
+sliderBg.Size = UDim2.new(0.7, 0, 0, 6)
+sliderBg.Position = UDim2.new(0.1, 0, 0, 55)
+sliderBg.BackgroundColor3 = C.border
+sliderBg.BorderSizePixel = 0
+Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(0, 3)
+
+local sliderFill = Instance.new("Frame", sliderBg)
+sliderFill.Size = UDim2.new(0.18, 0, 1, 0)
+sliderFill.BackgroundColor3 = C.accent
+sliderFill.BorderSizePixel = 0
+Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(0, 3)
+
+-- Buy Buttons
+local buyStartBtn = Instance.new("TextButton", buyPage)
+buyStartBtn.Size = UDim2.new(0.48, 0, 0, 42)
+buyStartBtn.Position = UDim2.new(0, 0, 0, 150)
+buyStartBtn.BackgroundColor3 = C.green
+buyStartBtn.Text = "▶️ START BUY"
+buyStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
+buyStartBtn.Font = Enum.Font.GothamBold
+buyStartBtn.TextSize = 13
+buyStartBtn.BorderSizePixel = 0
+Instance.new("UICorner", buyStartBtn).CornerRadius = UDim.new(0, 8)
+
+local buyStopBtn = Instance.new("TextButton", buyPage)
+buyStopBtn.Size = UDim2.new(0.48, 0, 0, 42)
+buyStopBtn.Position = UDim2.new(0.52, 0, 0, 150)
+buyStopBtn.BackgroundColor3 = C.red
+buyStopBtn.Text = "⏹️ STOP BUY"
+buyStopBtn.TextColor3 = Color3.fromRGB(255,255,255)
+buyStopBtn.Font = Enum.Font.GothamBold
+buyStopBtn.TextSize = 13
+buyStopBtn.BorderSizePixel = 0
+Instance.new("UICorner", buyStopBtn).CornerRadius = UDim.new(0, 8)
+
+local buyTotalCard = Instance.new("Frame", buyPage)
+buyTotalCard.Size = UDim2.new(1, 0, 0, 36)
+buyTotalCard.Position = UDim2.new(0, 0, 0, 202)
+buyTotalCard.BackgroundColor3 = C.card
+buyTotalCard.BorderSizePixel = 0
+Instance.new("UICorner", buyTotalCard).CornerRadius = UDim.new(0, 8)
+
 local buyTotalLbl = Instance.new("TextLabel", buyTotalCard)
 buyTotalLbl.Size = UDim2.new(1, -20, 1, 0)
 buyTotalLbl.Position = UDim2.new(0, 12, 0, 0)
 buyTotalLbl.BackgroundTransparency = 1
 buyTotalLbl.Text = "Total: 0 item"
 buyTotalLbl.Font = Enum.Font.Gotham
-buyTotalLbl.TextSize = 11
+buyTotalLbl.TextSize = 12
 buyTotalLbl.TextColor3 = C.textMid
 buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local buySliderWrap2, buyValLbl2 = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
-	buyAmount = v
-end)
+-- ============================================================
+-- AUTO SELL PAGE
+-- ============================================================
+local sellPage = Instance.new("ScrollingFrame", Content)
+sellPage.Size = UDim2.new(1, 0, 1, 0)
+sellPage.BackgroundTransparency = 1
+sellPage.Visible = false
+sellPage.ScrollBarThickness = 4
+sellPage.ScrollBarImageColor3 = C.accentSoft
+sellPage.CanvasSize = UDim2.new(0, 0, 0, 250)
 
-local buyStartBtn = makeActionBtn(buyp, "▶️ START BUY", C.green, 5)
-local buyStopBtn = makeActionBtn(buyp, "⏹️ STOP BUY", C.red, 6)
+local sellPadding = Instance.new("UIPadding", sellPage)
+sellPadding.PaddingLeft = UDim.new(0, 10)
+sellPadding.PaddingRight = UDim.new(0, 10)
+sellPadding.PaddingTop = UDim.new(0, 10)
+
+-- Sell Status Card
+local sellStatusCard = Instance.new("Frame", sellPage)
+sellStatusCard.Size = UDim2.new(1, 0, 0, 50)
+sellStatusCard.BackgroundColor3 = C.card
+sellStatusCard.BorderSizePixel = 0
+Instance.new("UICorner", sellStatusCard).CornerRadius = UDim.new(0, 8)
+
+local sellStatusLbl = Instance.new("TextLabel", sellStatusCard)
+sellStatusLbl.Size = UDim2.new(1, -20, 1, 0)
+sellStatusLbl.Position = UDim2.new(0, 12, 0, 0)
+sellStatusLbl.BackgroundTransparency = 1
+sellStatusLbl.Text = "⏹️ STOPPED"
+sellStatusLbl.Font = Enum.Font.GothamBold
+sellStatusLbl.TextSize = 14
+sellStatusLbl.TextColor3 = C.red
+sellStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Sell Counter Card
+local sellCounterCard = Instance.new("Frame", sellPage)
+sellCounterCard.Size = UDim2.new(1, 0, 0, 40)
+sellCounterCard.Position = UDim2.new(0, 0, 0, 60)
+sellCounterCard.BackgroundColor3 = C.card
+sellCounterCard.BorderSizePixel = 0
+Instance.new("UICorner", sellCounterCard).CornerRadius = UDim.new(0, 8)
+
+local sellCounterLbl = Instance.new("TextLabel", sellCounterCard)
+sellCounterLbl.Size = UDim2.new(1, -20, 1, 0)
+sellCounterLbl.Position = UDim2.new(0, 12, 0, 0)
+sellCounterLbl.BackgroundTransparency = 1
+sellCounterLbl.Text = "Terjual: 0"
+sellCounterLbl.Font = Enum.Font.GothamBold
+sellCounterLbl.TextSize = 12
+sellCounterLbl.TextColor3 = C.accentGlow
+sellCounterLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Sell Buttons
+local sellStartBtn = Instance.new("TextButton", sellPage)
+sellStartBtn.Size = UDim2.new(0.48, 0, 0, 42)
+sellStartBtn.Position = UDim2.new(0, 0, 0, 110)
+sellStartBtn.BackgroundColor3 = C.green
+sellStartBtn.Text = "▶️ START SELL"
+sellStartBtn.TextColor3 = Color3.fromRGB(255,255,255)
+sellStartBtn.Font = Enum.Font.GothamBold
+sellStartBtn.TextSize = 13
+sellStartBtn.BorderSizePixel = 0
+Instance.new("UICorner", sellStartBtn).CornerRadius = UDim.new(0, 8)
+
+local sellStopBtn = Instance.new("TextButton", sellPage)
+sellStopBtn.Size = UDim2.new(0.48, 0, 0, 42)
+sellStopBtn.Position = UDim2.new(0.52, 0, 0, 110)
+sellStopBtn.BackgroundColor3 = C.red
+sellStopBtn.Text = "⏹️ STOP SELL"
+sellStopBtn.TextColor3 = Color3.fromRGB(255,255,255)
+sellStopBtn.Font = Enum.Font.GothamBold
+sellStopBtn.TextSize = 13
+sellStopBtn.BorderSizePixel = 0
+Instance.new("UICorner", sellStopBtn).CornerRadius = UDim.new(0, 8)
+
+local sellToolsCard = Instance.new("Frame", sellPage)
+sellToolsCard.Size = UDim2.new(1, 0, 0, 36)
+sellToolsCard.Position = UDim2.new(0, 0, 0, 162)
+sellToolsCard.BackgroundColor3 = C.card
+sellToolsCard.BorderSizePixel = 0
+Instance.new("UICorner", sellToolsCard).CornerRadius = UDim.new(0, 8)
+
+local sellToolsLbl = Instance.new("TextLabel", sellToolsCard)
+sellToolsLbl.Size = UDim2.new(1, -20, 1, 0)
+sellToolsLbl.Position = UDim2.new(0, 12, 0, 0)
+sellToolsLbl.BackgroundTransparency = 1
+sellToolsLbl.Text = "Tools: 0"
+sellToolsLbl.Font = Enum.Font.Gotham
+sellToolsLbl.TextSize = 12
+sellToolsLbl.TextColor3 = C.textMid
+sellToolsLbl.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ============================================================
--- HP SAFE LOGIC
+-- HP SAFE LOGIC (otomatis saat MS start/stop)
 -- ============================================================
 local hpMonitoringActive = false
 local isInSafeZone = false
@@ -1314,105 +1092,7 @@ local function stopHPMonitoring()
 end
 
 -- ============================================================
--- FARM LOGIC
--- ============================================================
-local function cook()
-	while running do
-		if equip("Water") then
-			statusLabel.Text = "Cooking Water..."
-			statusLabel.TextColor3 = C.accentGlow
-			if waterBar then fill(waterBar, 20) end
-			holdE(0.7)
-			task.wait(20)
-		end
-		if equip("Sugar Block Bag") then
-			statusLabel.Text = "Cooking Sugar..."
-			if sugarBar then fill(sugarBar, 1) end
-			holdE(0.7)
-			task.wait(1)
-		end
-		if equip("Gelatin") then
-			statusLabel.Text = "Cooking Gelatin..."
-			if gelatinBar then fill(gelatinBar, 1) end
-			holdE(0.7)
-			task.wait(1)
-		end
-		statusLabel.Text = "Waiting..."
-		if bagBar then fill(bagBar, 45) end
-		task.wait(45)
-		if equip("Empty Bag") then
-			statusLabel.Text = "Collecting..."
-			holdE(0.7)
-			task.wait(1)
-		end
-	end
-	statusLabel.Text = "IDLE"
-	statusLabel.TextColor3 = C.textMid
-end
-
-local buying = false
-local function autoBuy()
-	if buying then return end
-	buying = true
-	notify("Buy", "Membeli x" .. buyAmount, "info")
-	for i = 1, buyAmount do
-		if buyRemote then
-			buyRemote:FireServer("Water") task.wait(.35)
-			buyRemote:FireServer("Sugar Block Bag") task.wait(.35)
-			buyRemote:FireServer("Gelatin") task.wait(.35)
-			buyRemote:FireServer("Empty Bag") task.wait(.45)
-		end
-	end
-	notify("Buy", "Selesai beli x" .. buyAmount, "success")
-	buying = false
-end
-
-local function autoSell()
-	local bags = {"Small Marshmallow Bag","Medium Marshmallow Bag","Large Marshmallow Bag"}
-	for _,bag in pairs(bags) do
-		while countItem(bag) > 0 and autoSellEnabled do
-			if equip(bag) then holdE(0.7) task.wait(1)
-			else break end
-		end
-	end
-	notify("Sell", "Semua bag terjual!", "success")
-end
-
-farmToggleBtn.MouseButton1Click:Connect(function()
-	autoFarmRunning = false
-	autoFarmStopping = true
-	running = not running
-	if running then
-		farmToggleBtn.Text = "STOP FARM"
-		TweenService:Create(farmToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
-		notify("Farm", "Auto farm dimulai!", "success")
-		task.spawn(cook)
-	else
-		farmToggleBtn.Text = "START FARM"
-		TweenService:Create(farmToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
-		notify("Farm", "Auto farm dihentikan.", "error")
-	end
-end)
-
-buyNowBtn.MouseButton1Click:Connect(function()
-	task.spawn(autoBuy)
-end)
-
-sellToggleBtn.MouseButton1Click:Connect(function()
-	autoSellEnabled = not autoSellEnabled
-	if autoSellEnabled then
-		sellToggleBtn.Text = "AUTO SELL : ON"
-		TweenService:Create(sellToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
-		notify("Sell", "Auto sell aktif!", "success")
-		task.spawn(autoSell)
-	else
-		sellToggleBtn.Text = "AUTO SELL : OFF"
-		TweenService:Create(sellToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.card}):Play()
-	end
-end)
-
--- ============================================================
--- MS LOOP LOGIC (AUTO PAGE)
+-- MS LOOP LOGIC (masak semua bahan di inventory)
 -- ============================================================
 local loopRunning = false
 
@@ -1422,123 +1102,126 @@ local function pressE2()
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
-local function updateBuyIndicators()
+local function updateInventoryDisplay()
     local waterCount = countItem("Water")
     local sugarCount = countItem("Sugar Block Bag")
     local gelatinCount = countItem("Gelatin")
     
-    if waterVal then waterVal.Text = tostring(waterCount) end
-    if sugarVal then sugarVal.Text = tostring(sugarCount) end
-    if gelatinVal then gelatinVal.Text = tostring(gelatinCount) end
-    if bagVal then bagVal.Text = tostring(countItem("Empty Bag")) end
-    if statWaterVal then statWaterVal.Text = tostring(waterCount) end
-    if statSugarVal then statSugarVal.Text = tostring(sugarCount) end
-    if statGelatinVal then statGelatinVal.Text = tostring(gelatinCount) end
-    if statBagVal then statBagVal.Text = tostring(countItem("Empty Bag")) end
+    waterLbl.Text = "💧 Water: " .. waterCount
+    sugarLbl.Text = "🍚 Sugar: " .. sugarCount
+    gelatinLbl.Text = "🧪 Gelatin: " .. gelatinCount
+    
+    if waterCount > 0 then waterLbl.TextColor3 = C.accentGlow
+    else waterLbl.TextColor3 = C.text end
+    
+    if sugarCount > 0 then sugarLbl.TextColor3 = C.accentGlow
+    else sugarLbl.TextColor3 = C.text end
+    
+    if gelatinCount > 0 then gelatinLbl.TextColor3 = C.accentGlow
+    else gelatinLbl.TextColor3 = C.text end
 end
 
 local function startMSLoop()
     if loopRunning then return end
     loopRunning = true
-    msLoopStatusLbl.Text = "▶️ LOOP RUNNING"
-    msLoopStatusLbl.TextColor3 = C.green
-    hpSafeStatusLbl.Text = "🛡️ HP SAFE: ACTIVE"
-    hpSafeStatusLbl.TextColor3 = C.green
+    msStatusLbl.Text = "▶️ RUNNING"
+    msStatusLbl.TextColor3 = C.green
     
+    -- Aktifkan HP Safe otomatis
     startHPMonitoring()
     
     task.spawn(function()
         while loopRunning do
-            updateBuyIndicators()
+            updateInventoryDisplay()
             
+            -- Masak Water (20 detik)
             local waterTool = findTool("water")
             if waterTool and equip(waterTool.Name) then
                 toolLbl.Text = "Tool: WATER"
-                stepLbl.Text = "Step 1: WATER - 20 seconds"
+                stepLbl.Text = "Step: Cooking Water..."
                 pressE2()
                 local startTime = tick()
                 while loopRunning and (tick() - startTime) < 20 do
                     local remaining = 20 - (tick() - startTime)
-                    timerLbl.Text = string.format("Timer: %d/20s - WATER", math.floor(20 - remaining))
+                    timerLbl.Text = string.format("Timer: %d/20s", math.floor(remaining))
                     task.wait(0.1)
                 end
             else
-                stepLbl.Text = "ERROR: Water tool not found!"
-                break
+                stepLbl.Text = "No Water tool found! Waiting..."
+                task.wait(5)
             end
             
-            task.wait(3)
             if not loopRunning then break end
             
+            -- Masak Sugar (1 detik)
             local sugarTool = findTool("sugar")
             if sugarTool and equip(sugarTool.Name) then
                 toolLbl.Text = "Tool: SUGAR"
-                stepLbl.Text = "Step 2: SUGAR - 2 seconds"
+                stepLbl.Text = "Step: Cooking Sugar..."
                 pressE2()
                 local startTime = tick()
-                while loopRunning and (tick() - startTime) < 2 do
-                    local remaining = 2 - (tick() - startTime)
-                    timerLbl.Text = string.format("Timer: %d/2s - SUGAR", math.floor(2 - remaining))
+                while loopRunning and (tick() - startTime) < 1 do
                     task.wait(0.1)
                 end
+                timerLbl.Text = "Timer: 0s"
             else
-                stepLbl.Text = "ERROR: Sugar tool not found!"
-                break
+                stepLbl.Text = "No Sugar tool found! Waiting..."
+                task.wait(5)
             end
             
             task.wait(0.5)
             if not loopRunning then break end
             
+            -- Masak Gelatin (45 detik)
             local gelatinTool = findTool("gelatin")
             if gelatinTool and equip(gelatinTool.Name) then
                 toolLbl.Text = "Tool: GELATIN"
-                stepLbl.Text = "Step 3: GELATIN - 45 seconds"
+                stepLbl.Text = "Step: Cooking Gelatin..."
                 pressE2()
                 local startTime = tick()
                 while loopRunning and (tick() - startTime) < 45 do
                     local remaining = 45 - (tick() - startTime)
-                    timerLbl.Text = string.format("Timer: %d/45s - GELATIN", math.floor(45 - remaining))
+                    timerLbl.Text = string.format("Timer: %d/45s", math.floor(remaining))
                     task.wait(0.1)
                 end
             else
-                stepLbl.Text = "ERROR: Gelatin tool not found!"
-                break
+                stepLbl.Text = "No Gelatin tool found! Waiting..."
+                task.wait(5)
             end
             
             task.wait(3)
             if not loopRunning then break end
             
+            -- Ambil hasil (Empty Bag)
             local emptyTool = findTool("empty") or findTool("bag")
             if emptyTool and equip(emptyTool.Name) then
                 toolLbl.Text = "Tool: EMPTY BAG"
-                stepLbl.Text = "Step 4: EMPTY BAG - 2 seconds (HASIL)"
+                stepLbl.Text = "Step: Collecting Result..."
                 pressE2()
                 local startTime = tick()
                 while loopRunning and (tick() - startTime) < 2 do
                     local remaining = 2 - (tick() - startTime)
-                    timerLbl.Text = string.format("Timer: %d/2s - HASIL", math.floor(2 - remaining))
+                    timerLbl.Text = string.format("Timer: %d/2s", math.floor(remaining))
                     task.wait(0.1)
                 end
             else
-                stepLbl.Text = "ERROR: Empty Bag tool not found!"
-                break
+                stepLbl.Text = "No Empty Bag found! Waiting..."
+                task.wait(5)
             end
             
-            updateBuyIndicators()
+            updateInventoryDisplay()
             stepLbl.Text = "Loop complete! Restarting..."
-            task.wait(1)
+            task.wait(2)
         end
         
         loopRunning = false
-        msLoopStatusLbl.Text = "⏹️ LOOP STOPPED"
-        msLoopStatusLbl.TextColor3 = C.red
+        msStatusLbl.Text = "⏹️ STOPPED"
+        msStatusLbl.TextColor3 = C.red
         stepLbl.Text = "Step: Stopped"
         timerLbl.Text = "Timer: 0s"
         toolLbl.Text = "Tool: -"
-        hpSafeStatusLbl.Text = "🛡️ HP SAFE: INACTIVE"
-        hpSafeStatusLbl.TextColor3 = C.textDim
-        updateBuyIndicators()
         
+        -- Matikan HP Safe otomatis saat MS stop
         stopHPMonitoring()
     end)
 end
@@ -1548,17 +1231,127 @@ local function stopMSLoop()
     stopHPMonitoring()
 end
 
-msLoopStartBtn.MouseButton1Click:Connect(function()
+msStartBtn.MouseButton1Click:Connect(function()
     if not loopRunning then task.spawn(startMSLoop) end
 end)
 
-msLoopStopBtn.MouseButton1Click:Connect(function()
+msStopBtn.MouseButton1Click:Connect(function()
     loopRunning = false
-    stopHPMonitoring()
 end)
 
 -- ============================================================
--- AUTO SELL LOGIC (SELL PAGE)
+-- AUTO BUY LOGIC
+-- ============================================================
+local autoBuyRunning = false
+local autoBuyTotalBought = 0
+
+local function setBuyAmount(amount)
+    buyAmount = math.clamp(amount, 1, 50)
+    amountValue.Text = buyAmount .. "x"
+    sliderFill.Size = UDim2.new((buyAmount - 1) / 49, 0, 1, 0)
+end
+
+local isDragging = false
+
+sliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        local mousePos = input.Position.X
+        local sliderPos = sliderBg.AbsolutePosition.X
+        local sliderWidth = sliderBg.AbsoluteSize.X
+        local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
+        local newAmount = math.floor(1 + percent * 49)
+        setBuyAmount(newAmount)
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then
+        local mousePos = input.Position.X
+        local sliderPos = sliderBg.AbsolutePosition.X
+        local sliderWidth = sliderBg.AbsoluteSize.X
+        
+        if mousePos >= sliderPos and mousePos <= sliderPos + sliderWidth then
+            local percent = math.clamp((mousePos - sliderPos) / sliderWidth, 0, 1)
+            local newAmount = math.floor(1 + percent * 49)
+            setBuyAmount(newAmount)
+        end
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+local function startAutoBuy()
+    if autoBuyRunning then return end
+    if not storePurchaseRE then
+        buyStatusLbl.Text = "❌ RemoteEvent Error!"
+        buyStatusLbl.TextColor3 = C.red
+        task.wait(2)
+        buyStatusLbl.Text = "⏹️ STOPPED"
+        return
+    end
+    
+    autoBuyRunning = true
+    autoBuyTotalBought = 0
+    buyStatusLbl.Text = "▶️ RUNNING"
+    buyStatusLbl.TextColor3 = C.green
+    buyTotalLbl.Text = "Total: 0 item"
+    
+    local BUY_ITEMS = {"Water", "Sugar Block Bag", "Gelatin"}
+    
+    task.spawn(function()
+        local amount = buyAmount
+        
+        for _, itemName in ipairs(BUY_ITEMS) do
+            if not autoBuyRunning then break end
+            
+            buyStatusLbl.Text = "🛒 Buying " .. itemName .. " x" .. amount
+            buyStatusLbl.TextColor3 = Color3.fromRGB(255,255,100)
+            
+            for i = 1, amount do
+                if not autoBuyRunning then break end
+                
+                pcall(function()
+                    storePurchaseRE:FireServer(itemName, 1)
+                end)
+                
+                autoBuyTotalBought = autoBuyTotalBought + 1
+                buyTotalLbl.Text = "Total: " .. autoBuyTotalBought .. " items"
+                task.wait(0.5)
+            end
+            
+            task.wait(0.8)
+        end
+        
+        if autoBuyRunning then
+            buyStatusLbl.Text = "✅ Complete! " .. autoBuyTotalBought .. " items"
+            buyStatusLbl.TextColor3 = C.green
+            task.wait(2)
+            if autoBuyRunning then
+                buyStatusLbl.Text = "⏹️ STOPPED"
+                buyStatusLbl.TextColor3 = C.red
+                autoBuyRunning = false
+            end
+        end
+        updateInventoryDisplay()
+    end)
+end
+
+local function stopAutoBuy()
+    autoBuyRunning = false
+    buyStatusLbl.Text = "⏹️ STOPPED"
+    buyStatusLbl.TextColor3 = C.red
+end
+
+buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
+buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
+
+-- ============================================================
+-- AUTO SELL LOGIC
 -- ============================================================
 local autoSellRunning = false
 local autoSellCount = 0
@@ -1609,7 +1402,7 @@ local function startAutoSell()
                             local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
                             if humanoid then humanoid:EquipTool(tool) task.wait(0.3) end
                         end
-                        sellStatusLbl.Text = "▶️ HOLD E..."
+                        sellStatusLbl.Text = "▶️ SELLING..."
                         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
                         local holdStart = tick()
                         while autoSellRunning and (tick() - holdStart) < 2 do task.wait(0.1) end
@@ -1639,243 +1432,100 @@ sellStartBtn.MouseButton1Click:Connect(startAutoSell)
 sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
 -- ============================================================
--- HP SAFE TOGGLE
+-- TAB SWITCHING
 -- ============================================================
-local hpSafeActive = false
-
-hpSafeToggleBtn.MouseButton1Click:Connect(function()
-    hpSafeActive = not hpSafeActive
-    if hpSafeActive then
-        startHPMonitoring()
-        hpSafeStatusLbl.Text = "🛡️ HP SAFE: ACTIVE"
-        hpSafeStatusLbl.TextColor3 = C.green
-        hpSafeToggleBtn.Text = "DEACTIVATE HP SAFE"
-        TweenService:Create(hpSafeToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
-        notify("Safety", "HP Safe diaktifkan!", "success")
-    else
-        stopHPMonitoring()
-        hpSafeStatusLbl.Text = "🛡️ HP SAFE: INACTIVE"
-        hpSafeStatusLbl.TextColor3 = C.textDim
-        hpSafeToggleBtn.Text = "ACTIVATE HP SAFE"
-        TweenService:Create(hpSafeToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
-        notify("Safety", "HP Safe dimatikan.", "error")
-    end
-end)
-
--- ============================================================
--- BLINK FUNCTIONS
--- ============================================================
-local function blinkAtas()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, 2, 0)
-        blinkStatusLbl.Text = "✅ Naik 2 studs!"
-        task.wait(1)
-        blinkStatusLbl.Text = "Klik tombol di bawah untuk blink"
-    end
-end
-
-local function blinkBawah()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -4, 0)
-        blinkStatusLbl.Text = "✅ Turun 4 studs!"
-        task.wait(1)
-        blinkStatusLbl.Text = "Klik tombol di bawah untuk blink"
-    end
-end
-
-local function blinkMaju()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * 5
-        blinkStatusLbl.Text = "✅ Maju 5 studs!"
-        task.wait(1)
-        blinkStatusLbl.Text = "Klik tombol di bawah untuk blink"
-    end
-end
-
-local function blinkMundur()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame - hrp.CFrame.LookVector * 5
-        blinkStatusLbl.Text = "✅ Mundur 5 studs!"
-        task.wait(1)
-        blinkStatusLbl.Text = "Klik tombol di bawah untuk blink"
-    end
-end
-
-blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
-blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
-blinkMajuBtn.MouseButton1Click:Connect(blinkMaju)
-blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
-
--- ============================================================
--- AUTO BUY LOGIC (BUY PAGE)
--- ============================================================
-local autoBuyRunning2 = false
-local autoBuyTotalBought = 0
-
-local function startAutoBuy2()
-    if autoBuyRunning2 then return end
-    if not storePurchaseRE then
-        buyStatusLbl.Text = "❌ RemoteEvent tidak ditemukan!"
-        buyStatusLbl.TextColor3 = C.red
-        task.wait(2)
-        buyStatusLbl.Text = "⏹️ BELUM MULAI"
-        buyStatusLbl.TextColor3 = C.red
-        return
-    end
+local function switchTab(tab)
+    tpPage.Visible = (tab == "tp")
+    msPage.Visible = (tab == "ms")
+    buyPage.Visible = (tab == "buy")
+    sellPage.Visible = (tab == "sell")
     
-    autoBuyRunning2 = true
-    autoBuyTotalBought = 0
-    buyStatusLbl.Text = "▶️ RUNNING"
-    buyStatusLbl.TextColor3 = C.green
-    buyTotalLbl.Text = "Total: 0 item"
+    tpTab.BackgroundColor3 = (tab == "tp") and C.accentDim or C.card
+    msTab.BackgroundColor3 = (tab == "ms") and C.accentDim or C.card
+    buyTab.BackgroundColor3 = (tab == "buy") and C.accentDim or C.card
+    sellTab.BackgroundColor3 = (tab == "sell") and C.accentDim or C.card
     
-    local BUY_ITEMS = {
-        {name = "Water", display = "💧 Water"},
-        {name = "Sugar Block Bag", display = "🍚 Sugar Block Bag"},
-        {name = "Gelatin", display = "🧪 Gelatin"}
-    }
-    
-    task.spawn(function()
-        local amount = buyAmount
-        
-        for _, item in ipairs(BUY_ITEMS) do
-            if not autoBuyRunning2 then break end
-            
-            buyStatusLbl.Text = "🛒 Membeli " .. item.display .. " x" .. amount
-            buyStatusLbl.TextColor3 = Color3.fromRGB(255,255,100)
-            
-            for i = 1, amount do
-                if not autoBuyRunning2 then break end
-                
-                pcall(function()
-                    storePurchaseRE:FireServer(item.name, 1)
-                end)
-                
-                autoBuyTotalBought = autoBuyTotalBought + 1
-                buyTotalLbl.Text = "Total: " .. autoBuyTotalBought .. " item"
-                task.wait(0.5)
-            end
-            
-            task.wait(0.8)
-        end
-        
-        if autoBuyRunning2 then
-            buyStatusLbl.Text = "✅ Selesai! Total: " .. autoBuyTotalBought .. " item"
-            buyStatusLbl.TextColor3 = C.green
-            task.wait(2)
-            if autoBuyRunning2 then
-                buyStatusLbl.Text = "⏹️ STOPPED"
-                buyStatusLbl.TextColor3 = C.red
-                autoBuyRunning2 = false
-            end
-        end
-        updateBuyIndicators()
-    end)
+    tpTab.TextColor3 = (tab == "tp") and C.text or C.textMid
+    msTab.TextColor3 = (tab == "ms") and C.text or C.textMid
+    buyTab.TextColor3 = (tab == "buy") and C.text or C.textMid
+    sellTab.TextColor3 = (tab == "sell") and C.text or C.textMid
 end
 
-local function stopAutoBuy2()
-    autoBuyRunning2 = false
-    buyStatusLbl.Text = "⏹️ STOPPED"
-    buyStatusLbl.TextColor3 = C.red
-end
-
-buyStartBtn.MouseButton1Click:Connect(startAutoBuy2)
-buyStopBtn.MouseButton1Click:Connect(stopAutoBuy2)
-
--- ============================================================
--- STATUS LOOP
--- ============================================================
-task.spawn(function()
-	while gui and gui.Parent do
-		local w  = countItem("Water")
-		local sg = countItem("Sugar Block Bag")
-		local ge = countItem("Gelatin")
-		local bg = countItem("Empty Bag")
-		local sm = countItem("Small Marshmallow Bag")
-		local md = countItem("Medium Marshmallow Bag")
-		local lg = countItem("Large Marshmallow Bag")
-
-		if waterVal    then waterVal.Text    = tostring(w)  end
-		if sugarVal    then sugarVal.Text    = tostring(sg) end
-		if gelatinVal  then gelatinVal.Text  = tostring(ge) end
-		if bagVal      then bagVal.Text      = tostring(bg) end
-		if statWaterVal   then statWaterVal.Text   = tostring(w)  end
-		if statSugarVal   then statSugarVal.Text   = tostring(sg) end
-		if statGelatinVal then statGelatinVal.Text = tostring(ge) end
-		if statBagVal     then statBagVal.Text     = tostring(bg) end
-		if statSmallVal   then statSmallVal.Text   = tostring(sm) end
-		if statMedVal     then statMedVal.Text     = tostring(md) end
-		if statLargeVal   then statLargeVal.Text   = tostring(lg) end
-		if totalVal       then totalVal.Text        = tostring(sm+md+lg) end
-
-		task.wait(0.5)
-	end
-end)
+tpTab.MouseButton1Click:Connect(function() switchTab("tp") end)
+msTab.MouseButton1Click:Connect(function() switchTab("ms") end)
+buyTab.MouseButton1Click:Connect(function() switchTab("buy") end)
+sellTab.MouseButton1Click:Connect(function() switchTab("sell") end)
 
 -- ============================================================
 -- MINIMIZE BUTTON
 -- ============================================================
-local bodyVisible = true
+local minimized = false
+local openSize = UDim2.new(0, 500, 0, 450)
+local closedSize = UDim2.new(0, 500, 0, 50)
+local tweenInfo = TweenInfo.new(0.3)
 
 minBtn.MouseButton1Click:Connect(function()
-	bodyVisible = not bodyVisible
-	sidebar.Visible = bodyVisible
-	content.Visible = bodyVisible
-	if bodyVisible then
-		TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 430)}):Play()
-	else
-		TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 46)}):Play()
-	end
+    minimized = not minimized
+    if minimized then
+        tpPage.Visible = false
+        msPage.Visible = false
+        buyPage.Visible = false
+        sellPage.Visible = false
+        TabFrame.Visible = false
+        minBtn.Text = "□"
+        TweenService:Create(main, tweenInfo, {Size = closedSize}):Play()
+    else
+        TweenService:Create(main, tweenInfo, {Size = openSize}):Play()
+        task.wait(0.3)
+        tpPage.Visible = true
+        TabFrame.Visible = true
+        minBtn.Text = "−"
+    end
 end)
 
 -- ============================================================
 -- HIDE BUTTON + KEYBIND Z
 -- ============================================================
-local hideBtn2 = Instance.new("TextButton", gui)
-hideBtn2.Size = UDim2.new(0, 42, 0, 42)
-hideBtn2.Position = UDim2.new(1, -52, 0.5, -21)
-hideBtn2.Text = "191"
-hideBtn2.Font = Enum.Font.GothamBlack
-hideBtn2.TextSize = 12
-hideBtn2.BackgroundColor3 = C.accent
-hideBtn2.TextColor3 = Color3.new(1,1,1)
-hideBtn2.Active = true
-hideBtn2.Draggable = true
-hideBtn2.BorderSizePixel = 0
-Instance.new("UICorner", hideBtn2).CornerRadius = UDim.new(0, 10)
+local hideBtn = Instance.new("TextButton", gui)
+hideBtn.Size = UDim2.new(0, 42, 0, 42)
+hideBtn.Position = UDim2.new(1, -52, 0.5, -21)
+hideBtn.Text = "191"
+hideBtn.Font = Enum.Font.GothamBlack
+hideBtn.TextSize = 12
+hideBtn.BackgroundColor3 = C.accent
+hideBtn.TextColor3 = Color3.new(1,1,1)
+hideBtn.Active = true
+hideBtn.Draggable = true
+hideBtn.BorderSizePixel = 0
+Instance.new("UICorner", hideBtn).CornerRadius = UDim.new(0, 10)
 
-hideBtn2.MouseButton1Click:Connect(function()
-	main.Visible = not main.Visible
+hideBtn.MouseButton1Click:Connect(function()
+    main.Visible = not main.Visible
 end)
 
 ContextActionService:BindAction("toggleUI_191", function(_, state)
-	if state == Enum.UserInputState.Begin then
-		main.Visible = not main.Visible
-	end
+    if state == Enum.UserInputState.Begin then
+        main.Visible = not main.Visible
+    end
 end, false, Enum.KeyCode.Z)
 
 -- ============================================================
 -- STARTUP
 -- ============================================================
-switchTab("FARM")
+switchTab("tp")
+setBuyAmount(10)
 task.wait(0.3)
 notify("191 STORE", "Script berhasil diload! v191", "success")
 
--- Auto refresh untuk sell page
+-- Auto refresh
 task.spawn(function()
     while true do
         task.wait(2)
-        if sellp.Visible then
+        if msPage.Visible then
+            updateInventoryDisplay()
+        end
+        if sellPage.Visible then
             sellToolsLbl.Text = "Tools: " .. #getSellTools()
         end
-        updateBuyIndicators()
     end
 end)

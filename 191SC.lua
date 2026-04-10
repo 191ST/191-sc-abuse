@@ -1,58 +1,12 @@
--- VERSION 2 - PASTI MUNCUL (tanpa CoreGui, langsung PlayerGui)
 local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
--- HAPUS YANG LAMA
-local old = playerGui:FindFirstChild("191_STORE")
-if old then old:Destroy() end
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "191_STORE"
-gui.ResetOnSpawn = false
-gui.Parent = playerGui
-
--- BUAT FRAME SEDERHANA DULU
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 400, 0, 300)
-main.Position = UDim2.new(0.5, -200, 0.5, -150)
-main.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
-
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-title.Text = "191 STORE"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 18
-title.Font = Enum.Font.GothamBold
-title.TextStrokeTransparency = 1
-Instance.new("UICorner", title).CornerRadius = UDim.new(0, 12)
-
-local closeBtn = Instance.new("TextButton", main)
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 5)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-closeBtn.BackgroundTransparency = 1
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 14
-closeBtn.TextStrokeTransparency = 1
-closeBtn.MouseButton1Click:Connect(function()
-    gui:Destroy()
-end)
-
-local info = Instance.new("TextLabel", main)
-info.Size = UDim2.new(1, -20, 1, -50)
-info.Position = UDim2.new(0, 10, 0, 50)
-info.BackgroundTransparency = 1
-info.Text = "LOADING SCRIPT...\n\nTekan Z untuk hide/show\nTekan T untuk blink"
-info.TextColor3 = Color3.fromRGB(200, 200, 200)
-info.TextSize = 14
-info.TextStrokeTransparency = 1
-info.TextWrapped = true
-
-print("191 STORE GUI MUNCUL!")
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ContextActionService = game:GetService("ContextActionService")
+local VirtualUser = game:GetService("VirtualUser")
 
 -- ========== CUSTOM RESPAWN ==========
 local RESPAWN_POINT = CFrame.new(729.86, 3.71, 444.46) * CFrame.Angles(-3.14, 0.01, -3.14)
@@ -185,19 +139,13 @@ local function stepTeleport(targetPos)
 end
 
 -- ============================================================
--- GUI SETUP (PASTI MUNCUL)
+-- GUI SETUP
 -- ============================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "191_STORE"
+gui.Parent = playerGui
 gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-gui.Parent = game:GetService("CoreGui")
-
--- KALAU GAGAL PAKAI CoreGui, PAKAI PlayerGui
-if not gui.Parent then
-    gui.Parent = playerGui
-end
 
 -- ============================================================
 -- COLOR PALETTE
@@ -252,18 +200,15 @@ do
     fix.BackgroundColor3 = C.surface
     fix.BorderSizePixel = 0
 
-    local checkMark = Instance.new("TextLabel", topBar)
-    checkMark.Size = UDim2.new(0, 20, 0, 20)
-    checkMark.Position = UDim2.new(0, 16, 0.5, -10)
-    checkMark.BackgroundTransparency = 1
-    checkMark.Text = "✔"
-    checkMark.Font = Enum.Font.GothamBold
-    checkMark.TextSize = 16
-    checkMark.TextColor3 = C.accent
-    checkMark.TextStrokeTransparency = 1
+    local sq = Instance.new("Frame", topBar)
+    sq.Size = UDim2.new(0, 4, 0, 20)
+    sq.Position = UDim2.new(0, 16, 0.5, -10)
+    sq.BackgroundColor3 = C.accent
+    sq.BorderSizePixel = 0
+    Instance.new("UICorner", sq).CornerRadius = UDim.new(0, 2)
 
     local titleLbl = Instance.new("TextLabel", topBar)
-    titleLbl.Position = UDim2.new(0, 42, 0, 0)
+    titleLbl.Position = UDim2.new(0, 28, 0, 0)
     titleLbl.Size = UDim2.new(0, 160, 1, 0)
     titleLbl.BackgroundTransparency = 1
     titleLbl.Text = "191 STORE"
@@ -597,7 +542,7 @@ local function makeStatusRow(parent, label, order)
 end
 
 -- ============================================================
--- AUTO PAGE
+-- AUTO PAGE (MS LOOP)
 -- ============================================================
 local ap = pages["AUTO"]
 
@@ -634,12 +579,13 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
+-- FUNGSI MASAK SEDERHANA
 local function cookProcess()
     pcall(function()
         equip("Water")
         holdE(0.7)
         for i = 20, 1, -1 do
-            if not msRunning then return end
+            if not msRunning and not fullyRunning then return end
             task.wait(1)
         end
         
@@ -652,7 +598,7 @@ local function cookProcess()
         task.wait(1)
         
         for i = 45, 1, -1 do
-            if not msRunning then return end
+            if not msRunning and not fullyRunning then return end
             task.wait(1)
         end
         
@@ -693,7 +639,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE
+-- FULLY PAGE (FIXED STOP)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -829,6 +775,7 @@ local function fullyLoop()
     while fullyRunning do
         if not fullyRunning then break end
         
+        -- BELI
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -837,6 +784,7 @@ local function fullyLoop()
         fullyBuy(fullyTarget)
         if not fullyRunning then break end
         
+        -- KEMBALI
         if fullySavedPos then
             setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
@@ -846,6 +794,7 @@ local function fullyLoop()
         if not fullyRunning then break end
         updateFullyInventory()
         
+        -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
@@ -858,6 +807,7 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
+        -- JUAL
         setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -870,6 +820,7 @@ local function fullyLoop()
         task.wait(2)
     end
     
+    -- TAMAT
     fullyRunning = false
     fullyStartBtn.Text = "START FULLY"
     TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
@@ -1392,9 +1343,3 @@ end, false, Enum.KeyCode.Z)
 -- STARTUP
 -- ============================================================
 switchTab("AUTO")
-
--- NOTIFIKASI SEDERHANA
-task.spawn(function()
-    task.wait(1)
-    print("191 STORE LOADED! Tekan Z untuk hide/show GUI")
-end)

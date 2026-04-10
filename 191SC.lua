@@ -542,7 +542,7 @@ local function makeStatusRow(parent, label, order)
 end
 
 -- ============================================================
--- AUTO PAGE (MS LOOP) - PAKAI INI
+-- AUTO PAGE (MS LOOP)
 -- ============================================================
 local ap = pages["AUTO"]
 
@@ -579,68 +579,34 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- INI FUNGSI MASAK YANG PASTI BERHASIL (COPY DARI SCRIPT LAMA)
+-- FUNGSI MASAK SEDERHANA (GA PAKAI RETURN FALSE)
 local function cookProcess()
-    -- WATER
-    if equip("Water") then
+    pcall(function()
+        equip("Water")
         holdE(0.7)
-        for i = 20, 1, -1 do
-            if not msRunning and not fullyRunning then return false end
-            task.wait(1)
-        end
-    else
-        return false
-    end
-    
-    -- SUGAR
-    if equip("Sugar Block Bag") then
+        for i = 20, 1, -1 do task.wait(1) end
+        
+        equip("Sugar Block Bag")
         holdE(0.7)
         task.wait(1)
-    else
-        return false
-    end
-    
-    -- GELATIN
-    if equip("Gelatin") then
+        
+        equip("Gelatin")
         holdE(0.7)
         task.wait(1)
-    else
-        return false
-    end
-    
-    -- WAIT 45 DETIK
-    for i = 45, 1, -1 do
-        if not msRunning and not fullyRunning then return false end
-        task.wait(1)
-    end
-    
-    -- EMPTY BAG
-    if equip("Empty Bag") then
+        
+        for i = 45, 1, -1 do task.wait(1) end
+        
+        equip("Empty Bag")
         holdE(0.7)
         task.wait(1)
-    else
-        return false
-    end
-    
-    return true
+    end)
 end
 
 local function msLoop()
     while msRunning do
         updateAutoInventory()
-        
-        if countItem("Water") == 0 or countItem("Sugar Block Bag") == 0 or countItem("Gelatin") == 0 or countItem("Empty Bag") == 0 then
-            msStatusLbl.Text = "OUT OF INGREDIENTS!"
-            task.wait(2)
-            break
-        end
-        
         msStatusLbl.Text = "COOKING..."
-        if cookProcess() then
-            msStatusLbl.Text = "COOKING COMPLETE"
-        else
-            msStatusLbl.Text = "COOKING FAILED"
-        end
+        cookProcess()
         updateAutoInventory()
         task.wait(2)
     end
@@ -667,7 +633,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE - PAKAI FUNGSI MASAK YANG SAMA PERSIS
+-- FULLY PAGE (PAKAI COOKPROCESS YANG SAMA)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -717,60 +683,40 @@ local function setFullyStatus(msg, color)
 end
 
 local function fullyBuy(qty)
-    if not storePurchaseRE then
-        setFullyStatus("ERROR: RemoteEvent not found!", C.red)
-        return false
-    end
+    if not storePurchaseRE then return end
     
     local items = {"Water", "Sugar Block Bag", "Gelatin", "Empty Bag"}
     
     for _, item in ipairs(items) do
-        if not fullyRunning then return false end
+        if not fullyRunning then break end
         setFullyStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
-        
         for i = 1, qty do
-            if not fullyRunning then return false end
-            pcall(function()
-                storePurchaseRE:FireServer(item, 1)
-            end)
+            if not fullyRunning then break end
+            pcall(function() storePurchaseRE:FireServer(item, 1) end)
             task.wait(0.4)
         end
         task.wait(0.5)
     end
-    
     setFullyStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
     task.wait(1)
-    return true
 end
 
 local function fullySell()
     local sellItems = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
-    local totalSold = 0
     
     for _, item in ipairs(sellItems) do
-        if not fullyRunning then return false end
-        
+        if not fullyRunning then break end
         while countItem(item) > 0 and fullyRunning do
             setFullyStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
-            
-            if equip(item) then
+            pcall(function()
+                equip(item)
                 holdE(0.7)
                 task.wait(1)
-                totalSold = totalSold + 1
-            else
-                task.wait(1)
-                break
-            end
+            end)
         end
     end
-    
-    if totalSold > 0 then
-        setFullyStatus("SOLD " .. totalSold .. " ITEMS!", Color3.fromRGB(52, 210, 110))
-    else
-        setFullyStatus("NO ITEMS TO SELL", Color3.fromRGB(255, 155, 35))
-    end
+    setFullyStatus("SELLING COMPLETE!", Color3.fromRGB(52, 210, 110))
     task.wait(1)
-    return true
 end
 
 -- LOOP FULLY
@@ -778,43 +724,30 @@ local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
-        -- BELI BAHAN
+        -- BELI
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
-        setFullyStatus("BUYING INGREDIENTS", Color3.fromRGB(100, 180, 255))
-        if not fullyBuy(fullyTarget) then
-            if not fullyRunning then break end
-            setFullyStatus("FAILED TO BUY!", C.red)
-            task.wait(2)
-            break
-        end
+        fullyBuy(fullyTarget)
+        if not fullyRunning then break end
         
-        -- KEMBALI KE APART
+        -- KEMBALI
         if fullySavedPos then
-            setFullyStatus("RETURNING TO APARTMENT", Color3.fromRGB(148, 80, 255))
+            setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
             task.wait(1)
         end
         
         updateFullyInventory()
         
-        -- MASAK PAKAI FUNGSI YANG SAMA DENGAN AUTO MS
+        -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
-            
-            if cookProcess() then
-                cooked = cooked + 1
-                setFullyStatus("COMPLETED " .. cooked .. "/" .. fullyTarget, Color3.fromRGB(52, 210, 110))
-                updateFullyInventory()
-            else
-                if not fullyRunning then break end
-                setFullyStatus("COOKING FAILED!", Color3.fromRGB(255, 155, 35))
-                task.wait(2)
-                break
-            end
+            cookProcess()
+            cooked = cooked + 1
+            updateFullyInventory()
             task.wait(0.5)
         end
         
@@ -825,9 +758,7 @@ local function fullyLoop()
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
-        setFullyStatus("SELLING ALL MS", Color3.fromRGB(52, 210, 110))
         fullySell()
-        
         if not fullyRunning then break end
         
         setFullyStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
@@ -1072,7 +1003,7 @@ local autoBuyTotalBought = 0
 local function startAutoBuy()
     if autoBuyRunning then return end
     if not storePurchaseRE then
-        buyStatusLbl.Text = "ERROR: RemoteEvent not found!"
+        buyStatusLbl.Text = "ERROR!"
         buyStatusLbl.TextColor3 = C.red
         task.wait(2)
         buyStatusLbl.Text = "STOPPED"

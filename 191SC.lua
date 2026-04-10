@@ -39,9 +39,8 @@ local buyAmount = 10
 local buyRemote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("StorePurchase")
 local blinkEnabled = true
 
--- ========== BLINK SHORTCUT (KEY T) ==========
-local function blinkMajuShortcut()
-    if not blinkEnabled then return end
+-- ========== BLINK FUNCTIONS ==========
+local function blinkMaju()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
@@ -49,9 +48,34 @@ local function blinkMajuShortcut()
     end
 end
 
+local function blinkMundur()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame - hrp.CFrame.LookVector * 8
+    end
+end
+
+local function blinkAtas()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, 5, 0)
+    end
+end
+
+local function blinkBawah()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -5, 0)
+    end
+end
+
+-- Shortcut T untuk blink maju (keyboard)
 ContextActionService:BindAction("blink_forward", function(_, state)
-    if state == Enum.UserInputState.Begin then
-        blinkMajuShortcut()
+    if state == Enum.UserInputState.Begin and blinkEnabled then
+        blinkMaju()
     end
 end, false, Enum.KeyCode.T)
 
@@ -505,7 +529,7 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
 end
 
 -- ============================================================
--- AUTO PAGE (MS Loop dengan HP Safe)
+-- AUTO PAGE (MS Loop dengan HP Safe & Cooldown)
 -- ============================================================
 local ap = pages["AUTO"]
 
@@ -588,7 +612,7 @@ for i, loc in ipairs(LOCATIONS) do
 end
 
 -- ============================================================
--- MS POT PAGE (tanpa indicator, tanpa restore cook)
+-- MS POT PAGE
 -- ============================================================
 local mspot = pages["MS POT"]
 
@@ -940,25 +964,26 @@ sellStartBtn.MouseButton1Click:Connect(startAutoSell)
 sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
 -- ============================================================
--- SETTINGS PAGE
+-- SETTINGS PAGE (dengan tombol blink untuk HP)
 -- ============================================================
 local settingsp = pages["SETTINGS"]
 
 sectionLabel(settingsp, "Shortcut Settings", 1)
 
-local blinkCard = card(settingsp, 50, 2)
-local blinkTitle = Instance.new("TextLabel", blinkCard)
-blinkTitle.Size = UDim2.new(0.6, 0, 1, 0)
-blinkTitle.Position = UDim2.new(0, 12, 0, 0)
-blinkTitle.BackgroundTransparency = 1
-blinkTitle.Text = "Shortcut T (Blink Maju 8 studs)"
-blinkTitle.Font = Enum.Font.GothamSemibold
-blinkTitle.TextSize = 12
-blinkTitle.TextColor3 = C.text
-blinkTitle.TextXAlignment = Enum.TextXAlignment.Left
-blinkTitle.TextStrokeTransparency = 1
+-- Toggle Shortcut T
+local blinkToggleCard = card(settingsp, 50, 2)
+local blinkToggleTitle = Instance.new("TextLabel", blinkToggleCard)
+blinkToggleTitle.Size = UDim2.new(0.6, 0, 1, 0)
+blinkToggleTitle.Position = UDim2.new(0, 12, 0, 0)
+blinkToggleTitle.BackgroundTransparency = 1
+blinkToggleTitle.Text = "Shortcut T (Blink Maju)"
+blinkToggleTitle.Font = Enum.Font.GothamSemibold
+blinkToggleTitle.TextSize = 12
+blinkToggleTitle.TextColor3 = C.text
+blinkToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+blinkToggleTitle.TextStrokeTransparency = 1
 
-local blinkToggleBtn = Instance.new("TextButton", blinkCard)
+local blinkToggleBtn = Instance.new("TextButton", blinkToggleCard)
 blinkToggleBtn.Size = UDim2.new(0, 80, 0, 32)
 blinkToggleBtn.Position = UDim2.new(1, -92, 0.5, -16)
 blinkToggleBtn.BackgroundColor3 = C.green
@@ -980,6 +1005,19 @@ blinkToggleBtn.MouseButton1Click:Connect(function()
         blinkToggleBtn.BackgroundColor3 = C.red
     end
 end)
+
+sectionLabel(settingsp, "Blink Buttons (Mobile/HP)", 3)
+
+-- Tombol blink untuk HP
+local blinkMajuBtn = makeActionBtn(settingsp, "⬆️ BLINK MAJU", C.accentDim, 4)
+local blinkMundurBtn = makeActionBtn(settingsp, "⬇️ BLINK MUNDUR", C.accentDim, 5)
+local blinkAtasBtn = makeActionBtn(settingsp, "🔼 BLINK ATAS", C.accentDim, 6)
+local blinkBawahBtn = makeActionBtn(settingsp, "🔽 BLINK BAWAH", C.accentDim, 7)
+
+blinkMajuBtn.MouseButton1Click:Connect(blinkMaju)
+blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
+blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
+blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
 -- ============================================================
 -- HP SAFE LOGIC (otomatis saat MS start/stop)
@@ -1153,7 +1191,7 @@ local function stopHPMonitoring()
 end
 
 -- ============================================================
--- MS LOOP LOGIC
+-- MS LOOP LOGIC (dengan cooldown 2 detik setelah setiap E)
 -- ============================================================
 local loopRunning = false
 
@@ -1173,11 +1211,19 @@ local function startMSLoop()
     
     task.spawn(function()
         while loopRunning do
+            -- WATER
             local waterTool = findTool("water")
             if waterTool and equip(waterTool.Name) then
                 toolLbl.Text = "Tool: WATER"
                 stepLbl.Text = "Step: Cooking Water..."
                 pressE2()
+                -- Cooldown 2 detik setelah interaksi
+                local cooldownStart = tick()
+                while loopRunning and (tick() - cooldownStart) < 2 do
+                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
+                    task.wait(0.1)
+                end
+                -- Timer cooking 20 detik
                 local startTime = tick()
                 while loopRunning and (tick() - startTime) < 20 do
                     local remaining = 20 - (tick() - startTime)
@@ -1191,11 +1237,19 @@ local function startMSLoop()
             
             if not loopRunning then break end
             
+            -- SUGAR
             local sugarTool = findTool("sugar")
             if sugarTool and equip(sugarTool.Name) then
                 toolLbl.Text = "Tool: SUGAR"
                 stepLbl.Text = "Step: Cooking Sugar..."
                 pressE2()
+                -- Cooldown 2 detik setelah interaksi
+                local cooldownStart = tick()
+                while loopRunning and (tick() - cooldownStart) < 2 do
+                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
+                    task.wait(0.1)
+                end
+                -- Timer cooking 1 detik
                 local startTime = tick()
                 while loopRunning and (tick() - startTime) < 1 do
                     task.wait(0.1)
@@ -1209,11 +1263,19 @@ local function startMSLoop()
             task.wait(0.5)
             if not loopRunning then break end
             
+            -- GELATIN
             local gelatinTool = findTool("gelatin")
             if gelatinTool and equip(gelatinTool.Name) then
                 toolLbl.Text = "Tool: GELATIN"
                 stepLbl.Text = "Step: Cooking Gelatin..."
                 pressE2()
+                -- Cooldown 2 detik setelah interaksi
+                local cooldownStart = tick()
+                while loopRunning and (tick() - cooldownStart) < 2 do
+                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
+                    task.wait(0.1)
+                end
+                -- Timer cooking 45 detik
                 local startTime = tick()
                 while loopRunning and (tick() - startTime) < 45 do
                     local remaining = 45 - (tick() - startTime)
@@ -1228,11 +1290,19 @@ local function startMSLoop()
             task.wait(3)
             if not loopRunning then break end
             
+            -- EMPTY BAG (HASIL)
             local emptyTool = findTool("empty") or findTool("bag")
             if emptyTool and equip(emptyTool.Name) then
                 toolLbl.Text = "Tool: EMPTY BAG"
                 stepLbl.Text = "Step: Collecting Result..."
                 pressE2()
+                -- Cooldown 2 detik setelah interaksi
+                local cooldownStart = tick()
+                while loopRunning and (tick() - cooldownStart) < 2 do
+                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
+                    task.wait(0.1)
+                end
+                -- Timer collecting 2 detik
                 local startTime = tick()
                 while loopRunning and (tick() - startTime) < 2 do
                     local remaining = 2 - (tick() - startTime)

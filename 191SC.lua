@@ -160,179 +160,6 @@ local C = {
 }
 
 -- ============================================================
--- SIMPLE LOADING OVERLAY (untuk keperluan lain, tp tidak dipakai)
--- ============================================================
-local showLoading, hideLoading
-do
-    local loadGui = Instance.new("ScreenGui")
-    loadGui.Name = "191_LOAD"
-    loadGui.IgnoreGuiInset = true
-    loadGui.ResetOnSpawn = false
-    loadGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    loadGui.DisplayOrder = 999
-    loadGui.Enabled = false
-    pcall(function() loadGui.Parent = game:GetService("CoreGui") end)
-    if not loadGui.Parent then loadGui.Parent = playerGui end
-
-    local bg = Instance.new("Frame", loadGui)
-    bg.Size = UDim2.new(1, 0, 1, 0)
-    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    bg.BackgroundTransparency = 0
-    bg.BorderSizePixel = 0
-    bg.ZIndex = 10
-
-    local glow = Instance.new("Frame", bg)
-    glow.Size = UDim2.new(0, 400, 0, 180)
-    glow.Position = UDim2.new(0.5, -200, 0.5, -90)
-    glow.BackgroundColor3 = Color3.fromRGB(0, 70, 150)
-    glow.BackgroundTransparency = 0.88
-    glow.BorderSizePixel = 0
-    glow.ZIndex = 11
-    Instance.new("UICorner", glow).CornerRadius = UDim.new(1, 0)
-
-    local title = Instance.new("TextLabel", bg)
-    title.Size = UDim2.new(0, 500, 0, 56)
-    title.Position = UDim2.new(0.5, -250, 0.5, -50)
-    title.BackgroundTransparency = 1
-    title.Text = "191 STORE"
-    title.Font = Enum.Font.GothamBlack
-    title.TextSize = 44
-    title.TextColor3 = Color3.fromRGB(50, 150, 255)
-    title.TextXAlignment = Enum.TextXAlignment.Center
-    title.ZIndex = 12
-    title.TextStrokeTransparency = 1
-
-    local line = Instance.new("Frame", bg)
-    line.Size = UDim2.new(0, 200, 0, 1)
-    line.Position = UDim2.new(0.5, -100, 0.5, 14)
-    line.BackgroundColor3 = Color3.fromRGB(0, 110, 220)
-    line.BackgroundTransparency = 0.3
-    line.BorderSizePixel = 0
-    line.ZIndex = 12
-    Instance.new("UICorner", line).CornerRadius = UDim.new(1, 0)
-
-    local subLbl = Instance.new("TextLabel", bg)
-    subLbl.Size = UDim2.new(0, 400, 0, 22)
-    subLbl.Position = UDim2.new(0.5, -200, 0.5, 24)
-    subLbl.BackgroundTransparency = 1
-    subLbl.Text = "Teleporting..."
-    subLbl.Font = Enum.Font.Gotham
-    subLbl.TextSize = 13
-    subLbl.TextColor3 = Color3.fromRGB(0, 90, 190)
-    subLbl.TextXAlignment = Enum.TextXAlignment.Center
-    subLbl.ZIndex = 12
-    subLbl.TextStrokeTransparency = 1
-
-    task.spawn(function()
-        local pats = {"Teleporting", "Teleporting.", "Teleporting..", "Teleporting..."}
-        local idx = 1
-        while loadGui and loadGui.Parent do
-            if loadGui.Enabled then
-                subLbl.Text = pats[idx]
-                idx = (idx % #pats) + 1
-            end
-            task.wait(0.3)
-        end
-    end)
-
-    showLoading = function(subText)
-        subLbl.Text = subText or "Teleporting"
-        loadGui.Enabled = true
-    end
-
-    hideLoading = function()
-        loadGui.Enabled = false
-    end
-end
-
--- ============================================================
--- NOTIFICATION SYSTEM
--- ============================================================
-local notifContainer = Instance.new("Frame", gui)
-notifContainer.Size = UDim2.new(0, 270, 1, 0)
-notifContainer.Position = UDim2.new(1, -280, 0, 0)
-notifContainer.BackgroundTransparency = 1
-notifContainer.ZIndex = 100
-
-local notifLayout = Instance.new("UIListLayout", notifContainer)
-notifLayout.Padding = UDim.new(0, 6)
-notifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-notifLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local notifPadding = Instance.new("UIPadding", notifContainer)
-notifPadding.PaddingBottom = UDim.new(0, 14)
-notifPadding.PaddingRight = UDim.new(0, 8)
-
-local notifCount = 0
-local function notify(title, msg, ntype)
-    notifCount += 1
-    local color = ntype == "success" and C.green or ntype == "error" and C.red or C.accent
-
-    local card = Instance.new("Frame", notifContainer)
-    card.Size = UDim2.new(1, 0, 0, 58)
-    card.BackgroundColor3 = C.card
-    card.BorderSizePixel = 0
-    card.ClipsDescendants = true
-    card.ZIndex = 100
-    card.LayoutOrder = notifCount
-
-    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
-
-    local stroke = Instance.new("UIStroke", card)
-    stroke.Color = color
-    stroke.Thickness = 1
-    stroke.Transparency = 0.5
-
-    local bar_left = Instance.new("Frame", card)
-    bar_left.Size = UDim2.new(0, 3, 1, 0)
-    bar_left.BackgroundColor3 = color
-    bar_left.BorderSizePixel = 0
-    bar_left.ZIndex = 101
-
-    local t = Instance.new("TextLabel", card)
-    t.Position = UDim2.new(0, 14, 0, 7)
-    t.Size = UDim2.new(1, -22, 0, 18)
-    t.BackgroundTransparency = 1
-    t.Text = title
-    t.Font = Enum.Font.GothamBold
-    t.TextSize = 13
-    t.TextColor3 = C.text
-    t.TextXAlignment = Enum.TextXAlignment.Left
-    t.ZIndex = 101
-    t.TextStrokeTransparency = 1
-
-    local m = Instance.new("TextLabel", card)
-    m.Position = UDim2.new(0, 14, 0, 26)
-    m.Size = UDim2.new(1, -22, 0, 26)
-    m.BackgroundTransparency = 1
-    m.Text = msg
-    m.Font = Enum.Font.Gotham
-    m.TextSize = 11
-    m.TextColor3 = C.textMid
-    m.TextXAlignment = Enum.TextXAlignment.Left
-    m.TextWrapped = true
-    m.ZIndex = 101
-    m.TextStrokeTransparency = 1
-
-    local timerBar = Instance.new("Frame", card)
-    timerBar.Position = UDim2.new(0, 3, 1, -2)
-    timerBar.Size = UDim2.new(1, -3, 0, 2)
-    timerBar.BackgroundColor3 = color
-    timerBar.BorderSizePixel = 0
-    timerBar.ZIndex = 101
-
-    card.Position = UDim2.new(1, 16, 0, 0)
-    TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Position = UDim2.new(0,0,0,0)}):Play()
-    TweenService:Create(timerBar, TweenInfo.new(3.5, Enum.EasingStyle.Linear), {Size = UDim2.new(0,3,0,2)}):Play()
-
-    task.delay(3.5, function()
-        TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {Position = UDim2.new(1,16,0,0)}):Play()
-        task.wait(0.3)
-        card:Destroy()
-    end)
-end
-
--- ============================================================
 -- MAIN WINDOW
 -- ============================================================
 local main = Instance.new("Frame", gui)
@@ -350,7 +177,7 @@ mainStroke.Color = C.border
 mainStroke.Thickness = 1
 
 -- ============================================================
--- TOP BAR (tanpa garis/glow)
+-- TOP BAR
 -- ============================================================
 local topBar = Instance.new("Frame", main)
 topBar.Size = UDim2.new(1, 0, 0, 46)
@@ -397,8 +224,6 @@ closeBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
 closeBtn.MouseButton1Click:Connect(function()
-    notify("191 Store", "Script dihentikan.", "error")
-    task.wait(0.4)
     gui:Destroy()
 end)
 
@@ -738,7 +563,7 @@ local msStartBtn = makeActionBtn(ap, "▶️ START MS LOOP", C.green, 6)
 local msStopBtn = makeActionBtn(ap, "⏹️ STOP MS LOOP", C.red, 7)
 
 -- ============================================================
--- TP PAGE (tanpa loading screen)
+-- TP PAGE
 -- ============================================================
 local tp = pages["TP"]
 
@@ -758,38 +583,23 @@ local LOCATIONS = {
 for i, loc in ipairs(LOCATIONS) do
     local btn = makeActionBtn(tp, loc.name, C.card, i)
     btn.MouseButton1Click:Connect(function()
-        notify("Teleport", "Menuju "..loc.name.."...", "info")
         vehicleTeleport(CFrame.new(loc.pos))
-        notify("Teleport", "Tiba di "..loc.name, "success")
     end)
 end
 
 -- ============================================================
--- MS POT PAGE
+-- MS POT PAGE (tanpa indicator, tanpa restore cook)
 -- ============================================================
 local mspot = pages["MS POT"]
 
 sectionLabel(mspot, "Delete Part di Bawah", 1)
 
-local mspotStatusCard = card(mspot, 40, 2)
-local mspotStatusLbl = Instance.new("TextLabel", mspotStatusCard)
-mspotStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-mspotStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-mspotStatusLbl.BackgroundTransparency = 1
-mspotStatusLbl.Text = "Idle"
-mspotStatusLbl.Font = Enum.Font.GothamSemibold
-mspotStatusLbl.TextSize = 12
-mspotStatusLbl.TextColor3 = C.textMid
-mspotStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-mspotStatusLbl.TextStrokeTransparency = 1
+local deleteFloorBtn = makeActionBtn(mspot, "DELETE PART DI BAWAH", Color3.fromRGB(120, 20, 50), 2)
+local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 3)
 
-local deleteFloorBtn = makeActionBtn(mspot, "DELETE PART DI BAWAH", Color3.fromRGB(120, 20, 50), 3)
-local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 4)
+sectionLabel(mspot, "Find Cook (Prompt Scanner)", 4)
 
-sectionLabel(mspot, "Find Cook (Prompt Scanner)", 5)
-
-local findCookBtn = makeActionBtn(mspot, "FIND COOK", Color3.fromRGB(0, 100, 80), 6)
-local restoreCookBtn = makeActionBtn(mspot, "RESTORE COOK", C.card, 7)
+local findCookBtn = makeActionBtn(mspot, "FIND COOK", Color3.fromRGB(0, 100, 80), 5)
 
 -- MS POT LOGIC
 local deletedStack = {}
@@ -824,10 +634,7 @@ end
 local function doPromptScan()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then 
-        mspotStatusLbl.Text = "HumanoidRootPart tidak ada" 
-        return 
-    end
+    if not hrp then return end
 
     for prompt, data in pairs(scannedPrompts) do
         if prompt and prompt.Parent then
@@ -838,9 +645,6 @@ local function doPromptScan()
         end
     end
     scannedPrompts = {}
-
-    mspotStatusLbl.Text = "Scanning prompt..."
-    local found = 0
 
     for _, v in ipairs(workspace:GetDescendants()) do
         if v:IsA("ProximityPrompt") then
@@ -858,30 +662,10 @@ local function doPromptScan()
                     v.MaxActivationDistance = 20
                     v.RequiresLineOfSight   = false
                     v.HoldDuration          = 0
-                    found += 1
                 end
             end
         end
     end
-
-    mspotStatusLbl.Text = "Scan: " .. found .. " prompt dimodifikasi"
-    notify("MS POT", found .. " prompt ditemukan & dimodifikasi", "success")
-end
-
-local function doRestorePrompts()
-    local count = 0
-    for prompt, data in pairs(scannedPrompts) do
-        if prompt and prompt.Parent then
-            prompt.MaxActivationDistance = data.maxDist
-            prompt.RequiresLineOfSight   = data.lineOfSight
-            prompt.Enabled               = data.enabled
-            prompt.HoldDuration          = data.holdDuration
-            count += 1
-        end
-    end
-    scannedPrompts = {}
-    mspotStatusLbl.Text = count .. " prompt di-restore"
-    notify("MS POT", count .. " prompt di-restore", "info")
 end
 
 findCookBtn.MouseButton1Click:Connect(function()
@@ -895,10 +679,6 @@ findCookBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
-restoreCookBtn.MouseButton1Click:Connect(function()
-    doRestorePrompts()
-end)
-
 deleteFloorBtn.MouseButton1Click:Connect(function()
     if isDeleting then return end
     isDeleting = true
@@ -908,14 +688,11 @@ deleteFloorBtn.MouseButton1Click:Connect(function()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then
-        mspotStatusLbl.Text = "HumanoidRootPart tidak ada"
         isDeleting = false
         deleteFloorBtn.Text = "DELETE PART DI BAWAH"
         TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
         return
     end
-
-    mspotStatusLbl.Text = "Mencari object di bawah..."
 
     local rayOrigin = hrp.Position
     local rayDir = Vector3.new(0, -15, 0)
@@ -929,12 +706,7 @@ deleteFloorBtn.MouseButton1Click:Connect(function()
         if hit and hit.Parent then
             table.insert(deletedStack, {object = hit:Clone(), parent = hit.Parent})
             hit:Destroy()
-            mspotStatusLbl.Text = "Deleted: " .. hit.Name
-            notify("MS POT", "Part dihapus! (" .. #deletedStack .. " item di undo stack)", "success")
         end
-    else
-        mspotStatusLbl.Text = "Tidak ada object di bawah"
-        notify("MS POT", "Tidak ada object terdeteksi.", "error")
     end
 
     task.wait(0.3)
@@ -947,11 +719,6 @@ undoBtn.MouseButton1Click:Connect(function()
     local last = table.remove(deletedStack)
     if last and last.object then
         last.object.Parent = last.parent
-        mspotStatusLbl.Text = "Undo berhasil (" .. #deletedStack .. " item tersisa)"
-        notify("MS POT", "Undo berhasil!", "success")
-    else
-        mspotStatusLbl.Text = "Tidak ada yang bisa di-undo"
-        notify("MS POT", "Tidak ada yang bisa di-undo.", "error")
     end
 end)
 
@@ -1000,7 +767,7 @@ local autoBuyTotalBought = 0
 local function startAutoBuy()
     if autoBuyRunning then return end
     if not storePurchaseRE then
-        buyStatusLbl.Text = "❌ RemoteEvent Error!"
+        buyStatusLbl.Text = "❌ Error!"
         buyStatusLbl.TextColor3 = C.red
         task.wait(2)
         buyStatusLbl.Text = "⏹️ STOPPED"
@@ -1208,11 +975,9 @@ blinkToggleBtn.MouseButton1Click:Connect(function()
     if blinkEnabled then
         blinkToggleBtn.Text = "ON"
         blinkToggleBtn.BackgroundColor3 = C.green
-        notify("Settings", "Shortcut T (Blink) diaktifkan", "success")
     else
         blinkToggleBtn.Text = "OFF"
         blinkToggleBtn.BackgroundColor3 = C.red
-        notify("Settings", "Shortcut T (Blink) dimatikan", "error")
     end
 end)
 
@@ -1554,6 +1319,3 @@ end, false, Enum.KeyCode.Z)
 -- STARTUP
 -- ============================================================
 switchTab("AUTO")
-task.wait(0.3)
-notify("191 STORE", "Script berhasil diload!", "success")
-notify("Shortcut", "Tekan T untuk blink maju 8 studs", "info")

@@ -579,57 +579,64 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
+-- FUNGSI MASAK YANG AKAN DIPAKAI JUGA OLEH FULLY
+local function cookProcess()
+    if equip("Water") then
+        holdE(0.7)
+        for i = 20, 1, -1 do
+            if not msRunning and not fullyRunning then return false end
+            task.wait(1)
+        end
+    else
+        return false
+    end
+    
+    if equip("Sugar Block Bag") then
+        holdE(0.7)
+        task.wait(1)
+    else
+        return false
+    end
+    
+    if equip("Gelatin") then
+        holdE(0.7)
+        task.wait(1)
+    else
+        return false
+    end
+    
+    for i = 45, 1, -1 do
+        if not msRunning and not fullyRunning then return false end
+        task.wait(1)
+    end
+    
+    if equip("Empty Bag") then
+        holdE(0.7)
+        task.wait(1)
+    else
+        return false
+    end
+    
+    return true
+end
+
 local function msLoop()
     while msRunning do
         updateAutoInventory()
         
-        if countItem("Water") > 0 and equip("Water") then
-            msStatusLbl.Text = "COOKING WATER..."
-            holdE(0.7)
-            for i = 20, 1, -1 do
-                if not msRunning then break end
-                task.wait(1)
-            end
+        if countItem("Water") == 0 or countItem("Sugar Block Bag") == 0 or countItem("Gelatin") == 0 or countItem("Empty Bag") == 0 then
+            msStatusLbl.Text = "OUT OF INGREDIENTS!"
+            task.wait(2)
+            break
         end
         
-        if not msRunning then break end
-        updateAutoInventory()
-        
-        if countItem("Sugar Block Bag") > 0 and equip("Sugar Block Bag") then
-            msStatusLbl.Text = "COOKING SUGAR..."
-            holdE(0.7)
-            task.wait(1)
+        msStatusLbl.Text = "COOKING..."
+        if cookProcess() then
+            msStatusLbl.Text = "COOKING COMPLETE"
+        else
+            msStatusLbl.Text = "COOKING FAILED"
         end
-        
-        if not msRunning then break end
         updateAutoInventory()
-        
-        if countItem("Gelatin") > 0 and equip("Gelatin") then
-            msStatusLbl.Text = "COOKING GELATIN..."
-            holdE(0.7)
-            task.wait(1)
-        end
-        
-        if not msRunning then break end
-        updateAutoInventory()
-        
-        msStatusLbl.Text = "WAITING 45 SECONDS..."
-        for i = 45, 1, -1 do
-            if not msRunning then break end
-            task.wait(1)
-        end
-        
-        if not msRunning then break end
-        updateAutoInventory()
-        
-        if countItem("Empty Bag") > 0 and equip("Empty Bag") then
-            msStatusLbl.Text = "COLLECTING RESULT..."
-            holdE(0.7)
-            task.wait(1)
-        end
-        
-        updateAutoInventory()
-        msStatusLbl.Text = "LOOP COMPLETE"
         task.wait(2)
     end
     msStatusLbl.Text = "STOPPED"
@@ -655,7 +662,7 @@ msStopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY PAGE (FIXED)
+-- FULLY PAGE (PAKAI FUNGSI MASAK YANG SAMA)
 -- ============================================================
 local fullyPage = pages["FULLY"]
 
@@ -702,77 +709,6 @@ end
 local function setFullyStatus(msg, color)
     fullyStatusLbl.Text = msg
     fullyStatusLbl.TextColor3 = color or C.textMid
-end
-
--- FUNGSI MASAK YANG BENER
-local function fullyCook()
-    if not fullyRunning then return false end
-    
-    -- STEP 1: WATER
-    setFullyStatus("STEP 1: COOKING WATER...", Color3.fromRGB(100, 180, 255))
-    if equip("Water") then
-        holdE(0.7)
-        for i = 20, 1, -1 do
-            if not fullyRunning then return false end
-            if i % 5 == 0 or i <= 3 then
-                setFullyStatus("WATER: " .. i .. "s left", Color3.fromRGB(80, 150, 255))
-            end
-            task.wait(1)
-        end
-    else
-        setFullyStatus("FAILED: No Water!", C.red)
-        return false
-    end
-    
-    if not fullyRunning then return false end
-    
-    -- STEP 2: SUGAR
-    setFullyStatus("STEP 2: COOKING SUGAR...", Color3.fromRGB(255, 220, 100))
-    if equip("Sugar Block Bag") then
-        holdE(0.7)
-        task.wait(1)
-    else
-        setFullyStatus("FAILED: No Sugar!", C.red)
-        return false
-    end
-    
-    if not fullyRunning then return false end
-    
-    -- STEP 3: GELATIN
-    setFullyStatus("STEP 3: COOKING GELATIN...", Color3.fromRGB(255, 200, 50))
-    if equip("Gelatin") then
-        holdE(0.7)
-        task.wait(1)
-    else
-        setFullyStatus("FAILED: No Gelatin!", C.red)
-        return false
-    end
-    
-    if not fullyRunning then return false end
-    
-    -- STEP 4: WAIT 45 SECONDS
-    setFullyStatus("STEP 4: COOKING PROCESS...", Color3.fromRGB(80, 140, 255))
-    for i = 45, 1, -1 do
-        if not fullyRunning then return false end
-        if i % 10 == 0 or i <= 5 then
-            setFullyStatus("COOKING: " .. i .. "s left", Color3.fromRGB(80, 140, 255))
-        end
-        task.wait(1)
-    end
-    
-    if not fullyRunning then return false end
-    
-    -- STEP 5: COLLECT RESULT
-    setFullyStatus("STEP 5: COLLECTING RESULT...", Color3.fromRGB(100, 180, 255))
-    if equip("Empty Bag") then
-        holdE(0.7)
-        task.wait(1)
-    else
-        setFullyStatus("FAILED: No Empty Bag!", C.red)
-        return false
-    end
-    
-    return true
 end
 
 local function fullyBuy(qty)
@@ -868,7 +804,7 @@ local function fullyLoop()
         
         updateFullyInventory()
         
-        -- MASAK
+        -- MASAK (PAKAI FUNGSI YANG SAMA DENGAN AUTO MS)
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             local waterCount = countItem("Water")
@@ -883,7 +819,7 @@ local function fullyLoop()
             
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
             
-            if fullyCook() then
+            if cookProcess() then
                 cooked = cooked + 1
                 setFullyStatus("COMPLETED " .. cooked .. "/" .. fullyTarget .. " MS", Color3.fromRGB(52, 210, 110))
                 updateFullyInventory()

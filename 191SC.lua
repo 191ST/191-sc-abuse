@@ -1,25 +1,58 @@
--- 191 STORE - FULL SCRIPT
--- PASTI MUNCUL, PAKAI CoreGui
-
+-- VERSION 2 - PASTI MUNCUL (tanpa CoreGui, langsung PlayerGui)
 local Players = game:GetService("Players")
-local player = game.Players.LocalPlayer
-local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ContextActionService = game:GetService("ContextActionService")
-local VirtualUser = game:GetService("VirtualUser")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- HAPUS GUI LAMA
-pcall(function()
-    if game:GetService("CoreGui"):FindFirstChild("191_STORE") then
-        game:GetService("CoreGui")["191_STORE"]:Destroy()
-    end
-    if player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("191_STORE") then
-        player.PlayerGui["191_STORE"]:Destroy()
-    end
+-- HAPUS YANG LAMA
+local old = playerGui:FindFirstChild("191_STORE")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "191_STORE"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+-- BUAT FRAME SEDERHANA DULU
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 400, 0, 300)
+main.Position = UDim2.new(0.5, -200, 0.5, -150)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+title.Text = "191 STORE"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
+title.TextStrokeTransparency = 1
+Instance.new("UICorner", title).CornerRadius = UDim.new(0, 12)
+
+local closeBtn = Instance.new("TextButton", main)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 14
+closeBtn.TextStrokeTransparency = 1
+closeBtn.MouseButton1Click:Connect(function()
+    gui:Destroy()
 end)
+
+local info = Instance.new("TextLabel", main)
+info.Size = UDim2.new(1, -20, 1, -50)
+info.Position = UDim2.new(0, 10, 0, 50)
+info.BackgroundTransparency = 1
+info.Text = "LOADING SCRIPT...\n\nTekan Z untuk hide/show\nTekan T untuk blink"
+info.TextColor3 = Color3.fromRGB(200, 200, 200)
+info.TextSize = 14
+info.TextStrokeTransparency = 1
+info.TextWrapped = true
+
+print("191 STORE GUI MUNCUL!")
 
 -- ========== CUSTOM RESPAWN ==========
 local RESPAWN_POINT = CFrame.new(729.86, 3.71, 444.46) * CFrame.Angles(-3.14, 0.01, -3.14)

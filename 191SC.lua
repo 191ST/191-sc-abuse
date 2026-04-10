@@ -36,7 +36,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Variables
 local buyAmount = 10
-local buyRemote = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("StorePurchase")
+local running = false
 local blinkEnabled = true
 
 -- ========== BLINK FUNCTIONS ==========
@@ -88,7 +88,7 @@ player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- HELPERS
+-- HELPERS (dari Elixir)
 -- ============================================================
 local function holdE(t)
     VirtualInputManager:SendKeyEvent(true,"E",false,game)
@@ -151,6 +151,12 @@ local function vehicleTeleport(cf)
     seat.Throttle = 1
     task.wait(0.5)
     seat.Throttle = 0
+end
+
+local function fill(bar, time)
+    bar.Size = UDim2.new(0,0,1,0)
+    bar:TweenSize(UDim2.new(1,0,1,0), Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, time, true)
+    task.delay(time, function() bar.Size = UDim2.new(0,0,1,0) end)
 end
 
 -- ============================================================
@@ -529,62 +535,178 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
 end
 
 -- ============================================================
--- AUTO PAGE (MS Loop dengan HP Safe & Cooldown)
+-- AUTO PAGE (dengan logic dari Elixir FARM)
 -- ============================================================
 local ap = pages["AUTO"]
 
-sectionLabel(ap, "MS Loop (Auto Cook)", 1)
+sectionLabel(ap, "Auto Cook", 1)
 
-local msStatusCard = card(ap, 40, 2)
-local msStatusLbl = Instance.new("TextLabel", msStatusCard)
-msStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-msStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-msStatusLbl.BackgroundTransparency = 1
-msStatusLbl.Text = "⏹️ STOPPED"
-msStatusLbl.Font = Enum.Font.GothamBold
-msStatusLbl.TextSize = 13
-msStatusLbl.TextColor3 = C.red
-msStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-msStatusLbl.TextStrokeTransparency = 1
+-- Status
+local statusCard = card(ap, 40, 2)
+local statusLbl = Instance.new("TextLabel", statusCard)
+statusLbl.Size = UDim2.new(1, -20, 1, 0)
+statusLbl.Position = UDim2.new(0, 12, 0, 0)
+statusLbl.BackgroundTransparency = 1
+statusLbl.Text = "IDLE"
+statusLbl.Font = Enum.Font.GothamBold
+statusLbl.TextSize = 13
+statusLbl.TextColor3 = C.textMid
+statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+statusLbl.TextStrokeTransparency = 1
 
-local stepCard = card(ap, 30, 3)
-local stepLbl = Instance.new("TextLabel", stepCard)
-stepLbl.Size = UDim2.new(1, -20, 1, 0)
-stepLbl.Position = UDim2.new(0, 12, 0, 0)
-stepLbl.BackgroundTransparency = 1
-stepLbl.Text = "Step: Waiting..."
-stepLbl.Font = Enum.Font.Gotham
-stepLbl.TextSize = 11
-stepLbl.TextColor3 = C.textMid
-stepLbl.TextXAlignment = Enum.TextXAlignment.Left
-stepLbl.TextStrokeTransparency = 1
+-- Inventory
+sectionLabel(ap, "Inventory", 3)
 
-local timerCard = card(ap, 30, 4)
-local timerLbl = Instance.new("TextLabel", timerCard)
-timerLbl.Size = UDim2.new(1, -20, 1, 0)
-timerLbl.Position = UDim2.new(0, 12, 0, 0)
-timerLbl.BackgroundTransparency = 1
-timerLbl.Text = "Timer: 0s"
-timerLbl.Font = Enum.Font.Gotham
-timerLbl.TextSize = 11
-timerLbl.TextColor3 = C.textMid
-timerLbl.TextXAlignment = Enum.TextXAlignment.Left
-timerLbl.TextStrokeTransparency = 1
+local waterVal, _ = makeStatusRow(ap, "Water", 4)
+local sugarVal, _ = makeStatusRow(ap, "Sugar Block Bag", 5)
+local gelatinVal, _ = makeStatusRow(ap, "Gelatin", 6)
+local bagVal, _ = makeStatusRow(ap, "Empty Bag", 7)
 
-local toolCard = card(ap, 30, 5)
-local toolLbl = Instance.new("TextLabel", toolCard)
-toolLbl.Size = UDim2.new(1, -20, 1, 0)
-toolLbl.Position = UDim2.new(0, 12, 0, 0)
-toolLbl.BackgroundTransparency = 1
-toolLbl.Text = "Tool: -"
-toolLbl.Font = Enum.Font.GothamBold
-toolLbl.TextSize = 11
-toolLbl.TextColor3 = C.accentGlow
-toolLbl.TextXAlignment = Enum.TextXAlignment.Left
-toolLbl.TextStrokeTransparency = 1
+-- Controls
+sectionLabel(ap, "Controls", 8)
 
-local msStartBtn = makeActionBtn(ap, "▶️ START MS LOOP", C.green, 6)
-local msStopBtn = makeActionBtn(ap, "⏹️ STOP MS LOOP", C.red, 7)
+local buySliderWrap, buyValLbl = makeSlider(ap, "BUY AMOUNT", 1, 25, 10, 9, function(v)
+    buyAmount = v
+end)
+
+local startStopBtn = makeActionBtn(ap, "START AUTO", C.green, 10)
+local buyNowBtn = makeActionBtn(ap, "BUY NOW", C.card, 11)
+
+-- Progress Bars
+sectionLabel(ap, "Cook Progress", 12)
+
+local function makeProgressCard(label, order)
+    local f = card(ap, 34, order)
+    local lbl3 = Instance.new("TextLabel", f)
+    lbl3.Position = UDim2.new(0, 10, 0, 5)
+    lbl3.Size = UDim2.new(0.6, 0, 0, 13)
+    lbl3.BackgroundTransparency = 1
+    lbl3.Text = label
+    lbl3.Font = Enum.Font.GothamSemibold
+    lbl3.TextSize = 10
+    lbl3.TextColor3 = C.textMid
+    lbl3.TextXAlignment = Enum.TextXAlignment.Left
+    lbl3.TextStrokeTransparency = 1
+    local bg2 = Instance.new("Frame", f)
+    bg2.Position = UDim2.new(0, 10, 0, 22)
+    bg2.Size = UDim2.new(1, -20, 0, 5)
+    bg2.BackgroundColor3 = C.border
+    bg2.BorderSizePixel = 0
+    Instance.new("UICorner", bg2).CornerRadius = UDim.new(1, 0)
+    local bar2 = Instance.new("Frame", bg2)
+    bar2.Size = UDim2.new(0, 0, 1, 0)
+    bar2.BackgroundColor3 = C.accent
+    bar2.BorderSizePixel = 0
+    Instance.new("UICorner", bar2).CornerRadius = UDim.new(1, 0)
+    return bar2
+end
+
+local waterBar = makeProgressCard("Water (20s)", 13)
+local sugarBar = makeProgressCard("Sugar (1s)", 14)
+local gelatinBar = makeProgressCard("Gelatin (1s)", 15)
+local bagBar = makeProgressCard("Bag (45s)", 16)
+
+-- Helper untuk status row
+local function makeStatusRow(parent, label, order)
+    local f = card(parent, 30, order)
+
+    local lbl2 = Instance.new("TextLabel", f)
+    lbl2.Position = UDim2.new(0, 12, 0, 0)
+    lbl2.Size = UDim2.new(0.6, 0, 1, 0)
+    lbl2.BackgroundTransparency = 1
+    lbl2.Text = label
+    lbl2.Font = Enum.Font.GothamSemibold
+    lbl2.TextSize = 11
+    lbl2.TextColor3 = C.textMid
+    lbl2.TextXAlignment = Enum.TextXAlignment.Left
+    lbl2.TextStrokeTransparency = 1
+
+    local val2 = Instance.new("TextLabel", f)
+    val2.Position = UDim2.new(0.6, 0, 0, 0)
+    val2.Size = UDim2.new(0.4, -10, 1, 0)
+    val2.BackgroundTransparency = 1
+    val2.Text = "0"
+    val2.Font = Enum.Font.GothamBold
+    val2.TextSize = 12
+    val2.TextColor3 = C.accentGlow
+    val2.TextXAlignment = Enum.TextXAlignment.Right
+    val2.TextStrokeTransparency = 1
+
+    return val2, f
+end
+
+-- ============================================================
+-- AUTO COOK LOGIC (dari Elixir FARM)
+-- ============================================================
+local function cook()
+    while running do
+        if equip("Water") then
+            statusLbl.Text = "Cooking Water..."
+            statusLbl.TextColor3 = C.accentGlow
+            if waterBar then fill(waterBar, 20) end
+            holdE(0.7)
+            task.wait(20)
+        end
+        if equip("Sugar Block Bag") then
+            statusLbl.Text = "Cooking Sugar..."
+            if sugarBar then fill(sugarBar, 1) end
+            holdE(0.7)
+            task.wait(1)
+        end
+        if equip("Gelatin") then
+            statusLbl.Text = "Cooking Gelatin..."
+            if gelatinBar then fill(gelatinBar, 1) end
+            holdE(0.7)
+            task.wait(1)
+        end
+        statusLbl.Text = "Waiting..."
+        if bagBar then fill(bagBar, 45) end
+        task.wait(45)
+        if equip("Empty Bag") then
+            statusLbl.Text = "Collecting..."
+            holdE(0.7)
+            task.wait(1)
+        end
+    end
+    statusLbl.Text = "IDLE"
+    statusLbl.TextColor3 = C.textMid
+end
+
+local buying = false
+local function autoBuy()
+    if buying then return end
+    buying = true
+    for i = 1, buyAmount do
+        if storePurchaseRE then
+            storePurchaseRE:FireServer("Water") task.wait(.35)
+            storePurchaseRE:FireServer("Sugar Block Bag") task.wait(.35)
+            storePurchaseRE:FireServer("Gelatin") task.wait(.35)
+            storePurchaseRE:FireServer("Empty Bag") task.wait(.45)
+        end
+    end
+    buying = false
+    -- Update inventory display
+    waterVal.Text = tostring(countItem("Water"))
+    sugarVal.Text = tostring(countItem("Sugar Block Bag"))
+    gelatinVal.Text = tostring(countItem("Gelatin"))
+    bagVal.Text = tostring(countItem("Empty Bag"))
+end
+
+startStopBtn.MouseButton1Click:Connect(function()
+    running = not running
+    if running then
+        startStopBtn.Text = "STOP AUTO"
+        TweenService:Create(startStopBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
+        task.spawn(cook)
+    else
+        startStopBtn.Text = "START AUTO"
+        TweenService:Create(startStopBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
+    end
+end)
+
+buyNowBtn.MouseButton1Click:Connect(function()
+    task.spawn(autoBuy)
+end)
 
 -- ============================================================
 -- TP PAGE
@@ -777,7 +899,7 @@ buyTotalLbl.TextColor3 = C.textMid
 buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
 buyTotalLbl.TextStrokeTransparency = 1
 
-local buySliderWrap, buyValLbl = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
+local buySliderWrap2, buyValLbl2 = makeSlider(buyp, "JUMLAH BELI PER ITEM", 1, 50, 10, 4, function(v)
     buyAmount = v
 end)
 
@@ -1020,326 +1142,22 @@ blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
 -- ============================================================
--- HP SAFE LOGIC (otomatis saat MS start/stop)
+-- STATUS LOOP (update inventory)
 -- ============================================================
-local hpMonitoringActive = false
-local isInSafeZone = false
-local originalPosition = nil
-local safeZoneTimerThread = nil
-local currentHumanoid = nil
-local lastHealthPercent = 100
+task.spawn(function()
+    while gui and gui.Parent do
+        local w = countItem("Water")
+        local sg = countItem("Sugar Block Bag")
+        local ge = countItem("Gelatin")
+        local bg = countItem("Empty Bag")
 
-local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
+        if waterVal then waterVal.Text = tostring(w) end
+        if sugarVal then sugarVal.Text = tostring(sg) end
+        if gelatinVal then gelatinVal.Text = tostring(ge) end
+        if bagVal then bagVal.Text = tostring(bg) end
 
-local function teleportToSafeZone()
-    local character = player.Character
-    local hum = character and character:FindFirstChildOfClass("Humanoid")
-    if not character or not hum then return false end
-    
-    local seatPart = hum.SeatPart
-    if seatPart then
-        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
-        if vehicle then
-            if vehicle.PrimaryPart then
-                vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
-            end
-            return true
-        end
-    else
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Anchored = true
-            hrp.CFrame = SAFE_ZONE_CFRAME
-            task.wait(0.05)
-            hrp.Anchored = false
-            return true
-        end
+        task.wait(0.5)
     end
-    return false
-end
-
-local function teleportBackToOriginal()
-    if originalPosition then
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Anchored = true
-            hrp.CFrame = originalPosition
-            task.wait(0.05)
-            hrp.Anchored = false
-        end
-        originalPosition = nil
-    end
-    isInSafeZone = false
-end
-
-local function saveOriginalPosition()
-    local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        originalPosition = hrp.CFrame
-        return true
-    end
-    return false
-end
-
-local function startSafeZoneTimer()
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-    end
-    
-    safeZoneTimerThread = task.spawn(function()
-        task.wait(8)
-        if isInSafeZone and hpMonitoringActive then
-            teleportBackToOriginal()
-        end
-        safeZoneTimerThread = nil
-    end)
-end
-
-local function onCharacterAdded(character)
-    currentHumanoid = character:WaitForChild("Humanoid")
-    lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
-    isInSafeZone = false
-    originalPosition = nil
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-        safeZoneTimerThread = nil
-    end
-end
-
-if player.Character then
-    onCharacterAdded(player.Character)
-end
-player.CharacterAdded:Connect(onCharacterAdded)
-
-local function checkHealthAndTeleport()
-    if not hpMonitoringActive then return end
-    if not currentHumanoid or currentHumanoid.Parent == nil then
-        local character = player.Character
-        if character then
-            currentHumanoid = character:FindFirstChildOfClass("Humanoid")
-        end
-        if not currentHumanoid then return end
-    end
-    
-    local currentHealth = currentHumanoid.Health
-    local maxHealth = currentHumanoid.MaxHealth
-    
-    if maxHealth > 0 then
-        local currentPercent = (currentHealth / maxHealth) * 100
-        local percentDropped = lastHealthPercent - currentPercent
-        
-        if percentDropped >= 1 and not isInSafeZone then
-            saveOriginalPosition()
-            
-            if teleportToSafeZone() then
-                isInSafeZone = true
-                startSafeZoneTimer()
-            end
-        end
-        
-        lastHealthPercent = currentPercent
-    end
-end
-
-local hpMonitorThread = nil
-local function startHPMonitoring()
-    if hpMonitoringActive then return end
-    hpMonitoringActive = true
-    isInSafeZone = false
-    originalPosition = nil
-    
-    if currentHumanoid then
-        lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
-    else
-        lastHealthPercent = 100
-    end
-    
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-        safeZoneTimerThread = nil
-    end
-    
-    hpMonitorThread = task.spawn(function()
-        while hpMonitoringActive do
-            checkHealthAndTeleport()
-            task.wait(0.3)
-        end
-    end)
-end
-
-local function stopHPMonitoring()
-    hpMonitoringActive = false
-    
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-        safeZoneTimerThread = nil
-    end
-    
-    if hpMonitorThread then
-        task.cancel(hpMonitorThread)
-        hpMonitorThread = nil
-    end
-    
-    if isInSafeZone then
-        teleportBackToOriginal()
-    end
-    
-    isInSafeZone = false
-    originalPosition = nil
-end
-
--- ============================================================
--- MS LOOP LOGIC (dengan cooldown 2 detik setelah setiap E)
--- ============================================================
-local loopRunning = false
-
-local function pressE2()
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-    task.wait(0.1)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-end
-
-local function startMSLoop()
-    if loopRunning then return end
-    loopRunning = true
-    msStatusLbl.Text = "▶️ RUNNING"
-    msStatusLbl.TextColor3 = C.green
-    
-    startHPMonitoring()
-    
-    task.spawn(function()
-        while loopRunning do
-            -- WATER
-            local waterTool = findTool("water")
-            if waterTool and equip(waterTool.Name) then
-                toolLbl.Text = "Tool: WATER"
-                stepLbl.Text = "Step: Cooking Water..."
-                pressE2()
-                -- Cooldown 2 detik setelah interaksi
-                local cooldownStart = tick()
-                while loopRunning and (tick() - cooldownStart) < 2 do
-                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
-                    task.wait(0.1)
-                end
-                -- Timer cooking 20 detik
-                local startTime = tick()
-                while loopRunning and (tick() - startTime) < 20 do
-                    local remaining = 20 - (tick() - startTime)
-                    timerLbl.Text = string.format("Timer: %d/20s", math.floor(remaining))
-                    task.wait(0.1)
-                end
-            else
-                stepLbl.Text = "No Water tool! Waiting..."
-                task.wait(5)
-            end
-            
-            if not loopRunning then break end
-            
-            -- SUGAR
-            local sugarTool = findTool("sugar")
-            if sugarTool and equip(sugarTool.Name) then
-                toolLbl.Text = "Tool: SUGAR"
-                stepLbl.Text = "Step: Cooking Sugar..."
-                pressE2()
-                -- Cooldown 2 detik setelah interaksi
-                local cooldownStart = tick()
-                while loopRunning and (tick() - cooldownStart) < 2 do
-                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
-                    task.wait(0.1)
-                end
-                -- Timer cooking 1 detik
-                local startTime = tick()
-                while loopRunning and (tick() - startTime) < 1 do
-                    task.wait(0.1)
-                end
-                timerLbl.Text = "Timer: 0s"
-            else
-                stepLbl.Text = "No Sugar tool! Waiting..."
-                task.wait(5)
-            end
-            
-            task.wait(0.5)
-            if not loopRunning then break end
-            
-            -- GELATIN
-            local gelatinTool = findTool("gelatin")
-            if gelatinTool and equip(gelatinTool.Name) then
-                toolLbl.Text = "Tool: GELATIN"
-                stepLbl.Text = "Step: Cooking Gelatin..."
-                pressE2()
-                -- Cooldown 2 detik setelah interaksi
-                local cooldownStart = tick()
-                while loopRunning and (tick() - cooldownStart) < 2 do
-                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
-                    task.wait(0.1)
-                end
-                -- Timer cooking 45 detik
-                local startTime = tick()
-                while loopRunning and (tick() - startTime) < 45 do
-                    local remaining = 45 - (tick() - startTime)
-                    timerLbl.Text = string.format("Timer: %d/45s", math.floor(remaining))
-                    task.wait(0.1)
-                end
-            else
-                stepLbl.Text = "No Gelatin tool! Waiting..."
-                task.wait(5)
-            end
-            
-            task.wait(3)
-            if not loopRunning then break end
-            
-            -- EMPTY BAG (HASIL)
-            local emptyTool = findTool("empty") or findTool("bag")
-            if emptyTool and equip(emptyTool.Name) then
-                toolLbl.Text = "Tool: EMPTY BAG"
-                stepLbl.Text = "Step: Collecting Result..."
-                pressE2()
-                -- Cooldown 2 detik setelah interaksi
-                local cooldownStart = tick()
-                while loopRunning and (tick() - cooldownStart) < 2 do
-                    timerLbl.Text = string.format("Cooldown: %d/2s", math.floor(2 - (tick() - cooldownStart)))
-                    task.wait(0.1)
-                end
-                -- Timer collecting 2 detik
-                local startTime = tick()
-                while loopRunning and (tick() - startTime) < 2 do
-                    local remaining = 2 - (tick() - startTime)
-                    timerLbl.Text = string.format("Timer: %d/2s", math.floor(remaining))
-                    task.wait(0.1)
-                end
-            else
-                stepLbl.Text = "No Empty Bag! Waiting..."
-                task.wait(5)
-            end
-            
-            stepLbl.Text = "Loop complete! Restarting..."
-            task.wait(2)
-        end
-        
-        loopRunning = false
-        msStatusLbl.Text = "⏹️ STOPPED"
-        msStatusLbl.TextColor3 = C.red
-        stepLbl.Text = "Step: Stopped"
-        timerLbl.Text = "Timer: 0s"
-        toolLbl.Text = "Tool: -"
-        
-        stopHPMonitoring()
-    end)
-end
-
-local function stopMSLoop()
-    loopRunning = false
-    stopHPMonitoring()
-end
-
-msStartBtn.MouseButton1Click:Connect(function()
-    if not loopRunning then task.spawn(startMSLoop) end
-end)
-
-msStopBtn.MouseButton1Click:Connect(function()
-    loopRunning = false
 end)
 
 -- ============================================================

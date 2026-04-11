@@ -411,11 +411,11 @@ local C = {
 }
 
 -- ============================================================
--- MAIN WINDOW (520x420)
+-- MAIN WINDOW
 -- ============================================================
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 520, 0, 420)
-main.Position = UDim2.new(0.5, -260, 0.5, -210)
+main.Size = UDim2.new(0, 660, 0, 500)
+main.Position = UDim2.new(0.5, -330, 0.5, -250)
 main.BackgroundColor3 = C.bg
 main.Active = true
 main.Draggable = true
@@ -483,10 +483,10 @@ minBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
 -- ============================================================
--- SIDEBAR (70px)
+-- SIDEBAR
 -- ============================================================
 local sidebar = Instance.new("Frame", main)
-sidebar.Size = UDim2.new(0, 70, 1, -46)
+sidebar.Size = UDim2.new(0, 80, 1, -46)
 sidebar.Position = UDim2.new(0, 0, 0, 46)
 sidebar.BackgroundColor3 = C.sidebar
 sidebar.ZIndex = 2
@@ -494,7 +494,7 @@ sidebar.ClipsDescendants = false
 
 local sidebarLine = Instance.new("Frame", main)
 sidebarLine.Size = UDim2.new(0, 1, 1, -46)
-sidebarLine.Position = UDim2.new(0, 69, 0, 46)
+sidebarLine.Position = UDim2.new(0, 79, 0, 46)
 sidebarLine.BackgroundColor3 = C.border
 sidebarLine.BorderSizePixel = 0
 sidebarLine.ZIndex = 3
@@ -512,8 +512,8 @@ sidebarPad.PaddingTop = UDim.new(0, 10)
 -- CONTENT AREA
 -- ============================================================
 local content = Instance.new("Frame", main)
-content.Size = UDim2.new(1, -70, 1, -46)
-content.Position = UDim2.new(0, 70, 0, 46)
+content.Size = UDim2.new(1, -80, 1, -46)
+content.Position = UDim2.new(0, 80, 0, 46)
 content.BackgroundColor3 = C.panel
 content.ClipsDescendants = true
 Instance.new("UICorner", content).CornerRadius = UDim.new(0, 0)
@@ -554,7 +554,7 @@ end
 
 for i, def in ipairs(tabDefs) do
     local btn = Instance.new("TextButton", sidebar)
-    btn.Size = UDim2.new(0, 62, 0, 36)
+    btn.Size = UDim2.new(0, 68, 0, 36)
     btn.BackgroundTransparency = 1
     btn.Text = def.label
     btn.Font = Enum.Font.GothamBold
@@ -582,14 +582,14 @@ for i, def in ipairs(tabDefs) do
     page.BorderSizePixel = 0
 
     local layout = Instance.new("UIListLayout", page)
-    layout.Padding = UDim.new(0, 6)
+    layout.Padding = UDim.new(0, 7)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
 
     local pad = Instance.new("UIPadding", page)
-    pad.PaddingTop = UDim.new(0, 12)
-    pad.PaddingLeft = UDim.new(0, 10)
-    pad.PaddingRight = UDim.new(0, 10)
-    pad.PaddingBottom = UDim.new(0, 12)
+    pad.PaddingTop = UDim.new(0, 14)
+    pad.PaddingLeft = UDim.new(0, 12)
+    pad.PaddingRight = UDim.new(0, 12)
+    pad.PaddingBottom = UDim.new(0, 14)
 
     pages[def.label] = page
     tabBtns[def.label] = btn
@@ -814,6 +814,7 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
+-- FUNGSI MASAK SEDERHANA
 local function cookProcess()
     pcall(function()
         equip("Water")
@@ -849,23 +850,23 @@ end
 
 msStartBtn.MouseButton1Click:Connect(function()
     if not msRunning then
+        startHPMonitoring()
         msRunning = true
         msStartBtn.Text = "STOP MS LOOP"
         TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
         msStatusLbl.Text = "RUNNING"
         msStatusLbl.TextColor3 = C.green
-        startHPMonitoring()
         task.spawn(msLoop)
     end
 end)
 
 msStopBtn.MouseButton1Click:Connect(function()
     msRunning = false
+    stopHPMonitoring()
     msStartBtn.Text = "START MS LOOP"
     TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
     msStatusLbl.Text = "STOPPED"
     msStatusLbl.TextColor3 = C.red
-    stopHPMonitoring()
 end)
 
 -- ============================================================
@@ -955,10 +956,12 @@ local function fullySell()
     task.wait(1)
 end
 
+-- LOOP FULLY
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
+        -- BELI
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -966,6 +969,7 @@ local function fullyLoop()
         fullyBuy(fullyTarget)
         if not fullyRunning then break end
         
+        -- KEMBALI
         if fullySavedPos then
             setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
@@ -974,6 +978,7 @@ local function fullyLoop()
         
         updateFullyInventory()
         
+        -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
@@ -985,6 +990,7 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
+        -- JUAL
         setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -1018,7 +1024,7 @@ fullyStartBtn.MouseButton1Click:Connect(function()
     fullyStartBtn.Text = "RUNNING..."
     TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
     setFullyStatus("RUNNING", C.green)
-    startHPMonitoring()
+    
     task.spawn(fullyLoop)
 end)
 
@@ -1026,7 +1032,6 @@ fullyStopBtn.MouseButton1Click:Connect(function()
     if not fullyRunning then return end
     fullyRunning = false
     setFullyStatus("STOPPING...", C.orange)
-    stopHPMonitoring()
 end)
 
 -- ============================================================
@@ -1062,14 +1067,14 @@ end
 -- ============================================================
 local mspot = pages["MS POT"]
 
-sectionLabel(mspot, "DELETE PART BELOW", 1)
+sectionLabel(mspot, "HAPUS PART DIBAWAH", 1)
 
-local deleteFloorBtn = makeActionBtn(mspot, "DELETE PART BELOW", Color3.fromRGB(120, 20, 50), 2)
+local deleteFloorBtn = makeActionBtn(mspot, "HAPUS", Color3.fromRGB(120, 20, 50), 2)
 local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 3)
 
-sectionLabel(mspot, "FIND COOK (PROMPT SCANNER)", 4)
+sectionLabel(mspot, "CARI TOMBOL", 4)
 
-local findCookBtn = makeActionBtn(mspot, "FIND COOK", Color3.fromRGB(0, 100, 80), 5)
+local findCookBtn = makeActionBtn(mspot, "CARI TOMBOL AMPE KETEMU", Color3.fromRGB(0, 100, 80), 5)
 
 local deletedStack = {}
 local scannedPrompts = {}
@@ -1138,12 +1143,12 @@ local function doPromptScan()
 end
 
 findCookBtn.MouseButton1Click:Connect(function()
-    findCookBtn.Text = "SCANNING..."
+    findCookBtn.Text = "CARI"
     TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 60, 50)}):Play()
     task.spawn(function()
         doPromptScan()
         task.wait(0.3)
-        findCookBtn.Text = "FIND COOK"
+        findCookBtn.Text = "CARI TOMBOL AMPE KETEMU"
         TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 100, 80)}):Play()
     end)
 end)
@@ -1158,7 +1163,7 @@ deleteFloorBtn.MouseButton1Click:Connect(function()
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then
         isDeleting = false
-        deleteFloorBtn.Text = "DELETE PART BELOW"
+        deleteFloorBtn.Text = "HAPUS"
         TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
         return
     end
@@ -1180,7 +1185,7 @@ deleteFloorBtn.MouseButton1Click:Connect(function()
 
     task.wait(0.3)
     isDeleting = false
-    deleteFloorBtn.Text = "DELETE PART BELOW"
+    deleteFloorBtn.Text = "HAPUS"
     TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
 end)
 
@@ -1480,9 +1485,9 @@ minBtn.MouseButton1Click:Connect(function()
     sidebar.Visible = bodyVisible
     content.Visible = bodyVisible
     if bodyVisible then
-        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 520, 0, 420)}):Play()
+        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 500)}):Play()
     else
-        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 520, 0, 46)}):Play()
+        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 46)}):Play()
     end
 end)
 

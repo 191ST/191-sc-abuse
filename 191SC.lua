@@ -1405,7 +1405,7 @@ blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
 blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
--- ========== FULLY NV PAGE ==========
+-- ========== FULLY NV PAGE (DENGAN BLINK CEPAT) ==========
 local nvPage = pages["FULLY NV"]
 
 sectionLabel(nvPage, "AUTO FULLY NON VEHICLE", 1)
@@ -1502,7 +1502,7 @@ nvStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 local nvStartBtn = makeActionBtn(nvPage, "START FULLY NV", C.green, 11)
 local nvStopBtn = makeActionBtn(nvPage, "STOP FULLY NV", C.red, 12)
 
--- ========== LOGIC FULLY NV ==========
+-- ========== LOGIC FULLY NV DENGAN BLINK CEPAT ==========
 local nvRunning = false
 local nvWalkSpeed = 10
 
@@ -1533,6 +1533,7 @@ local function getSelectedApartPosition()
     return pos
 end
 
+-- JALAN KAKI (Pathfinding)
 local function walkToPosition(targetPos)
     local character = player.Character
     if not character then return false end
@@ -1564,38 +1565,35 @@ local function walkToPosition(targetPos)
     return (targetPos - hrp.Position).Magnitude < 5
 end
 
-local function goDown3Studs()
+-- TURUN 5 STUDS (BLINK CEPAT - LANGSUNG, TANPA ANIMASI)
+local function goDownFast()
     local character = player.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if hrp then
         local currentPos = hrp.Position
-        local groundPos = Vector3.new(currentPos.X, currentPos.Y - 5, currentPos.Z)
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {CFrame = CFrame.new(groundPos)})
-        tween:Play()
-        tween.Completed:Wait()
+        local newPos = Vector3.new(currentPos.X, currentPos.Y - 5, currentPos.Z)
+        hrp.CFrame = CFrame.new(newPos)
     end
 end
 
-local function goUp3Studs()
+-- NAIK 5 STUDS (BLINK CEPAT - LANGSUNG, TANPA ANIMASI)
+local function goUpFast()
     local character = player.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if hrp then
         local currentPos = hrp.Position
-        local upPos = Vector3.new(currentPos.X, currentPos.Y + 5, currentPos.Z)
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {CFrame = CFrame.new(upPos)})
-        tween:Play()
-        tween.Completed:Wait()
+        local newPos = Vector3.new(currentPos.X, currentPos.Y + 5, currentPos.Z)
+        hrp.CFrame = CFrame.new(newPos)
     end
 end
 
-local function goUpToApart()
+-- NAIK KE APARTEMEN (LANGSUNG)
+local function goUpToApartFast()
     local character = player.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if hrp then
         local targetPos = getSelectedApartPosition()
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {CFrame = CFrame.new(targetPos)})
-        tween:Play()
-        tween.Completed:Wait()
+        hrp.CFrame = CFrame.new(targetPos)
     end
 end
 
@@ -1667,45 +1665,54 @@ local function nvCook()
     end)
 end
 
+-- LOOP UTAMA DENGAN BLINK CEPAT
 local function nvLoop()
     setNVStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     local npcPos = Vector3.new(510.061, 4.476, 600.548)
     
     while nvRunning do
-        setNVStatus("GOING DOWN 3 STUDS...", Color3.fromRGB(255, 200, 100))
-        goDown3Studs()
-        task.wait(0.3)
+        -- TURUN CEPAT 5 STUDS
+        setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
+        goDownFast()
+        task.wait(0.1)
         
+        -- JALAN KE NPC
         setNVStatus("WALKING TO NPC...", Color3.fromRGB(100, 180, 255))
         walkToPosition(npcPos)
-        task.wait(0.5)
+        task.wait(0.3)
         
+        -- NAIK CEPAT 5 STUDS
         setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
-        goUp3Studs()
-        task.wait(0.5)
+        goUpFast()
+        task.wait(0.1)
         
         if not nvRunning then break end
         
+        -- BELI BAHAN
         nvBuy(fullyTarget)
         if not nvRunning then break end
         
-        setNVStatus("GOING DOWN 3 STUDS...", Color3.fromRGB(255, 200, 100))
-        goDown3Studs()
-        task.wait(0.3)
+        -- TURUN CEPAT
+        setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
+        goDownFast()
+        task.wait(0.1)
         
+        -- JALAN KEMBALI KE APARTEMEN
         local apartPos = getSelectedApartPosition()
         local groundApartPos = Vector3.new(apartPos.X, apartPos.Y - 5, apartPos.Z)
         
         setNVStatus("WALKING BACK TO APARTMENT...", Color3.fromRGB(148, 80, 255))
         walkToPosition(groundApartPos)
-        task.wait(0.5)
+        task.wait(0.3)
         
+        -- NAIK CEPAT KE APARTEMEN
         setNVStatus("GOING UP TO APARTMENT...", Color3.fromRGB(255, 200, 100))
-        goUpToApart()
-        task.wait(0.5)
+        goUpToApartFast()
+        task.wait(0.1)
         
         if not nvRunning then break end
         
+        -- UPDATE INVENTORY DAN MASAK
         updateNVInventory()
         
         local cooked = 0
@@ -1718,23 +1725,28 @@ local function nvLoop()
         end
         if not nvRunning then break end
         
-        setNVStatus("GOING DOWN 3 STUDS...", Color3.fromRGB(255, 200, 100))
-        goDown3Studs()
-        task.wait(0.3)
+        -- TURUN CEPAT
+        setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
+        goDownFast()
+        task.wait(0.1)
         
+        -- JALAN KE NPC UNTUK JUAL
         setNVStatus("WALKING TO NPC FOR SELLING...", Color3.fromRGB(52, 210, 110))
         walkToPosition(npcPos)
-        task.wait(0.5)
+        task.wait(0.3)
         
+        -- NAIK CEPAT
         setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
-        goUp3Studs()
-        task.wait(0.5)
+        goUpFast()
+        task.wait(0.1)
         
         if not nvRunning then break end
         
+        -- JUAL HASIL MASAKAN
         nvSell()
         if not nvRunning then break end
         
+        -- LOOP LAGI
         setNVStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
         task.wait(2)
     end
@@ -1818,5 +1830,6 @@ end, false, Enum.KeyCode.Z)
 -- ========== STARTUP ==========
 switchTab("AUTO")
 
-print("191 STORE SCRIPT LOADED - FULLY NV ADDED")
+print("191 STORE SCRIPT LOADED - FULLY NV DENGAN BLINK CEPAT!")
+print("Turun/Naik 5 studs INSTAN seperti blink!")
 print("Tekan Z untuk hide/show GUI")

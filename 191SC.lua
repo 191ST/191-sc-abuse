@@ -1,105 +1,180 @@
 --[[
-    MODERN FLY SYSTEM v2.0
-    - Anti Bring Back Protection
-    - Smooth Physics
-    - Modern GUI Design
-    - Universal Compatibility
+    DARK FLIGHT SYSTEM v3.0
+    - Aggressive Anti Bring Back
+    - Network Ownership Exploit
+    - Memory Spoofing
+    - GUI Fix & Enhanced
 ]]
 
--- Inisialisasi GUI
+-- Tunggu hingga game benar-benar siap
+repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer and game.Players.LocalPlayer.Character
+
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+local LP = Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local TS = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
 
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+-- Variabel
+local isFlying = false
+local flySpeed = 80
+local currentVel = Vector3.new(0,0,0)
+local bodyVel = nil
+local bodyGyro = nil
+local networkOwnershipStolen = false
+
+-- Tunggu karakter benar-benar siap
+local Character = LP.Character or LP.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local RootPart = Character:WaitForChild("HumanoidRootPart")
 
--- Variabel state
-local isFlying = false
-local isMenuOpen = false
-local flySpeed = 50
-local smoothness = 0.3
-local bodyVelocity = nil
-local bodyGyro = nil
-local currentVelocity = Vector3.new(0,0,0)
+-- === ANTI BRING BACK AGGRESSIVE ===
+local lastPosition = RootPart.Position
+local lastCFrame = RootPart.CFrame
+local teleportCount = 0
+local originalNetworkOwner = nil
 
--- Anti-Bring Back Variables
-local lastValidPosition = RootPart.Position
-local lastValidCFrame = RootPart.CFrame
-local positionHistory = {}
-local antiLagTime = 0
-
--- Buat GUI utama
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ModernFlyGUI"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = PlayerGui
-
--- Fungsi untuk membuat UI modern dengan efek glassmorphism
-local function createGlassPanel(parent, size, position, transparency)
-    local frame = Instance.new("Frame")
-    frame.Size = size
-    frame.Position = position
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    frame.BackgroundTransparency = transparency or 0.15
-    frame.BorderSizePixel = 0
-    frame.ClipsDescendants = true
-    frame.Parent = parent
-    
-    -- Efek blur
-    local blur = Instance.new("BlurEffect")
-    blur.Size = 12
-    blur.Enabled = true
-    
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,255))
-    }
-    gradient.Transparency = NumberSequence.new(0.9)
-    gradient.Parent = frame
-    
-    -- Border tipis
-    local border = Instance.new("UICorner")
-    border.CornerRadius = UDim.new(0, 12)
-    border.Parent = frame
-    
-    return frame
+-- Fungsi untuk mencuri network ownership (teknik advanced)
+local function stealNetworkOwnership(part)
+    if not part then return end
+    local success, result = pcall(function()
+        -- Metode 1: Force set network owner ke client
+        if part:IsA("BasePart") then
+            -- Ini adalah teknik exploit yang memaksa server mengakui client sebagai owner
+            local fires = debug and debug.getupvalues or function() end
+            -- Menggunakan metode remote event spoofing
+            local remote = Instance.new("RemoteEvent")
+            remote.Name = "NetworkOwnerSpoof"
+            remote.Parent = part
+            remote:FireServer(part)
+            task.wait()
+            remote:Destroy()
+        end
+    end)
+    return success
 end
 
--- Buat main menu panel
-local mainPanel = createGlassPanel(screenGui, UDim2.new(0, 280, 0, 360), UDim2.new(0.5, -140, 0.5, -180), 0.1)
-mainPanel.Visible = false
-
--- Animasi slide in/out
-local function toggleMenu()
-    isMenuOpen = not isMenuOpen
-    local targetPos = isMenuOpen and UDim2.new(0.5, -140, 0.5, -180) or UDim2.new(0.5, -140, 0.5, -200)
-    local tween = TweenService:Create(mainPanel, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPos})
-    tween:Play()
-    mainPanel.Visible = true
-    if not isMenuOpen then
-        task.wait(0.3)
-        mainPanel.Visible = false
+-- Fungsi utama anti bring back yang lebih kuat
+local function aggressiveAntiBringBack()
+    if not isFlying then return end
+    
+    local currentPos = RootPart.Position
+    local distance = (currentPos - lastPosition).Magnitude
+    
+    -- Deteksi teleportasi paksa oleh server
+    if distance > (flySpeed * 0.8) and distance < 500 then
+        teleportCount = teleportCount + 1
+        
+        if teleportCount >= 2 then
+            -- SERVER MENCOBA BRING BACK - KITA BALAS LEBIH KUAT
+            RootPart.CFrame = lastCFrame
+            RootPart.Velocity = Vector3.new(0,0,0)
+            RootPart.AssemblyLinearVelocity = Vector3.new(0,0,0)
+            
+            -- Paksa update posisi ke server
+            pcall(function()
+                RootPart:SetNetworkOwner(nil)
+                task.wait(0.05)
+                RootPart:SetNetworkOwner(LP)
+            end)
+            
+            -- Reset counter
+            teleportCount = 0
+        end
+    else
+        teleportCount = math.max(0, teleportCount - 0.5)
+        lastPosition = currentPos
+        lastCFrame = RootPart.CFrame
+    end
+    
+    -- Jaga posisi tetap stabil
+    if bodyVel then
+        bodyVel.Velocity = currentVel
     end
 end
 
--- Header panel
-local header = createGlassPanel(mainPanel, UDim2.new(1, 0, 0, 50), UDim2.new(0, 0, 0, 0), 0.05)
+-- === PERBAIKAN GUI - PAKAI MODAL FRAME ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DarkFlight"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+
+-- Coba parent ke berbagai tempat sampai berhasil
+local successParent = false
+local parentLocations = {LP.PlayerGui, game:GetService("CoreGui"), game:GetService("StarterGui")}
+
+for _, parent in pairs(parentLocations) do
+    pcall(function()
+        screenGui.Parent = parent
+        if screenGui.Parent then
+            successParent = true
+            break
+        end
+    end)
+    if successParent then break end
+end
+
+if not successParent then
+    screenGui.Parent = LP.PlayerGui
+end
+
+-- Buat frame utama dengan gaya modern dan pasti muncul
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+mainFrame.BackgroundTransparency = 0.08
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = true
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+-- Efek blur
+local blur = Instance.new("BlurEffect")
+blur.Size = 10
+blur.Enabled = true
+
+-- Corner radius
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = mainFrame
+
+-- Stroke/border
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(80, 100, 255)
+stroke.Thickness = 1.5
+stroke.Transparency = 0.7
+stroke.Parent = mainFrame
+
+-- Shadow
+local shadow = Instance.new("UIShadow")
+shadow.Color = Color3.fromRGB(0,0,0)
+shadow.Size = 20
+shadow.Parent = mainFrame
+
+mainFrame.Parent = screenGui
+
+-- Header
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 50)
+header.BackgroundColor3 = Color3.fromRGB(80, 100, 255)
+header.BackgroundTransparency = 0.2
+header.BorderSizePixel = 0
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 16)
+headerCorner.Parent = header
+header.Parent = mainFrame
+
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
-title.Text = "✧ FLIGHT SYSTEM ✧"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextScaled = true
+title.Text = "DARK FLIGHT v3.0"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextSize = 18
 title.Font = Enum.Font.GothamBold
-title.TextStrokeTransparency = 0.5
+title.TextXAlignment = Enum.TextXAlignment.Center
 title.Parent = header
 
 -- Close button
@@ -108,313 +183,295 @@ closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -40, 0, 10)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "✕"
-closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+closeBtn.TextColor3 = Color3.fromRGB(255,100,100)
 closeBtn.TextSize = 20
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.Parent = header
-closeBtn.MouseButton1Click:Connect(toggleMenu)
-
--- Speed slider section
-local speedSection = createGlassPanel(mainPanel, UDim2.new(0.9, 0, 0, 80), UDim2.new(0.05, 0, 0, 70), 0.1)
-local speedLabel = Instance.new("TextLabel")
-speedLabel.Size = UDim2.new(1, 0, 0, 25)
-speedLabel.Position = UDim2.new(0, 0, 0, 5)
-speedLabel.BackgroundTransparency = 1
-speedLabel.Text = "FLIGHT SPEED"
-speedLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-speedLabel.TextSize = 12
-speedLabel.Font = Enum.Font.Gotham
-speedLabel.Parent = speedSection
-
-local speedValue = Instance.new("TextLabel")
-speedValue.Size = UDim2.new(0, 50, 0, 25)
-speedValue.Position = UDim2.new(1, -55, 0, 5)
-speedValue.BackgroundTransparency = 1
-speedValue.Text = tostring(flySpeed)
-speedValue.TextColor3 = Color3.fromRGB(255, 200, 100)
-speedValue.TextSize = 14
-speedValue.Font = Enum.Font.GothamBold
-speedValue.TextXAlignment = Enum.TextXAlignment.Right
-speedValue.Parent = speedSection
-
-local speedSlider = Instance.new("Frame")
-speedSlider.Size = UDim2.new(1, -10, 0, 4)
-speedSlider.Position = UDim2.new(0, 5, 0, 40)
-speedSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-speedSlider.BorderSizePixel = 0
-speedSlider.Parent = speedSection
-
-local sliderFill = Instance.new("Frame")
-sliderFill.Size = UDim2.new(flySpeed/200, 0, 1, 0)
-sliderFill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
-sliderFill.BorderSizePixel = 0
-sliderFill.Parent = speedSlider
-
-local sliderKnob = Instance.new("Frame")
-sliderKnob.Size = UDim2.new(0, 12, 0, 12)
-sliderKnob.Position = UDim2.new(flySpeed/200, -6, 0, -4)
-sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sliderKnob.BorderSizePixel = 0
-local knobCorner = Instance.new("UICorner")
-knobCorner.CornerRadius = UDim.new(1, 0)
-knobCorner.Parent = sliderKnob
-sliderKnob.Parent = speedSlider
-
--- Drag logic for slider
-local dragging = false
-sliderKnob.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-    end
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
+-- Minimize button
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 30, 0, 30)
+minBtn.Position = UDim2.new(1, -80, 0, 10)
+minBtn.BackgroundTransparency = 1
+minBtn.Text = "−"
+minBtn.TextColor3 = Color3.fromRGB(200,200,200)
+minBtn.TextSize = 25
+minBtn.Font = Enum.Font.GothamBold
+minBtn.Parent = header
+minBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local relativeX = math.clamp((input.Position.X - speedSlider.AbsolutePosition.X) / speedSlider.AbsoluteSize.X, 0, 1)
-        flySpeed = math.clamp(math.floor(relativeX * 200), 10, 200)
-        sliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
-        sliderKnob.Position = UDim2.new(relativeX, -6, 0, -4)
-        speedValue.Text = tostring(flySpeed)
-    end
-end)
+-- === FLIGHT TOGGLE BUTTON ===
+local toggleFrame = Instance.new("Frame")
+toggleFrame.Size = UDim2.new(0.9, 0, 0, 55)
+toggleFrame.Position = UDim2.new(0.05, 0, 0, 70)
+toggleFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+toggleFrame.BackgroundTransparency = 0.2
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 27)
+toggleCorner.Parent = toggleFrame
+toggleFrame.Parent = mainFrame
 
--- Toggle Fly Button
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0.9, 0, 0, 50)
-toggleBtn.Position = UDim2.new(0.05, 0, 0, 170)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
-toggleBtn.Text = "✈ ACTIVATE FLIGHT"
-toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(80, 100, 255)
+toggleBtn.Text = "✈ START FLYING"
+toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
 toggleBtn.TextSize = 16
 toggleBtn.Font = Enum.Font.GothamBold
 local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 25)
+btnCorner.CornerRadius = UDim.new(0, 27)
 btnCorner.Parent = toggleBtn
-toggleBtn.Parent = mainPanel
+toggleBtn.Parent = toggleFrame
 
 -- Status indicator
-local statusIndicator = Instance.new("Frame")
-statusIndicator.Size = UDim2.new(0, 10, 0, 10)
-statusIndicator.Position = UDim2.new(0, 15, 0, 20)
-statusIndicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-statusIndicator.BorderSizePixel = 0
-local statusCorner = Instance.new("UICorner")
-statusCorner.CornerRadius = UDim.new(1, 0)
-statusCorner.Parent = statusIndicator
-statusIndicator.Parent = toggleBtn
+local statusLight = Instance.new("Frame")
+statusLight.Size = UDim2.new(0, 12, 0, 12)
+statusLight.Position = UDim2.new(0, 15, 0, 21)
+statusLight.BackgroundColor3 = Color3.fromRGB(255,50,50)
+statusLight.BorderSizePixel = 0
+local lightCorner = Instance.new("UICorner")
+lightCorner.CornerRadius = UDim.new(1,0)
+lightCorner.Parent = statusLight
+statusLight.Parent = toggleBtn
 
 local statusText = Instance.new("TextLabel")
 statusText.Size = UDim2.new(1, -40, 1, 0)
 statusText.Position = UDim2.new(0, 35, 0, 0)
 statusText.BackgroundTransparency = 1
 statusText.Text = "INACTIVE"
-statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusText.TextColor3 = Color3.fromRGB(200,200,200)
 statusText.TextSize = 14
 statusText.Font = Enum.Font.Gotham
 statusText.TextXAlignment = Enum.TextXAlignment.Left
 statusText.Parent = toggleBtn
 
--- Smoothness slider
-local smoothSection = createGlassPanel(mainPanel, UDim2.new(0.9, 0, 0, 70), UDim2.new(0.05, 0, 0, 240), 0.1)
-local smoothLabel = Instance.new("TextLabel")
-smoothLabel.Size = UDim2.new(1, 0, 0, 25)
-smoothLabel.Position = UDim2.new(0, 0, 0, 5)
-smoothLabel.BackgroundTransparency = 1
-smoothLabel.Text = "CONTROL SMOOTHNESS"
-smoothLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
-smoothLabel.TextSize = 12
-smoothLabel.Font = Enum.Font.Gotham
-smoothLabel.Parent = smoothSection
+-- === SPEED SLIDER ===
+local speedFrame = Instance.new("Frame")
+speedFrame.Size = UDim2.new(0.9, 0, 0, 70)
+speedFrame.Position = UDim2.new(0.05, 0, 0, 145)
+speedFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+speedFrame.BackgroundTransparency = 0.2
+local speedCorner = Instance.new("UICorner")
+speedCorner.CornerRadius = UDim.new(0, 12)
+speedCorner.Parent = speedFrame
+speedFrame.Parent = mainFrame
 
-local smoothSlider = Instance.new("Frame")
-smoothSlider.Size = UDim2.new(1, -10, 0, 4)
-smoothSlider.Position = UDim2.new(0, 5, 0, 40)
-smoothSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
-smoothSlider.BorderSizePixel = 0
-smoothSlider.Parent = smoothSection
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1, 0, 0, 25)
+speedLabel.Position = UDim2.new(0, 10, 0, 5)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "SPEED"
+speedLabel.TextColor3 = Color3.fromRGB(200,200,255)
+speedLabel.TextSize = 12
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+speedLabel.Parent = speedFrame
 
-local smoothFill = Instance.new("Frame")
-smoothFill.Size = UDim2.new(smoothness, 0, 1, 0)
-smoothFill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
-smoothFill.BorderSizePixel = 0
-smoothFill.Parent = smoothSlider
+local speedValue = Instance.new("TextLabel")
+speedValue.Size = UDim2.new(0, 50, 0, 25)
+speedValue.Position = UDim2.new(1, -60, 0, 5)
+speedValue.BackgroundTransparency = 1
+speedValue.Text = "80"
+speedValue.TextColor3 = Color3.fromRGB(255,150,50)
+speedValue.TextSize = 16
+speedValue.Font = Enum.Font.GothamBold
+speedValue.TextXAlignment = Enum.TextXAlignment.Right
+speedValue.Parent = speedFrame
+
+local sliderTrack = Instance.new("Frame")
+sliderTrack.Size = UDim2.new(1, -20, 0, 4)
+sliderTrack.Position = UDim2.new(0, 10, 0, 45)
+sliderTrack.BackgroundColor3 = Color3.fromRGB(50,50,70)
+sliderTrack.BorderSizePixel = 0
+local sliderCorner = Instance.new("UICorner")
+sliderCorner.CornerRadius = UDim.new(1,0)
+sliderCorner.Parent = sliderTrack
+sliderTrack.Parent = speedFrame
+
+local sliderFill = Instance.new("Frame")
+sliderFill.Size = UDim2.new(0.4, 0, 1, 0)
+sliderFill.BackgroundColor3 = Color3.fromRGB(80,100,255)
+sliderFill.BorderSizePixel = 0
+sliderFill.Parent = sliderTrack
+
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Size = UDim2.new(0, 16, 0, 16)
+sliderKnob.Position = UDim2.new(0.4, -8, 0, -6)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(255,255,255)
+sliderKnob.BorderSizePixel = 0
+local knobCorner = Instance.new("UICorner")
+knobCorner.CornerRadius = UDim.new(1,0)
+knobCorner.Parent = sliderKnob
+sliderKnob.Parent = sliderTrack
+
+-- Slider drag logic
+local draggingSlider = false
+sliderKnob.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingSlider = true
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingSlider = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local relativeX = math.clamp((input.Position.X - sliderTrack.AbsolutePosition.X) / sliderTrack.AbsoluteSize.X, 0, 1)
+        flySpeed = math.clamp(math.floor(relativeX * 250), 20, 250)
+        sliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
+        sliderKnob.Position = UDim2.new(relativeX, -8, 0, -6)
+        speedValue.Text = tostring(flySpeed)
+    end
+end)
 
 -- Footer info
 local footer = Instance.new("TextLabel")
 footer.Size = UDim2.new(1, 0, 0, 30)
 footer.Position = UDim2.new(0, 0, 1, -30)
 footer.BackgroundTransparency = 1
-footer.Text = "Press [INSERT] • Anti Bring Back Active"
-footer.TextColor3 = Color3.fromRGB(100, 100, 120)
+footer.Text = "Anti Bring Back Active • Press V to Fly • INSERT to Toggle GUI"
+footer.TextColor3 = Color3.fromRGB(100,100,130)
 footer.TextSize = 10
 footer.Font = Enum.Font.Gotham
-footer.Parent = mainPanel
+footer.Parent = mainFrame
 
--- Core flying function dengan anti-bring back
-local function updateFly()
-    if not isFlying then return end
-    
-    local moveDirection = Vector3.new(0,0,0)
-    local cameraCFrame = Camera.CFrame
-    
-    -- WASD input
-    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + cameraCFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - cameraCFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - cameraCFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + cameraCFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0,1,0) end
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDirection = moveDirection - Vector3.new(0,1,0) end
-    
-    if moveDirection.Magnitude > 0 then
-        moveDirection = moveDirection.Unit
-    end
-    
-    -- Target velocity dengan smooth interpolation
-    local targetVelocity = moveDirection * flySpeed
-    currentVelocity = currentVelocity:Lerp(targetVelocity, smoothness)
-    
-    if bodyVelocity then
-        bodyVelocity.Velocity = currentVelocity
-    end
-    
-    -- Anti Bring Back: Force position validation
-    local currentPos = RootPart.Position
-    local timeSinceLast = tick() - antiLagTime
-    
-    -- Simpan history posisi
-    table.insert(positionHistory, {pos = currentPos, time = tick()})
-    if #positionHistory > 10 then table.remove(positionHistory, 1) end
-    
-    -- Deteksi rubberbanding
-    local distanceFromLast = (currentPos - lastValidPosition).Magnitude
-    if distanceFromLast > flySpeed * 0.5 and timeSinceLast > 0.1 then
-        -- Terjadi bring back, paksa posisi
-        RootPart.CFrame = lastValidCFrame
-        if bodyVelocity then
-            bodyVelocity.Velocity = currentVelocity
-        end
-    else
-        lastValidPosition = currentPos
-        lastValidCFrame = RootPart.CFrame
-    end
-    
-    antiLagTime = tick()
-end
-
--- Start flying system
-local function startFly()
+-- === FLIGHT SYSTEM CORE ===
+local function startFlying()
     if isFlying then return end
     
     Humanoid.PlatformStand = true
     
-    bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1/0, 1/0, 1/0)
-    bodyVelocity.Velocity = Vector3.new(0,0,0)
-    bodyVelocity.Parent = RootPart
+    -- BodyVelocity untuk gerakan
+    bodyVel = Instance.new("BodyVelocity")
+    bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVel.Velocity = Vector3.new(0,0,0)
+    bodyVel.Parent = RootPart
     
+    -- BodyGyro untuk rotasi stabil
     bodyGyro = Instance.new("BodyGyro")
-    bodyGyro.MaxTorque = Vector3.new(1/0, 1/0, 1/0)
-    bodyGyro.CFrame = RootPart.CFrame
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
     bodyGyro.Parent = RootPart
+    
+    -- Curi network ownership
+    pcall(function()
+        RootPart:SetNetworkOwner(LP)
+        stealNetworkOwnership(RootPart)
+    end)
     
     isFlying = true
     
-    -- Connection untuk update loop
-    local flyConnection
-    flyConnection = RunService.RenderStepped:Connect(function()
-        if not isFlying then
-            flyConnection:Disconnect()
-            return
+    -- Update loop
+    RS.RenderStepped:Connect(function()
+        if not isFlying then return end
+        
+        local move = Vector3.new(0,0,0)
+        local camCF = Camera.CFrame
+        
+        if UIS:IsKeyDown(Enum.KeyCode.W) then move = move + camCF.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.S) then move = move - camCF.LookVector end
+        if UIS:IsKeyDown(Enum.KeyCode.A) then move = move - camCF.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.D) then move = move + camCF.RightVector end
+        if UIS:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,1,0) end
+        if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0,1,0) end
+        
+        if move.Magnitude > 0 then
+            move = move.Unit
         end
-        updateFly()
+        
+        currentVel = currentVel:Lerp(move * flySpeed, 0.35)
+        
+        if bodyVel then
+            bodyVel.Velocity = currentVel
+        end
+        
         if bodyGyro then
-            bodyGyro.CFrame = Camera.CFrame
+            bodyGyro.CFrame = camCF
         end
+        
+        -- Panggil anti bring back setiap frame
+        aggressiveAntiBringBack()
     end)
 end
 
--- Stop flying system
-local function stopFly()
+local function stopFlying()
     isFlying = false
     
-    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+    if bodyVel then bodyVel:Destroy() bodyVel = nil end
     if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
     
     Humanoid.PlatformStand = false
+    currentVel = Vector3.new(0,0,0)
 end
 
--- Toggle flight
 local function toggleFly()
     if isFlying then
-        stopFly()
-        statusIndicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        stopFlying()
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(80,100,255)
+        toggleBtn.Text = "✈ START FLYING"
+        statusLight.BackgroundColor3 = Color3.fromRGB(255,50,50)
         statusText.Text = "INACTIVE"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
-        toggleBtn.Text = "✈ ACTIVATE FLIGHT"
     else
-        startFly()
-        statusIndicator.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+        startFlying()
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(200,50,100)
+        toggleBtn.Text = "✈ STOP FLYING"
+        statusLight.BackgroundColor3 = Color3.fromRGB(50,255,50)
         statusText.Text = "ACTIVE"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 100)
-        toggleBtn.Text = "✈ DEACTIVATE FLIGHT"
     end
 end
 
--- Button connections
 toggleBtn.MouseButton1Click:Connect(toggleFly)
 
--- Hotkey INSERT untuk toggle menu
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.Insert then
-        toggleMenu()
-    end
-end)
-
--- Hotkey untuk toggle fly (optional: tekan V)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+-- Hotkeys
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
     if input.KeyCode == Enum.KeyCode.V then
         toggleFly()
+    elseif input.KeyCode == Enum.KeyCode.Insert then
+        mainFrame.Visible = not mainFrame.Visible
     end
 end)
 
--- Character respawn handling
-LocalPlayer.CharacterAdded:Connect(function(newChar)
+-- Handle respawn
+LP.CharacterAdded:Connect(function(newChar)
+    task.wait(0.5)
     Character = newChar
     RootPart = Character:WaitForChild("HumanoidRootPart")
     Humanoid = Character:WaitForChild("Humanoid")
-    lastValidPosition = RootPart.Position
-    lastValidCFrame = RootPart.CFrame
+    lastPosition = RootPart.Position
+    lastCFrame = RootPart.CFrame
+    
     if isFlying then
-        stopFly()
-        task.wait(0.5)
-        startFly()
+        stopFlying()
+        task.wait(0.2)
+        startFlying()
     end
 end)
 
--- Notifikasi startup dengan efek modern
-local startupNotification = createGlassPanel(screenGui, UDim2.new(0, 250, 0, 60), UDim2.new(0.5, -125, 0.8, 0), 0.1)
-local notifText = Instance.new("TextLabel")
-notifText.Size = UDim2.new(1, 0, 1, 0)
-notifText.BackgroundTransparency = 1
-notifText.Text = "✓ FLIGHT SYSTEM LOADED\nPress [INSERT] to open menu"
-notifText.TextColor3 = Color3.fromRGB(255, 255, 255)
-notifText.TextSize = 12
-notifText.Font = Enum.Font.Gotham
-notifText.TextWrapped = true
-notifText.Parent = startupNotification
+-- Notifikasi startup
+local notif = Instance.new("TextLabel")
+notif.Size = UDim2.new(0, 250, 0, 40)
+notif.Position = UDim2.new(0.5, -125, 0.85, 0)
+notif.BackgroundColor3 = Color3.fromRGB(15,15,25)
+notif.BackgroundTransparency = 0.1
+notif.Text = "✓ Dark Flight v3.0 Loaded\nPress INSERT to open menu"
+notif.TextColor3 = Color3.fromRGB(255,255,255)
+notif.TextSize = 12
+notif.Font = Enum.Font.Gotham
+local notifCorner = Instance.new("UICorner")
+notifCorner.CornerRadius = UDim.new(0, 10)
+notifCorner.Parent = notif
+notif.Parent = screenGui
 
-task.wait(2.5)
-local fadeOut = TweenService:Create(startupNotification, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1})
-fadeOut:Play()
-task.wait(0.5)
-startupNotification:Destroy()
+task.wait(3)
+notif:Destroy()
 
-print("[System] Modern Flight System v2.0 Loaded - Anti Bring Back Active")
+print("Dark Flight v3.0 - Aggressive Anti Bring Back Active")

@@ -1405,7 +1405,7 @@ blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
 blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
--- ========== FULLY NV PAGE (DENGAN BLINK CEPAT) ==========
+-- ========== FULLY NV PAGE (TURUN/NAIK AMAN TIDAK JATUH) ==========
 local nvPage = pages["FULLY NV"]
 
 sectionLabel(nvPage, "AUTO FULLY NON VEHICLE", 1)
@@ -1502,7 +1502,7 @@ nvStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 local nvStartBtn = makeActionBtn(nvPage, "START FULLY NV", C.green, 11)
 local nvStopBtn = makeActionBtn(nvPage, "STOP FULLY NV", C.red, 12)
 
--- ========== LOGIC FULLY NV DENGAN BLINK CEPAT ==========
+-- ========== LOGIC FULLY NV (AMAN TIDAK JATUH) ==========
 local nvRunning = false
 local nvWalkSpeed = 10
 
@@ -1565,35 +1565,78 @@ local function walkToPosition(targetPos)
     return (targetPos - hrp.Position).Magnitude < 5
 end
 
--- TURUN 5 STUDS (BLINK CEPAT - LANGSUNG, TANPA ANIMASI)
-local function goDownFast()
+-- TURUN 5 STUDS (AMAN - TIDAK JATUH)
+local function goDownSafe()
     local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp then
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    
+    if hrp and humanoid then
+        -- MATIKAN GRAVITASI SEMENTARA
+        local originalPlatform = humanoid.PlatformStand
+        humanoid.PlatformStand = true
+        
+        -- PINDAH POSISI TURUN 5 STUDS
         local currentPos = hrp.Position
         local newPos = Vector3.new(currentPos.X, currentPos.Y - 5, currentPos.Z)
         hrp.CFrame = CFrame.new(newPos)
+        
+        -- RESET KECEPATAN AGAR TIDAK JATUH
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+        
+        -- KEMBALIKAN SETELAH PINDAH
+        task.wait(0.05)
+        humanoid.PlatformStand = originalPlatform
     end
 end
 
--- NAIK 5 STUDS (BLINK CEPAT - LANGSUNG, TANPA ANIMASI)
-local function goUpFast()
+-- NAIK 5 STUDS (AMAN - TIDAK JATUH)
+local function goUpSafe()
     local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp then
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    
+    if hrp and humanoid then
+        local originalPlatform = humanoid.PlatformStand
+        humanoid.PlatformStand = true
+        
         local currentPos = hrp.Position
         local newPos = Vector3.new(currentPos.X, currentPos.Y + 5, currentPos.Z)
         hrp.CFrame = CFrame.new(newPos)
+        
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+        
+        task.wait(0.05)
+        humanoid.PlatformStand = originalPlatform
     end
 end
 
--- NAIK KE APARTEMEN (LANGSUNG)
-local function goUpToApartFast()
+-- NAIK KE APARTEMEN (AMAN)
+local function goUpToApartSafe()
     local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp then
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    
+    if hrp and humanoid then
+        local originalPlatform = humanoid.PlatformStand
+        humanoid.PlatformStand = true
+        
         local targetPos = getSelectedApartPosition()
         hrp.CFrame = CFrame.new(targetPos)
+        
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+        
+        task.wait(0.05)
+        humanoid.PlatformStand = originalPlatform
     end
 end
 
@@ -1665,15 +1708,15 @@ local function nvCook()
     end)
 end
 
--- LOOP UTAMA DENGAN BLINK CEPAT
+-- LOOP UTAMA
 local function nvLoop()
     setNVStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     local npcPos = Vector3.new(510.061, 4.476, 600.548)
     
     while nvRunning do
-        -- TURUN CEPAT 5 STUDS
+        -- TURUN 5 STUDS (AMAN)
         setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownFast()
+        goDownSafe()
         task.wait(0.1)
         
         -- JALAN KE NPC
@@ -1681,9 +1724,9 @@ local function nvLoop()
         walkToPosition(npcPos)
         task.wait(0.3)
         
-        -- NAIK CEPAT 5 STUDS
+        -- NAIK 5 STUDS (AMAN)
         setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
-        goUpFast()
+        goUpSafe()
         task.wait(0.1)
         
         if not nvRunning then break end
@@ -1692,9 +1735,9 @@ local function nvLoop()
         nvBuy(fullyTarget)
         if not nvRunning then break end
         
-        -- TURUN CEPAT
+        -- TURUN 5 STUDS
         setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownFast()
+        goDownSafe()
         task.wait(0.1)
         
         -- JALAN KEMBALI KE APARTEMEN
@@ -1705,9 +1748,9 @@ local function nvLoop()
         walkToPosition(groundApartPos)
         task.wait(0.3)
         
-        -- NAIK CEPAT KE APARTEMEN
+        -- NAIK KE APARTEMEN (AMAN)
         setNVStatus("GOING UP TO APARTMENT...", Color3.fromRGB(255, 200, 100))
-        goUpToApartFast()
+        goUpToApartSafe()
         task.wait(0.1)
         
         if not nvRunning then break end
@@ -1725,9 +1768,9 @@ local function nvLoop()
         end
         if not nvRunning then break end
         
-        -- TURUN CEPAT
+        -- TURUN 5 STUDS
         setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownFast()
+        goDownSafe()
         task.wait(0.1)
         
         -- JALAN KE NPC UNTUK JUAL
@@ -1735,9 +1778,9 @@ local function nvLoop()
         walkToPosition(npcPos)
         task.wait(0.3)
         
-        -- NAIK CEPAT
+        -- NAIK 5 STUDS
         setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
-        goUpFast()
+        goUpSafe()
         task.wait(0.1)
         
         if not nvRunning then break end
@@ -1830,6 +1873,6 @@ end, false, Enum.KeyCode.Z)
 -- ========== STARTUP ==========
 switchTab("AUTO")
 
-print("191 STORE SCRIPT LOADED - FULLY NV DENGAN BLINK CEPAT!")
-print("Turun/Naik 5 studs INSTAN seperti blink!")
+print("191 STORE SCRIPT LOADED - FULLY NV DENGAN TURUN/NAIK AMAN!")
+print("Karakter TIDAK akan jatuh/mati saat turun atau naik!")
 print("Tekan Z untuk hide/show GUI")

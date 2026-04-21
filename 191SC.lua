@@ -376,6 +376,78 @@ local function stepTeleport(targetPos)
     end
 end
 
+-- ========== FLY SYSTEM UNTUK TURUN/NAIK ==========
+local flyBodyVelocity = nil
+local flyBodyGyro = nil
+local isFlying = false
+
+local function startFly()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    
+    if not hrp or not hum then return end
+    
+    if flyBodyVelocity then flyBodyVelocity:Destroy() end
+    if flyBodyGyro then flyBodyGyro:Destroy() end
+    
+    hum.PlatformStand = true
+    
+    flyBodyVelocity = Instance.new("BodyVelocity")
+    flyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    flyBodyVelocity.Parent = hrp
+    
+    flyBodyGyro = Instance.new("BodyGyro")
+    flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    flyBodyGyro.Parent = hrp
+    
+    isFlying = true
+end
+
+local function stopFly()
+    if flyBodyVelocity then flyBodyVelocity:Destroy() flyBodyVelocity = nil end
+    if flyBodyGyro then flyBodyGyro:Destroy() flyBodyGyro = nil end
+    
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.PlatformStand = false
+    end
+    
+    isFlying = false
+end
+
+local function flyToPosition(targetPos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    startFly()
+    
+    local direction = (targetPos - hrp.Position).Unit
+    local distance = (targetPos - hrp.Position).Magnitude
+    
+    if flyBodyVelocity then
+        flyBodyVelocity.Velocity = direction * 50
+    end
+    
+    -- Tunggu sampai sampai
+    while isFlying and (hrp.Position - targetPos).Magnitude > 3 do
+        task.wait(0.05)
+        if flyBodyVelocity then
+            local newDir = (targetPos - hrp.Position).Unit
+            flyBodyVelocity.Velocity = newDir * 50
+        end
+    end
+    
+    if flyBodyVelocity then
+        flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    end
+    
+    stopFly()
+end
+
 -- ========== GUI SETUP ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "191_STORE"
@@ -1405,7 +1477,7 @@ blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
 blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
--- ========== FULLY NV PAGE (TURUN/NAIK AMAN TIDAK JATUH) ==========
+-- ========== FULLY NV PAGE (PAKAI FLY UNTUK TURUN/NAIK) ==========
 local nvPage = pages["FULLY NV"]
 
 sectionLabel(nvPage, "AUTO FULLY NON VEHICLE", 1)
@@ -1502,7 +1574,7 @@ nvStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 local nvStartBtn = makeActionBtn(nvPage, "START FULLY NV", C.green, 11)
 local nvStopBtn = makeActionBtn(nvPage, "STOP FULLY NV", C.red, 12)
 
--- ========== LOGIC FULLY NV (AMAN TIDAK JATUH) ==========
+-- ========== LOGIC FULLY NV (PAKAI FLY) ==========
 local nvRunning = false
 local nvWalkSpeed = 10
 
@@ -1565,79 +1637,30 @@ local function walkToPosition(targetPos)
     return (targetPos - hrp.Position).Magnitude < 5
 end
 
--- TURUN 5 STUDS (AMAN - TIDAK JATUH)
-local function goDownSafe()
-    local character = player.Character
-    if not character then return end
+-- TURUN 5 STUDS (PAKAI FLY)
+local function goDownFly()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
     
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    
-    if hrp and humanoid then
-        -- MATIKAN GRAVITASI SEMENTARA
-        local originalPlatform = humanoid.PlatformStand
-        humanoid.PlatformStand = true
-        
-        -- PINDAH POSISI TURUN 5 STUDS
-        local currentPos = hrp.Position
-        local newPos = Vector3.new(currentPos.X, currentPos.Y - 5, currentPos.Z)
-        hrp.CFrame = CFrame.new(newPos)
-        
-        -- RESET KECEPATAN AGAR TIDAK JATUH
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        
-        -- KEMBALIKAN SETELAH PINDAH
-        task.wait(0.05)
-        humanoid.PlatformStand = originalPlatform
-    end
+    local targetPos = hrp.Position - Vector3.new(0, 5, 0)
+    flyToPosition(targetPos)
 end
 
--- NAIK 5 STUDS (AMAN - TIDAK JATUH)
-local function goUpSafe()
-    local character = player.Character
-    if not character then return end
+-- NAIK 5 STUDS (PAKAI FLY)
+local function goUpFly()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
     
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    
-    if hrp and humanoid then
-        local originalPlatform = humanoid.PlatformStand
-        humanoid.PlatformStand = true
-        
-        local currentPos = hrp.Position
-        local newPos = Vector3.new(currentPos.X, currentPos.Y + 5, currentPos.Z)
-        hrp.CFrame = CFrame.new(newPos)
-        
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        
-        task.wait(0.05)
-        humanoid.PlatformStand = originalPlatform
-    end
+    local targetPos = hrp.Position + Vector3.new(0, 5, 0)
+    flyToPosition(targetPos)
 end
 
--- NAIK KE APARTEMEN (AMAN)
-local function goUpToApartSafe()
-    local character = player.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    
-    if hrp and humanoid then
-        local originalPlatform = humanoid.PlatformStand
-        humanoid.PlatformStand = true
-        
-        local targetPos = getSelectedApartPosition()
-        hrp.CFrame = CFrame.new(targetPos)
-        
-        hrp.AssemblyLinearVelocity = Vector3.zero
-        hrp.AssemblyAngularVelocity = Vector3.zero
-        
-        task.wait(0.05)
-        humanoid.PlatformStand = originalPlatform
-    end
+-- NAIK KE APARTEMEN (PAKAI FLY)
+local function goUpToApartFly()
+    local targetPos = getSelectedApartPosition()
+    flyToPosition(targetPos)
 end
 
 local function updateNVInventory()
@@ -1708,15 +1731,15 @@ local function nvCook()
     end)
 end
 
--- LOOP UTAMA
+-- LOOP UTAMA (PAKAI FLY)
 local function nvLoop()
     setNVStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     local npcPos = Vector3.new(510.061, 4.476, 600.548)
     
     while nvRunning do
-        -- TURUN 5 STUDS (AMAN)
-        setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownSafe()
+        -- TURUN 5 STUDS (FLY)
+        setNVStatus("FLYING DOWN...", Color3.fromRGB(255, 200, 100))
+        goDownFly()
         task.wait(0.1)
         
         -- JALAN KE NPC
@@ -1724,9 +1747,9 @@ local function nvLoop()
         walkToPosition(npcPos)
         task.wait(0.3)
         
-        -- NAIK 5 STUDS (AMAN)
-        setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
-        goUpSafe()
+        -- NAIK 5 STUDS (FLY)
+        setNVStatus("FLYING UP...", Color3.fromRGB(255, 200, 100))
+        goUpFly()
         task.wait(0.1)
         
         if not nvRunning then break end
@@ -1735,9 +1758,9 @@ local function nvLoop()
         nvBuy(fullyTarget)
         if not nvRunning then break end
         
-        -- TURUN 5 STUDS
-        setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownSafe()
+        -- TURUN 5 STUDS (FLY)
+        setNVStatus("FLYING DOWN...", Color3.fromRGB(255, 200, 100))
+        goDownFly()
         task.wait(0.1)
         
         -- JALAN KEMBALI KE APARTEMEN
@@ -1748,9 +1771,9 @@ local function nvLoop()
         walkToPosition(groundApartPos)
         task.wait(0.3)
         
-        -- NAIK KE APARTEMEN (AMAN)
-        setNVStatus("GOING UP TO APARTMENT...", Color3.fromRGB(255, 200, 100))
-        goUpToApartSafe()
+        -- NAIK KE APARTEMEN (FLY)
+        setNVStatus("FLYING TO APARTMENT...", Color3.fromRGB(255, 200, 100))
+        goUpToApartFly()
         task.wait(0.1)
         
         if not nvRunning then break end
@@ -1768,9 +1791,9 @@ local function nvLoop()
         end
         if not nvRunning then break end
         
-        -- TURUN 5 STUDS
-        setNVStatus("GOING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownSafe()
+        -- TURUN 5 STUDS (FLY)
+        setNVStatus("FLYING DOWN...", Color3.fromRGB(255, 200, 100))
+        goDownFly()
         task.wait(0.1)
         
         -- JALAN KE NPC UNTUK JUAL
@@ -1778,9 +1801,9 @@ local function nvLoop()
         walkToPosition(npcPos)
         task.wait(0.3)
         
-        -- NAIK 5 STUDS
-        setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
-        goUpSafe()
+        -- NAIK 5 STUDS (FLY)
+        setNVStatus("FLYING UP...", Color3.fromRGB(255, 200, 100))
+        goUpFly()
         task.wait(0.1)
         
         if not nvRunning then break end
@@ -1825,6 +1848,7 @@ nvStopBtn.MouseButton1Click:Connect(function()
     nvRunning = false
     stopHPMonitoring()
     setNVStatus("STOPPING...", C.orange)
+    stopFly()
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
@@ -1873,6 +1897,6 @@ end, false, Enum.KeyCode.Z)
 -- ========== STARTUP ==========
 switchTab("AUTO")
 
-print("191 STORE SCRIPT LOADED - FULLY NV DENGAN TURUN/NAIK AMAN!")
-print("Karakter TIDAK akan jatuh/mati saat turun atau naik!")
+print("191 STORE SCRIPT LOADED - FULLY NV PAKAI FLY!")
+print("Turun/naik pake FLY, ga bakal jatoh!")
 print("Tekan Z untuk hide/show GUI")

@@ -41,7 +41,7 @@ local buyAmount = 10
 local blinkEnabled = true
 local fullyTarget = 5
 
--- ========== HP SAFE ZONE (AUTO TELEPORT SAAT KENA HIT) ==========
+-- ========== HP SAFE ZONE ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalCFrame = nil
@@ -320,17 +320,13 @@ ContextActionService:BindAction("blink_forward", function(_, state)
     end
 end, false, Enum.KeyCode.T)
 
--- ============================================================
--- ANTI AFK
--- ============================================================
+-- ========== ANTI AFK ==========
 player.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- ============================================================
--- HELPERS
--- ============================================================
+-- ========== HELPERS ==========
 local function holdE(t)
     VirtualInputManager:SendKeyEvent(true,"E",false,game)
     task.wait(t or 0.7)
@@ -380,18 +376,14 @@ local function stepTeleport(targetPos)
     end
 end
 
--- ============================================================
--- GUI SETUP
--- ============================================================
+-- ========== GUI SETUP ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "191_STORE"
 gui.Parent = playerGui
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- ============================================================
--- COLOR PALETTE
--- ============================================================
+-- ========== COLOR PALETTE ==========
 local C = {
     bg        = Color3.fromRGB(8,  8,  16),
     surface   = Color3.fromRGB(13, 13, 22),
@@ -411,9 +403,7 @@ local C = {
     border    = Color3.fromRGB(40, 45, 65),
 }
 
--- ============================================================
--- MAIN WINDOW
--- ============================================================
+-- ========== MAIN WINDOW ==========
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 660, 0, 500)
 main.Position = UDim2.new(0.5, -330, 0.5, -250)
@@ -427,9 +417,7 @@ local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Color = C.border
 mainStroke.Thickness = 1
 
--- ============================================================
--- TOP BAR
--- ============================================================
+-- ========== TOP BAR ==========
 local topBar = Instance.new("Frame", main)
 topBar.Size = UDim2.new(1, 0, 0, 46)
 topBar.BackgroundColor3 = C.surface
@@ -452,7 +440,6 @@ do
     titleLbl.TextSize = 15
     titleLbl.TextColor3 = C.text
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    titleLbl.TextStrokeTransparency = 1
 end
 
 local closeBtn = Instance.new("TextButton", topBar)
@@ -464,7 +451,6 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 12
 closeBtn.TextColor3 = C.red
 closeBtn.BorderSizePixel = 0
-closeBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -480,12 +466,9 @@ minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 14
 minBtn.TextColor3 = C.textMid
 minBtn.BorderSizePixel = 0
-minBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
--- ============================================================
--- SIDEBAR
--- ============================================================
+-- ========== SIDEBAR ==========
 local sidebar = Instance.new("Frame", main)
 sidebar.Size = UDim2.new(0, 80, 1, -46)
 sidebar.Position = UDim2.new(0, 0, 0, 46)
@@ -509,9 +492,7 @@ sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
 local sidebarPad = Instance.new("UIPadding", sidebar)
 sidebarPad.PaddingTop = UDim.new(0, 10)
 
--- ============================================================
--- CONTENT AREA
--- ============================================================
+-- ========== CONTENT AREA ==========
 local content = Instance.new("Frame", main)
 content.Size = UDim2.new(1, -80, 1, -46)
 content.Position = UDim2.new(0, 80, 0, 46)
@@ -519,9 +500,7 @@ content.BackgroundColor3 = C.panel
 content.ClipsDescendants = true
 Instance.new("UICorner", content).CornerRadius = UDim.new(0, 0)
 
--- ============================================================
--- TAB SYSTEM
--- ============================================================
+-- ========== TAB SYSTEM ==========
 local pages = {}
 local tabBtns = {}
 local currentTab = nil
@@ -534,7 +513,7 @@ local tabDefs = {
     {label = "BUY",      order = 5},
     {label = "SELL",     order = 6},
     {label = "SETTINGS", order = 7},
-    {label = "FULLY NON VEHICLE", order = 8},
+    {label = "FULLY NV", order = 8},
 }
 
 local function switchTab(name)
@@ -564,7 +543,6 @@ for i, def in ipairs(tabDefs) do
     btn.TextColor3 = C.textDim
     btn.BorderSizePixel = 0
     btn.LayoutOrder = def.order
-    btn.TextStrokeTransparency = 1
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
 
     local indicator = Instance.new("Frame", btn)
@@ -605,9 +583,7 @@ for i, def in ipairs(tabDefs) do
     end)
 end
 
--- ============================================================
--- UI COMPONENT BUILDERS
--- ============================================================
+-- ========== UI COMPONENT BUILDERS ==========
 local function sectionLabel(parent, text, order)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 22)
@@ -622,7 +598,6 @@ local function sectionLabel(parent, text, order)
     lbl.TextSize = 9
     lbl.TextColor3 = C.textDim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.LayoutOrder = order or 0
     lbl.TextStrokeTransparency = 1
 
     local line = Instance.new("Frame", wrap)
@@ -654,7 +629,6 @@ local function makeActionBtn(parent, text, color, order)
     f.Text = text
     f.BorderSizePixel = 0
     f.LayoutOrder = order or 0
-    f.TextStrokeTransparency = 1
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
 
     f.MouseEnter:Connect(function()
@@ -678,7 +652,6 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     lbl.TextSize = 11
     lbl.TextColor3 = C.textMid
     lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.TextStrokeTransparency = 1
 
     local valLbl = Instance.new("TextLabel", wrap)
     valLbl.Position = UDim2.new(1, -52, 0, 8)
@@ -689,7 +662,6 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     valLbl.TextSize = 12
     valLbl.TextColor3 = C.accentGlow
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
-    valLbl.TextStrokeTransparency = 1
 
     local track = Instance.new("Frame", wrap)
     track.Position = UDim2.new(0, 12, 0, 34)
@@ -762,7 +734,6 @@ local function makeStatusRow(parent, label, order)
     lbl2.TextSize = 11
     lbl2.TextColor3 = C.textMid
     lbl2.TextXAlignment = Enum.TextXAlignment.Left
-    lbl2.TextStrokeTransparency = 1
 
     local val2 = Instance.new("TextLabel", f)
     val2.Position = UDim2.new(0.6, 0, 0, 0)
@@ -773,14 +744,11 @@ local function makeStatusRow(parent, label, order)
     val2.TextSize = 12
     val2.TextColor3 = C.accentGlow
     val2.TextXAlignment = Enum.TextXAlignment.Right
-    val2.TextStrokeTransparency = 1
 
     return val2
 end
 
--- ============================================================
--- AUTO PAGE (MS LOOP)
--- ============================================================
+-- ========== AUTO PAGE ==========
 local ap = pages["AUTO"]
 
 sectionLabel(ap, "MS LOOP AUTO COOK", 1)
@@ -802,7 +770,6 @@ msStatusLbl.Font = Enum.Font.GothamBold
 msStatusLbl.TextSize = 13
 msStatusLbl.TextColor3 = C.red
 msStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-msStatusLbl.TextStrokeTransparency = 1
 
 local msStartBtn = makeActionBtn(ap, "START MS LOOP", C.green, 8)
 local msStopBtn = makeActionBtn(ap, "STOP MS LOOP", C.red, 9)
@@ -870,9 +837,7 @@ msStopBtn.MouseButton1Click:Connect(function()
     msStatusLbl.TextColor3 = C.red
 end)
 
--- ============================================================
--- FULLY PAGE
--- ============================================================
+-- ========== FULLY PAGE ==========
 local fullyPage = pages["FULLY"]
 
 sectionLabel(fullyPage, "AUTO FULLY", 1)
@@ -898,12 +863,10 @@ fullyStatusLbl.Font = Enum.Font.GothamBold
 fullyStatusLbl.TextSize = 13
 fullyStatusLbl.TextColor3 = C.red
 fullyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-fullyStatusLbl.TextStrokeTransparency = 1
 
 local fullyStartBtn = makeActionBtn(fullyPage, "START FULLY", C.green, 9)
 local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 10)
 
--- FULLY LOGIC
 local fullyRunning = false
 local fullySavedPos = nil
 local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
@@ -1032,9 +995,7 @@ fullyStopBtn.MouseButton1Click:Connect(function()
     setFullyStatus("STOPPING...", C.orange)
 end)
 
--- ============================================================
--- TP PAGE
--- ============================================================
+-- ========== TP PAGE ==========
 local tp = pages["TP"]
 
 local LOCATIONS = {
@@ -1060,9 +1021,7 @@ for i, loc in ipairs(LOCATIONS) do
     end)
 end
 
--- ============================================================
--- MS POT PAGE
--- ============================================================
+-- ========== MS POT PAGE ==========
 local mspot = pages["MS POT"]
 
 sectionLabel(mspot, "HAPUS PART DIBAWAH", 1)
@@ -1194,9 +1153,7 @@ undoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ============================================================
--- BUY PAGE
--- ============================================================
+-- ========== BUY PAGE ==========
 local buyp = pages["BUY"]
 
 sectionLabel(buyp, "AUTO BUY INGREDIENTS", 1)
@@ -1211,7 +1168,6 @@ buyStatusLbl.Font = Enum.Font.GothamBold
 buyStatusLbl.TextSize = 13
 buyStatusLbl.TextColor3 = C.red
 buyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-buyStatusLbl.TextStrokeTransparency = 1
 
 local buyTotalCard = card(buyp, 30, 3)
 local buyTotalLbl = Instance.new("TextLabel", buyTotalCard)
@@ -1223,7 +1179,6 @@ buyTotalLbl.Font = Enum.Font.Gotham
 buyTotalLbl.TextSize = 11
 buyTotalLbl.TextColor3 = C.textMid
 buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
-buyTotalLbl.TextStrokeTransparency = 1
 
 local buySliderWrap, buyValLbl = makeSlider(buyp, "BUY AMOUNT PER ITEM", 1, 50, 10, 4, function(v)
     buyAmount = v
@@ -1294,9 +1249,7 @@ end
 buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
 buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
 
--- ============================================================
--- SELL PAGE
--- ============================================================
+-- ========== SELL PAGE ==========
 local sellp = pages["SELL"]
 
 sectionLabel(sellp, "AUTO SELL MARSHMALLOW BAGS", 1)
@@ -1311,7 +1264,6 @@ sellStatusLbl.Font = Enum.Font.GothamBold
 sellStatusLbl.TextSize = 13
 sellStatusLbl.TextColor3 = C.red
 sellStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-sellStatusLbl.TextStrokeTransparency = 1
 
 local sellCounterCard = card(sellp, 30, 3)
 local sellCounterLbl = Instance.new("TextLabel", sellCounterCard)
@@ -1323,7 +1275,6 @@ sellCounterLbl.Font = Enum.Font.GothamBold
 sellCounterLbl.TextSize = 12
 sellCounterLbl.TextColor3 = C.accentGlow
 sellCounterLbl.TextXAlignment = Enum.TextXAlignment.Left
-sellCounterLbl.TextStrokeTransparency = 1
 
 local sellStartBtn = makeActionBtn(sellp, "START SELL", C.green, 4)
 local sellStopBtn = makeActionBtn(sellp, "STOP SELL", C.red, 5)
@@ -1404,9 +1355,7 @@ end
 sellStartBtn.MouseButton1Click:Connect(startAutoSell)
 sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
--- ============================================================
--- SETTINGS PAGE
--- ============================================================
+-- ========== SETTINGS PAGE ==========
 local settingsp = pages["SETTINGS"]
 
 sectionLabel(settingsp, "SHORTCUT SETTINGS", 1)
@@ -1421,7 +1370,6 @@ blinkToggleTitle.Font = Enum.Font.GothamSemibold
 blinkToggleTitle.TextSize = 12
 blinkToggleTitle.TextColor3 = C.text
 blinkToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
-blinkToggleTitle.TextStrokeTransparency = 1
 
 local blinkToggleBtn = Instance.new("TextButton", blinkToggleCard)
 blinkToggleBtn.Size = UDim2.new(0, 80, 0, 32)
@@ -1432,7 +1380,6 @@ blinkToggleBtn.Font = Enum.Font.GothamBold
 blinkToggleBtn.TextSize = 12
 blinkToggleBtn.TextColor3 = C.text
 blinkToggleBtn.BorderSizePixel = 0
-blinkToggleBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", blinkToggleBtn).CornerRadius = UDim.new(0, 6)
 
 blinkToggleBtn.MouseButton1Click:Connect(function()
@@ -1458,21 +1405,19 @@ blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
 blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
--- ============================================================
--- FULLY NON VEHICLE PAGE
--- ============================================================
-local nonVehiclePage = pages["FULLY NON VEHICLE"]
+-- ========== FULLY NV PAGE ==========
+local nvPage = pages["FULLY NV"]
 
-sectionLabel(nonVehiclePage, "AUTO FULLY NON VEHICLE", 1)
+sectionLabel(nvPage, "AUTO FULLY NON VEHICLE", 1)
 
-local waterValNonVeh = makeStatusRow(nonVehiclePage, "Water", 2)
-local sugarValNonVeh = makeStatusRow(nonVehiclePage, "Sugar Block Bag", 3)
-local gelatinValNonVeh = makeStatusRow(nonVehiclePage, "Gelatin", 4)
-local emptyValNonVeh = makeStatusRow(nonVehiclePage, "Empty Bag", 5)
+local waterValNV = makeStatusRow(nvPage, "Water", 2)
+local sugarValNV = makeStatusRow(nvPage, "Sugar Block Bag", 3)
+local gelatinValNV = makeStatusRow(nvPage, "Gelatin", 4)
+local emptyValNV = makeStatusRow(nvPage, "Empty Bag", 5)
 
-sectionLabel(nonVehiclePage, "APARTMENT SELECTION", 6)
+sectionLabel(nvPage, "APARTMENT SELECTION", 6)
 
-local apartFrame = card(nonVehiclePage, 120, 7)
+local apartFrame = card(nvPage, 120, 7)
 local apartTitle = Instance.new("TextLabel", apartFrame)
 apartTitle.Size = UDim2.new(1, -20, 0, 25)
 apartTitle.Position = UDim2.new(0, 12, 0, 5)
@@ -1537,32 +1482,29 @@ if apartButtons["Apart 1"] then
     apartButtons["Apart 1"].TextColor3 = C.accentGlow
 end
 
-sectionLabel(nonVehiclePage, "SETTINGS", 8)
+sectionLabel(nvPage, "SETTINGS", 8)
 
-local targetSliderNonVeh, targetValNonVeh = makeSlider(nonVehiclePage, "TARGET FULLY", 1, 50, 5, 9, function(v)
+local targetSliderNV, targetValNV = makeSlider(nvPage, "TARGET FULLY", 1, 50, 5, 9, function(v)
     fullyTarget = v
 end)
 
-local nonVehStatusCard = card(nonVehiclePage, 40, 10)
-local nonVehStatusLbl = Instance.new("TextLabel", nonVehStatusCard)
-nonVehStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-nonVehStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-nonVehStatusLbl.BackgroundTransparency = 1
-nonVehStatusLbl.Text = "STOPPED"
-nonVehStatusLbl.Font = Enum.Font.GothamBold
-nonVehStatusLbl.TextSize = 13
-nonVehStatusLbl.TextColor3 = C.red
-nonVehStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+local nvStatusCard = card(nvPage, 40, 10)
+local nvStatusLbl = Instance.new("TextLabel", nvStatusCard)
+nvStatusLbl.Size = UDim2.new(1, -20, 1, 0)
+nvStatusLbl.Position = UDim2.new(0, 12, 0, 0)
+nvStatusLbl.BackgroundTransparency = 1
+nvStatusLbl.Text = "STOPPED"
+nvStatusLbl.Font = Enum.Font.GothamBold
+nvStatusLbl.TextSize = 13
+nvStatusLbl.TextColor3 = C.red
+nvStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local nonVehStartBtn = makeActionBtn(nonVehiclePage, "START FULLY NON VEHICLE", C.green, 11)
-local nonVehStopBtn = makeActionBtn(nonVehiclePage, "STOP FULLY NON VEHICLE", C.red, 12)
+local nvStartBtn = makeActionBtn(nvPage, "START FULLY NV", C.green, 11)
+local nvStopBtn = makeActionBtn(nvPage, "STOP FULLY NV", C.red, 12)
 
--- ============================================================
--- LOGIC FULLY NON VEHICLE
--- ============================================================
-local nonVehRunning = false
-local nonVehSavedPos = nil
-local nonVehWalkSpeed = 19
+-- ========== LOGIC FULLY NV ==========
+local nvRunning = false
+local nvWalkSpeed = 10
 
 local function getSelectedApartPosition()
     local apartData = nil
@@ -1600,7 +1542,7 @@ local function walkToPosition(targetPos)
     if not humanoid or not hrp then return false end
     
     local originalWalkSpeed = humanoid.WalkSpeed
-    humanoid.WalkSpeed = nonVehWalkSpeed
+    humanoid.WalkSpeed = nvWalkSpeed
     humanoid.AutoRotate = true
     
     local path = PathfindingService:CreatePath({AgentRadius = 2, AgentHeight = 5, AgentCanJump = true, AgentMaxSlope = 45})
@@ -1609,7 +1551,7 @@ local function walkToPosition(targetPos)
     if success and path.Status == Enum.PathStatus.Success then
         local waypoints = path:GetWaypoints()
         for _, waypoint in ipairs(waypoints) do
-            if not nonVehRunning then break end
+            if not nvRunning then break end
             humanoid:MoveTo(waypoint.Position)
             humanoid.MoveToFinished:Wait(5)
         end
@@ -1622,13 +1564,25 @@ local function walkToPosition(targetPos)
     return (targetPos - hrp.Position).Magnitude < 5
 end
 
-local function goDownToGround()
+local function goDown3Studs()
     local character = player.Character
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if hrp then
         local currentPos = hrp.Position
-        local groundPos = Vector3.new(currentPos.X, currentPos.Y - 5, currentPos.Z)
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {CFrame = CFrame.new(groundPos)})
+        local groundPos = Vector3.new(currentPos.X, currentPos.Y - 3, currentPos.Z)
+        local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {CFrame = CFrame.new(groundPos)})
+        tween:Play()
+        tween.Completed:Wait()
+    end
+end
+
+local function goUp3Studs()
+    local character = player.Character
+    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local currentPos = hrp.Position
+        local upPos = Vector3.new(currentPos.X, currentPos.Y + 3, currentPos.Z)
+        local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {CFrame = CFrame.new(upPos)})
         tween:Play()
         tween.Completed:Wait()
     end
@@ -1645,41 +1599,41 @@ local function goUpToApart()
     end
 end
 
-local function updateNonVehInventory()
-    waterValNonVeh.Text = tostring(countItem("Water"))
-    sugarValNonVeh.Text = tostring(countItem("Sugar Block Bag"))
-    gelatinValNonVeh.Text = tostring(countItem("Gelatin"))
-    emptyValNonVeh.Text = tostring(countItem("Empty Bag"))
+local function updateNVInventory()
+    waterValNV.Text = tostring(countItem("Water"))
+    sugarValNV.Text = tostring(countItem("Sugar Block Bag"))
+    gelatinValNV.Text = tostring(countItem("Gelatin"))
+    emptyValNV.Text = tostring(countItem("Empty Bag"))
 end
 
-local function setNonVehStatus(msg, color)
-    nonVehStatusLbl.Text = msg
-    nonVehStatusLbl.TextColor3 = color or C.textMid
+local function setNVStatus(msg, color)
+    nvStatusLbl.Text = msg
+    nvStatusLbl.TextColor3 = color or C.textMid
 end
 
-local function nonVehBuy(qty)
+local function nvBuy(qty)
     if not storePurchaseRE then return end
     local items = {"Water", "Sugar Block Bag", "Gelatin", "Empty Bag"}
     for _, item in ipairs(items) do
-        if not nonVehRunning then break end
-        setNonVehStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
+        if not nvRunning then break end
+        setNVStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
         for i = 1, qty do
-            if not nonVehRunning then break end
+            if not nvRunning then break end
             pcall(function() storePurchaseRE:FireServer(item, 1) end)
             task.wait(0.4)
         end
         task.wait(0.5)
     end
-    setNonVehStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
+    setNVStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
     task.wait(1)
 end
 
-local function nonVehSell()
+local function nvSell()
     local sellItems = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, item in ipairs(sellItems) do
-        if not nonVehRunning then break end
-        while countItem(item) > 0 and nonVehRunning do
-            setNonVehStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
+        if not nvRunning then break end
+        while countItem(item) > 0 and nvRunning do
+            setNVStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
             pcall(function()
                 equip(item)
                 holdE(0.7)
@@ -1687,122 +1641,135 @@ local function nonVehSell()
             end)
         end
     end
-    setNonVehStatus("SELLING COMPLETE!", Color3.fromRGB(52, 210, 110))
+    setNVStatus("SELLING COMPLETE!", Color3.fromRGB(52, 210, 110))
     task.wait(1)
 end
 
-local function nonVehCook()
+local function nvCook()
     pcall(function()
         equip("Water")
         holdE(0.7)
-        for i = 20, 1, -1 do if not nonVehRunning then break end task.wait(1) end
-        if not nonVehRunning then return end
+        for i = 20, 1, -1 do if not nvRunning then break end task.wait(1) end
+        if not nvRunning then return end
         equip("Sugar Block Bag")
         holdE(0.7)
         task.wait(1)
-        if not nonVehRunning then return end
+        if not nvRunning then return end
         equip("Gelatin")
         holdE(0.7)
         task.wait(1)
-        if not nonVehRunning then return end
-        for i = 45, 1, -1 do if not nonVehRunning then break end task.wait(1) end
-        if not nonVehRunning then return end
+        if not nvRunning then return end
+        for i = 45, 1, -1 do if not nvRunning then break end task.wait(1) end
+        if not nvRunning then return end
         equip("Empty Bag")
         holdE(0.7)
         task.wait(1)
     end)
 end
 
-local function nonVehLoop()
-    setNonVehStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
+local function nvLoop()
+    setNVStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     local npcPos = Vector3.new(510.061, 4.476, 600.548)
     
-    while nonVehRunning do
-        setNonVehStatus("GOING DOWN TO GROUND...", Color3.fromRGB(255, 200, 100))
-        goDownToGround()
+    while nvRunning do
+        setNVStatus("GOING DOWN 3 STUDS...", Color3.fromRGB(255, 200, 100))
+        goDown3Studs()
+        task.wait(0.3)
+        
+        setNVStatus("WALKING TO NPC...", Color3.fromRGB(100, 180, 255))
+        walkToPosition(npcPos)
         task.wait(0.5)
         
-        setNonVehStatus("WALKING TO NPC...", Color3.fromRGB(100, 180, 255))
-        walkToPosition(npcPos)
-        task.wait(1)
-        if not nonVehRunning then break end
+        setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
+        goUp3Studs()
+        task.wait(0.5)
         
-        nonVehBuy(fullyTarget)
-        if not nonVehRunning then break end
+        if not nvRunning then break end
+        
+        nvBuy(fullyTarget)
+        if not nvRunning then break end
+        
+        setNVStatus("GOING DOWN 3 STUDS...", Color3.fromRGB(255, 200, 100))
+        goDown3Studs()
+        task.wait(0.3)
         
         local apartPos = getSelectedApartPosition()
         local groundApartPos = Vector3.new(apartPos.X, apartPos.Y - 5, apartPos.Z)
-        setNonVehStatus("WALKING BACK TO APARTMENT...", Color3.fromRGB(148, 80, 255))
+        
+        setNVStatus("WALKING BACK TO APARTMENT...", Color3.fromRGB(148, 80, 255))
         walkToPosition(groundApartPos)
-        task.wait(1)
-        if not nonVehRunning then break end
+        task.wait(0.5)
         
-        setNonVehStatus("GOING UP TO APARTMENT...", Color3.fromRGB(255, 200, 100))
+        setNVStatus("GOING UP TO APARTMENT...", Color3.fromRGB(255, 200, 100))
         goUpToApart()
-        task.wait(1)
-        if not nonVehRunning then break end
+        task.wait(0.5)
         
-        updateNonVehInventory()
+        if not nvRunning then break end
+        
+        updateNVInventory()
         
         local cooked = 0
-        while nonVehRunning and cooked < fullyTarget do
-            setNonVehStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
-            nonVehCook()
+        while nvRunning and cooked < fullyTarget do
+            setNVStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
+            nvCook()
             cooked = cooked + 1
-            updateNonVehInventory()
+            updateNVInventory()
             task.wait(0.5)
         end
-        if not nonVehRunning then break end
+        if not nvRunning then break end
         
-        setNonVehStatus("GOING DOWN TO GROUND...", Color3.fromRGB(255, 200, 100))
-        goDownToGround()
-        task.wait(0.5)
-        if not nonVehRunning then break end
+        setNVStatus("GOING DOWN 3 STUDS...", Color3.fromRGB(255, 200, 100))
+        goDown3Studs()
+        task.wait(0.3)
         
-        setNonVehStatus("WALKING TO NPC FOR SELLING...", Color3.fromRGB(52, 210, 110))
+        setNVStatus("WALKING TO NPC FOR SELLING...", Color3.fromRGB(52, 210, 110))
         walkToPosition(npcPos)
-        task.wait(1)
-        if not nonVehRunning then break end
+        task.wait(0.5)
         
-        nonVehSell()
-        if not nonVehRunning then break end
+        setNVStatus("GOING UP...", Color3.fromRGB(255, 200, 100))
+        goUp3Studs()
+        task.wait(0.5)
         
-        setNonVehStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
+        if not nvRunning then break end
+        
+        nvSell()
+        if not nvRunning then break end
+        
+        setNVStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
         task.wait(2)
     end
     
-    nonVehRunning = false
-    nonVehStartBtn.Text = "START FULLY NON VEHICLE"
-    TweenService:Create(nonVehStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
-    setNonVehStatus("STOPPED", C.red)
+    nvRunning = false
+    nvStartBtn.Text = "START FULLY NV"
+    TweenService:Create(nvStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
+    setNVStatus("STOPPED", C.red)
     
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then hum.WalkSpeed = 16 end
 end
 
-nonVehStartBtn.MouseButton1Click:Connect(function()
-    if nonVehRunning then return end
+nvStartBtn.MouseButton1Click:Connect(function()
+    if nvRunning then return end
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then
-        setNonVehStatus("CANNOT GET POSITION!", C.red)
+        setNVStatus("CANNOT GET POSITION!", C.red)
         return
     end
-    nonVehSavedPos = hrp.Position
-    nonVehRunning = true
+    nvRunning = true
     startHPMonitoring()
-    nonVehStartBtn.Text = "RUNNING..."
-    TweenService:Create(nonVehStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
-    setNonVehStatus("RUNNING", C.green)
-    task.spawn(nonVehLoop)
+    nvStartBtn.Text = "RUNNING..."
+    TweenService:Create(nvStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
+    setNVStatus("RUNNING", C.green)
+    task.spawn(nvLoop)
 end)
 
-nonVehStopBtn.MouseButton1Click:Connect(function()
-    if not nonVehRunning then return end
-    nonVehRunning = false
+nvStopBtn.MouseButton1Click:Connect(function()
+    if not nvRunning then return end
+    nvRunning = false
     stopHPMonitoring()
-    setNonVehStatus("STOPPING...", C.orange)
+    setNVStatus("STOPPING...", C.orange)
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
@@ -1811,9 +1778,7 @@ nonVehStopBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ============================================================
--- INVENTORY UPDATE LOOP
--- ============================================================
+-- ========== INVENTORY UPDATE LOOP ==========
 task.spawn(function()
     while gui and gui.Parent do
         if pages["AUTO"] and pages["AUTO"].Visible then
@@ -1822,16 +1787,14 @@ task.spawn(function()
         if pages["FULLY"] and pages["FULLY"].Visible then
             updateFullyInventory()
         end
-        if pages["FULLY NON VEHICLE"] and pages["FULLY NON VEHICLE"].Visible then
-            updateNonVehInventory()
+        if pages["FULLY NV"] and pages["FULLY NV"].Visible then
+            updateNVInventory()
         end
         task.wait(1)
     end
 end)
 
--- ============================================================
--- MINIMIZE BUTTON
--- ============================================================
+-- ========== MINIMIZE BUTTON ==========
 local bodyVisible = true
 
 minBtn.MouseButton1Click:Connect(function()
@@ -1845,19 +1808,15 @@ minBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ============================================================
--- KEYBIND Z UNTUK HIDE/SHOW GUI
--- ============================================================
+-- ========== KEYBIND Z ==========
 ContextActionService:BindAction("toggleUI_191", function(_, state)
     if state == Enum.UserInputState.Begin then
         main.Visible = not main.Visible
     end
 end, false, Enum.KeyCode.Z)
 
--- ============================================================
--- STARTUP
--- ============================================================
+-- ========== STARTUP ==========
 switchTab("AUTO")
 
-print("191 STORE SCRIPT LOADED - FULLY NON VEHICLE ADDED")
+print("191 STORE SCRIPT LOADED - FULLY NV ADDED")
 print("Tekan Z untuk hide/show GUI")

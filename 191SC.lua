@@ -1569,7 +1569,7 @@ local function goDown3Studs()
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if hrp then
         local currentPos = hrp.Position
-        local groundPos = Vector3.new(currentPos.X, currentPos.Y - 3, currentPos.Z)
+        local groundPos = Vector3.new(currentPos.X, currentPos.Y - 5, currentPos.Z)
         local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {CFrame = CFrame.new(groundPos)})
         tween:Play()
         tween.Completed:Wait()
@@ -1581,7 +1581,7 @@ local function goUp3Studs()
     local hrp = character and character:FindFirstChild("HumanoidRootPart")
     if hrp then
         local currentPos = hrp.Position
-        local upPos = Vector3.new(currentPos.X, currentPos.Y + 3, currentPos.Z)
+        local upPos = Vector3.new(currentPos.X, currentPos.Y + 5, currentPos.Z)
         local tween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {CFrame = CFrame.new(upPos)})
         tween:Play()
         tween.Completed:Wait()

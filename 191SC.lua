@@ -44,7 +44,7 @@ local buyAmount = 10
 local blinkEnabled = true
 local fullyTarget = 5
 
--- ========== HP SAFE ZONE (AUTO TELEPORT SAAT KENA HIT) ==========
+-- ========== HP SAFE ZONE ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalCFrame = nil
@@ -332,30 +332,41 @@ player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- MACRO F (AUTO KOKANG) - SAMA PERSIS KAYA PATSTORE
+-- MACRO F DARI PATSTORE ASLI
 -- ============================================================
-local macroFEnabled = false
-local macroFSpamming = false
+local macroFEnabled  = false
 local macroFInterval = 0.3
+local macroFTrigger  = "LeftMouse"
+local macroFHeld     = false
 
-local function spamFLoop()
-    while macroFSpamming do
-        pcall(function()
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-            task.wait(0.05)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-        end)
-        task.wait(macroFInterval)
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if not macroFEnabled then return end
+
+    local triggerMatch = false
+    if macroFTrigger == "LeftMouse" and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        triggerMatch = true
     end
-end
 
-UIS.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 and macroFEnabled then
-        macroFSpamming = not macroFSpamming
-        if macroFSpamming then
-            task.spawn(spamFLoop)
-        end
+    if triggerMatch and not macroFHeld then
+        macroFHeld = true
+        task.spawn(function()
+            while macroFHeld and macroFEnabled do
+                pcall(function()
+                    VirtualInputManager:SendKeyEvent(true,  Enum.KeyCode.F, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+                end)
+                task.wait(macroFInterval)
+            end
+        end)
+    end
+end)
+
+UIS.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        macroFHeld = false
     end
 end)
 
@@ -845,7 +856,6 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
--- FUNGSI MASAK SEDERHANA
 local function cookProcess()
     pcall(function()
         equip("Water")
@@ -933,7 +943,6 @@ fullyStatusLbl.TextStrokeTransparency = 1
 local fullyStartBtn = makeActionBtn(fullyPage, "START FULLY", C.green, 9)
 local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 10)
 
--- FULLY LOGIC
 local fullyRunning = false
 local fullySavedPos = nil
 local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
@@ -987,12 +996,10 @@ local function fullySell()
     task.wait(1)
 end
 
--- LOOP FULLY
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
-        -- BELI
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -1000,7 +1007,6 @@ local function fullyLoop()
         fullyBuy(fullyTarget)
         if not fullyRunning then break end
         
-        -- KEMBALI
         if fullySavedPos then
             setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
@@ -1009,7 +1015,6 @@ local function fullyLoop()
         
         updateFullyInventory()
         
-        -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
@@ -1021,7 +1026,6 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
-        -- JUAL
         setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -1440,7 +1444,7 @@ sellStartBtn.MouseButton1Click:Connect(startAutoSell)
 sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
 -- ============================================================
--- SETTINGS PAGE (DENGAN MACRO F)
+-- SETTINGS PAGE (DENGAN MACRO F DARI PATSTORE)
 -- ============================================================
 local settingsp = pages["SETTINGS"]
 
@@ -1456,7 +1460,6 @@ blinkToggleTitle.Font = Enum.Font.GothamSemibold
 blinkToggleTitle.TextSize = 12
 blinkToggleTitle.TextColor3 = C.text
 blinkToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
-blinkToggleTitle.TextStrokeTransparency = 1
 
 local blinkToggleBtn = Instance.new("TextButton", blinkToggleCard)
 blinkToggleBtn.Size = UDim2.new(0, 80, 0, 32)
@@ -1467,7 +1470,6 @@ blinkToggleBtn.Font = Enum.Font.GothamBold
 blinkToggleBtn.TextSize = 12
 blinkToggleBtn.TextColor3 = C.text
 blinkToggleBtn.BorderSizePixel = 0
-blinkToggleBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", blinkToggleBtn).CornerRadius = UDim.new(0, 6)
 
 blinkToggleBtn.MouseButton1Click:Connect(function()
@@ -1494,13 +1496,12 @@ blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
 -- ============================================================
--- MACRO F SECTION DI SETTINGS PAGE (SAMA PERSIS PATSTORE)
+-- MACRO F SECTION (SAMA PERSIS DARI PATSTORE)
 -- ============================================================
 sectionLabel(settingsp, "MACRO F (AUTO KOKANG)", 8)
 
 local macroFCard = card(settingsp, 100, 9)
 
--- Title dan toggle ON/OFF
 local macroFTitle = Instance.new("TextLabel", macroFCard)
 macroFTitle.Size = UDim2.new(0.6, 0, 0, 24)
 macroFTitle.Position = UDim2.new(0, 12, 0, 4)
@@ -1510,7 +1511,6 @@ macroFTitle.Font = Enum.Font.GothamSemibold
 macroFTitle.TextSize = 12
 macroFTitle.TextColor3 = C.text
 macroFTitle.TextXAlignment = Enum.TextXAlignment.Left
-macroFTitle.TextStrokeTransparency = 1
 
 local macroFToggleBtn = Instance.new("TextButton", macroFCard)
 macroFToggleBtn.Size = UDim2.new(0, 80, 0, 32)
@@ -1521,7 +1521,6 @@ macroFToggleBtn.Font = Enum.Font.GothamBold
 macroFToggleBtn.TextSize = 12
 macroFToggleBtn.TextColor3 = C.text
 macroFToggleBtn.BorderSizePixel = 0
-macroFToggleBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", macroFToggleBtn).CornerRadius = UDim.new(0, 6)
 
 macroFToggleBtn.MouseButton1Click:Connect(function()
@@ -1529,28 +1528,23 @@ macroFToggleBtn.MouseButton1Click:Connect(function()
     if macroFEnabled then
         macroFToggleBtn.Text = "ON"
         macroFToggleBtn.BackgroundColor3 = C.green
-        macroFSpamming = false
     else
         macroFToggleBtn.Text = "OFF"
         macroFToggleBtn.BackgroundColor3 = C.red
-        macroFSpamming = false
+        macroFHeld = false
     end
 end)
 
--- Info text
 local macroFInfo = Instance.new("TextLabel", macroFCard)
 macroFInfo.Size = UDim2.new(1, -24, 0, 32)
 macroFInfo.Position = UDim2.new(0, 12, 0, 42)
 macroFInfo.BackgroundTransparency = 1
-macroFInfo.Text = "⚠️ Klik Kiri SEKALI untuk spam F, klik lagi untuk berhenti"
+macroFInfo.Text = "⚠️ Tekan dan TAHAN Klik Kiri untuk spam F otomatis"
 macroFInfo.Font = Enum.Font.Gotham
 macroFInfo.TextSize = 10
 macroFInfo.TextColor3 = C.textDim
-macroFInfo.TextXAlignment = Enum.TextXAlignment.Left
 macroFInfo.TextWrapped = true
-macroFInfo.TextStrokeTransparency = 1
 
--- Slider untuk interval spam F
 local intervalSliderWrap, intervalValLbl = makeSlider(settingsp, "INTERVAL SPAM F (x0.1 detik)", 1, 30, 3, 10, function(v)
     macroFInterval = v / 10
     intervalValLbl.Text = string.format("%.1f", macroFInterval) .. "s"
@@ -1603,4 +1597,4 @@ end, false, Enum.KeyCode.Z)
 -- ============================================================
 switchTab("AUTO")
 
-print("[191 STORE + MACRO F] Script loaded! - Macro F: Klik kiri ON, klik lagi OFF")
+print("JOKOWIII")

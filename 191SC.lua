@@ -332,11 +332,10 @@ player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- MACRO F (AUTO KOKANG)
+-- MACRO F (AUTO KOKANG) - ONLY LEFT CLICK TRIGGER
 -- ============================================================
 local macroFEnabled = false
 local macroFInterval = 0.3
-local macroFTrigger = "LeftMouse"
 local macroFHeld = false
 
 local function spamF()
@@ -366,16 +365,7 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if not macroFEnabled then return end
     
-    local triggerMatch = false
-    if macroFTrigger == "LeftMouse" and input.UserInputType == Enum.UserInputType.MouseButton1 then
-        triggerMatch = true
-    elseif macroFTrigger == "KeyX" and input.KeyCode == Enum.KeyCode.X then
-        triggerMatch = true
-    elseif macroFTrigger == "KeyZ" and input.KeyCode == Enum.KeyCode.Z then
-        triggerMatch = true
-    end
-    
-    if triggerMatch and not macroFHeld then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and not macroFHeld then
         macroFHeld = true
         startMacroFLoop()
     end
@@ -383,11 +373,7 @@ end)
 
 UIS.InputEnded:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if macroFTrigger == "LeftMouse" and input.UserInputType == Enum.UserInputType.MouseButton1 then
-        macroFHeld = false
-    elseif macroFTrigger == "KeyX" and input.KeyCode == Enum.KeyCode.X then
-        macroFHeld = false
-    elseif macroFTrigger == "KeyZ" and input.KeyCode == Enum.KeyCode.Z then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
         macroFHeld = false
     end
 end)
@@ -1531,7 +1517,7 @@ blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 -- ============================================================
 sectionLabel(settingsp, "MACRO F (AUTO KOKANG)", 8)
 
-local macroFCard = card(settingsp, 120, 9)
+local macroFCard = card(settingsp, 100, 9)
 
 -- Title dan toggle ON/OFF
 local macroFTitle = Instance.new("TextLabel", macroFCard)
@@ -1575,7 +1561,7 @@ local macroFInfo = Instance.new("TextLabel", macroFCard)
 macroFInfo.Size = UDim2.new(1, -24, 0, 32)
 macroFInfo.Position = UDim2.new(0, 12, 0, 42)
 macroFInfo.BackgroundTransparency = 1
-macroFInfo.Text = "⚠️ Tekan dan tahan trigger untuk spam F otomatis"
+macroFInfo.Text = "⚠️ Tekan dan tahan Klik Kiri untuk spam F otomatis"
 macroFInfo.Font = Enum.Font.Gotham
 macroFInfo.TextSize = 10
 macroFInfo.TextColor3 = C.textDim
@@ -1590,85 +1576,6 @@ local intervalSliderWrap, intervalValLbl = makeSlider(settingsp, "INTERVAL SPAM 
 end)
 intervalValLbl.Text = "0.3s"
 macroFInterval = 0.3
-
--- Section untuk trigger selector
-sectionLabel(settingsp, "MACRO F TRIGGER", 11)
-
-local triggerCard = card(settingsp, 50, 12)
-
-local triggerTitle = Instance.new("TextLabel", triggerCard)
-triggerTitle.Size = UDim2.new(0.5, 0, 1, 0)
-triggerTitle.Position = UDim2.new(0, 12, 0, 0)
-triggerTitle.BackgroundTransparency = 1
-triggerTitle.Text = "Trigger Button:"
-triggerTitle.Font = Enum.Font.GothamSemibold
-triggerTitle.TextSize = 11
-triggerTitle.TextColor3 = C.textMid
-triggerTitle.TextXAlignment = Enum.TextXAlignment.Left
-triggerTitle.TextStrokeTransparency = 1
-
--- Tombol pilihan trigger
-local triggerLeftBtn = Instance.new("TextButton", triggerCard)
-triggerLeftBtn.Size = UDim2.new(0, 100, 0, 32)
-triggerLeftBtn.Position = UDim2.new(0.5, -110, 0.5, -16)
-triggerLeftBtn.BackgroundColor3 = C.green
-triggerLeftBtn.Text = "Klik Kiri"
-triggerLeftBtn.Font = Enum.Font.GothamBold
-triggerLeftBtn.TextSize = 11
-triggerLeftBtn.TextColor3 = C.text
-triggerLeftBtn.BorderSizePixel = 0
-Instance.new("UICorner", triggerLeftBtn).CornerRadius = UDim.new(0, 6)
-
-local triggerXBtn = Instance.new("TextButton", triggerCard)
-triggerXBtn.Size = UDim2.new(0, 70, 0, 32)
-triggerXBtn.Position = UDim2.new(0.5, 10, 0.5, -16)
-triggerXBtn.BackgroundColor3 = C.card
-triggerXBtn.Text = "Tombol X"
-triggerXBtn.Font = Enum.Font.GothamBold
-triggerXBtn.TextSize = 11
-triggerXBtn.TextColor3 = C.textDim
-triggerXBtn.BorderSizePixel = 0
-Instance.new("UICorner", triggerXBtn).CornerRadius = UDim.new(0, 6)
-
-local triggerZBtn = Instance.new("TextButton", triggerCard)
-triggerZBtn.Size = UDim2.new(0, 70, 0, 32)
-triggerZBtn.Position = UDim2.new(0.5, 90, 0.5, -16)
-triggerZBtn.BackgroundColor3 = C.card
-triggerZBtn.Text = "Tombol Z"
-triggerZBtn.Font = Enum.Font.GothamBold
-triggerZBtn.TextSize = 11
-triggerZBtn.TextColor3 = C.textDim
-triggerZBtn.BorderSizePixel = 0
-Instance.new("UICorner", triggerZBtn).CornerRadius = UDim.new(0, 6)
-
-local function updateMacroTrigger(trigger, activeBtn)
-    macroFTrigger = trigger
-    macroFHeld = false
-    
-    triggerLeftBtn.BackgroundColor3 = C.card
-    triggerLeftBtn.TextColor3 = C.textDim
-    triggerXBtn.BackgroundColor3 = C.card
-    triggerXBtn.TextColor3 = C.textDim
-    triggerZBtn.BackgroundColor3 = C.card
-    triggerZBtn.TextColor3 = C.textDim
-    
-    activeBtn.BackgroundColor3 = C.green
-    activeBtn.TextColor3 = C.text
-end
-
-triggerLeftBtn.MouseButton1Click:Connect(function()
-    updateMacroTrigger("LeftMouse", triggerLeftBtn)
-end)
-
-triggerXBtn.MouseButton1Click:Connect(function()
-    updateMacroTrigger("KeyX", triggerXBtn)
-end)
-
-triggerZBtn.MouseButton1Click:Connect(function()
-    updateMacroTrigger("KeyZ", triggerZBtn)
-end)
-
-updateMacroTrigger("LeftMouse", triggerLeftBtn)
 
 -- ============================================================
 -- INVENTORY UPDATE LOOP
@@ -1715,4 +1622,4 @@ end, false, Enum.KeyCode.Z)
 -- ============================================================
 switchTab("AUTO")
 
-print("[191 STORE + MACRO F] Script loaded!")
+print("[191 STORE + MACRO F] Script loaded! - Macro F hanya trigger Klik Kiri")

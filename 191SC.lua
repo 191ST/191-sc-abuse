@@ -332,49 +332,30 @@ player.Idled:Connect(function()
 end)
 
 -- ============================================================
--- MACRO F (AUTO KOKANG) - ONLY LEFT CLICK TRIGGER
+-- MACRO F (AUTO KOKANG) - SAMA PERSIS KAYA PATSTORE
 -- ============================================================
 local macroFEnabled = false
+local macroFSpamming = false
 local macroFInterval = 0.3
-local macroFHeld = false
 
-local function spamF()
-    if not macroFEnabled then return end
-    pcall(function()
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        task.wait(0.05)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-    end)
-end
-
-local macroFLoopThread = nil
-local function startMacroFLoop()
-    if macroFLoopThread then return end
-    macroFLoopThread = task.spawn(function()
-        while macroFEnabled do
-            if macroFHeld then
-                spamF()
-            end
-            task.wait(macroFInterval)
-        end
-        macroFLoopThread = nil
-    end)
+local function spamFLoop()
+    while macroFSpamming do
+        pcall(function()
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+            task.wait(0.05)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+        end)
+        task.wait(macroFInterval)
+    end
 end
 
 UIS.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if not macroFEnabled then return end
-    
-    if input.UserInputType == Enum.UserInputType.MouseButton1 and not macroFHeld then
-        macroFHeld = true
-        startMacroFLoop()
-    end
-end)
-
-UIS.InputEnded:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        macroFHeld = false
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and macroFEnabled then
+        macroFSpamming = not macroFSpamming
+        if macroFSpamming then
+            task.spawn(spamFLoop)
+        end
     end
 end)
 
@@ -1513,7 +1494,7 @@ blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
 -- ============================================================
--- MACRO F SECTION DI SETTINGS PAGE
+-- MACRO F SECTION DI SETTINGS PAGE (SAMA PERSIS PATSTORE)
 -- ============================================================
 sectionLabel(settingsp, "MACRO F (AUTO KOKANG)", 8)
 
@@ -1548,11 +1529,11 @@ macroFToggleBtn.MouseButton1Click:Connect(function()
     if macroFEnabled then
         macroFToggleBtn.Text = "ON"
         macroFToggleBtn.BackgroundColor3 = C.green
-        macroFHeld = false
+        macroFSpamming = false
     else
         macroFToggleBtn.Text = "OFF"
         macroFToggleBtn.BackgroundColor3 = C.red
-        macroFHeld = false
+        macroFSpamming = false
     end
 end)
 
@@ -1561,7 +1542,7 @@ local macroFInfo = Instance.new("TextLabel", macroFCard)
 macroFInfo.Size = UDim2.new(1, -24, 0, 32)
 macroFInfo.Position = UDim2.new(0, 12, 0, 42)
 macroFInfo.BackgroundTransparency = 1
-macroFInfo.Text = "⚠️ Tekan dan tahan Klik Kiri untuk spam F otomatis"
+macroFInfo.Text = "⚠️ Klik Kiri SEKALI untuk spam F, klik lagi untuk berhenti"
 macroFInfo.Font = Enum.Font.Gotham
 macroFInfo.TextSize = 10
 macroFInfo.TextColor3 = C.textDim
@@ -1622,4 +1603,4 @@ end, false, Enum.KeyCode.Z)
 -- ============================================================
 switchTab("AUTO")
 
-print("[191 STORE + MACRO F] Script loaded! - Macro F hanya trigger Klik Kiri")
+print("[191 STORE + MACRO F] Script loaded! - Macro F: Klik kiri ON, klik lagi OFF")

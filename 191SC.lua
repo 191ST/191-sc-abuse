@@ -1,3 +1,7 @@
+-- ======================================================
+--   191 STORE + PatStore MACRO F - FULL SCRIPT
+-- ======================================================
+
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
@@ -7,7 +11,6 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ContextActionService = game:GetService("ContextActionService")
 local VirtualUser = game:GetService("VirtualUser")
-local PathfindingService = game:GetService("PathfindingService")
 
 -- ========== CUSTOM RESPAWN ==========
 local RESPAWN_POINT = CFrame.new(729.86, 3.71, 444.46) * CFrame.Angles(-3.14, 0.01, -3.14)
@@ -41,7 +44,7 @@ local buyAmount = 10
 local blinkEnabled = true
 local fullyTarget = 5
 
--- ========== HP SAFE ZONE ==========
+-- ========== HP SAFE ZONE (AUTO TELEPORT SAAT KENA HIT) ==========
 local hpMonitoringActive = false
 local isInSafeZone = false
 local originalCFrame = nil
@@ -320,13 +323,78 @@ ContextActionService:BindAction("blink_forward", function(_, state)
     end
 end, false, Enum.KeyCode.T)
 
--- ========== ANTI AFK ==========
+-- ============================================================
+-- ANTI AFK
+-- ============================================================
 player.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
--- ========== HELPERS ==========
+-- ============================================================
+-- MACRO F (AUTO KOKANG)
+-- ============================================================
+local macroFEnabled = false
+local macroFInterval = 0.3
+local macroFTrigger = "LeftMouse"
+local macroFHeld = false
+
+local function spamF()
+    if not macroFEnabled then return end
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+    end)
+end
+
+local macroFLoopThread = nil
+local function startMacroFLoop()
+    if macroFLoopThread then return end
+    macroFLoopThread = task.spawn(function()
+        while macroFEnabled do
+            if macroFHeld then
+                spamF()
+            end
+            task.wait(macroFInterval)
+        end
+        macroFLoopThread = nil
+    end)
+end
+
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if not macroFEnabled then return end
+    
+    local triggerMatch = false
+    if macroFTrigger == "LeftMouse" and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        triggerMatch = true
+    elseif macroFTrigger == "KeyX" and input.KeyCode == Enum.KeyCode.X then
+        triggerMatch = true
+    elseif macroFTrigger == "KeyZ" and input.KeyCode == Enum.KeyCode.Z then
+        triggerMatch = true
+    end
+    
+    if triggerMatch and not macroFHeld then
+        macroFHeld = true
+        startMacroFLoop()
+    end
+end)
+
+UIS.InputEnded:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if macroFTrigger == "LeftMouse" and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        macroFHeld = false
+    elseif macroFTrigger == "KeyX" and input.KeyCode == Enum.KeyCode.X then
+        macroFHeld = false
+    elseif macroFTrigger == "KeyZ" and input.KeyCode == Enum.KeyCode.Z then
+        macroFHeld = false
+    end
+end)
+
+-- ============================================================
+-- HELPERS
+-- ============================================================
 local function holdE(t)
     VirtualInputManager:SendKeyEvent(true,"E",false,game)
     task.wait(t or 0.7)
@@ -376,86 +444,18 @@ local function stepTeleport(targetPos)
     end
 end
 
--- ========== FLY SYSTEM UNTUK TURUN/NAIK ==========
-local flyBodyVelocity = nil
-local flyBodyGyro = nil
-local isFlying = false
-
-local function startFly()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    
-    if not hrp or not hum then return end
-    
-    if flyBodyVelocity then flyBodyVelocity:Destroy() end
-    if flyBodyGyro then flyBodyGyro:Destroy() end
-    
-    hum.PlatformStand = true
-    
-    flyBodyVelocity = Instance.new("BodyVelocity")
-    flyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    flyBodyVelocity.Parent = hrp
-    
-    flyBodyGyro = Instance.new("BodyGyro")
-    flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyGyro.Parent = hrp
-    
-    isFlying = true
-end
-
-local function stopFly()
-    if flyBodyVelocity then flyBodyVelocity:Destroy() flyBodyVelocity = nil end
-    if flyBodyGyro then flyBodyGyro:Destroy() flyBodyGyro = nil end
-    
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.PlatformStand = false
-    end
-    
-    isFlying = false
-end
-
-local function flyToPosition(targetPos)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    startFly()
-    
-    local direction = (targetPos - hrp.Position).Unit
-    local distance = (targetPos - hrp.Position).Magnitude
-    
-    if flyBodyVelocity then
-        flyBodyVelocity.Velocity = direction * 50
-    end
-    
-    -- Tunggu sampai sampai
-    while isFlying and (hrp.Position - targetPos).Magnitude > 3 do
-        task.wait(0.05)
-        if flyBodyVelocity then
-            local newDir = (targetPos - hrp.Position).Unit
-            flyBodyVelocity.Velocity = newDir * 50
-        end
-    end
-    
-    if flyBodyVelocity then
-        flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    end
-    
-    stopFly()
-end
-
--- ========== GUI SETUP ==========
+-- ============================================================
+-- GUI SETUP
+-- ============================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "191_STORE"
 gui.Parent = playerGui
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- ========== COLOR PALETTE ==========
+-- ============================================================
+-- COLOR PALETTE
+-- ============================================================
 local C = {
     bg        = Color3.fromRGB(8,  8,  16),
     surface   = Color3.fromRGB(13, 13, 22),
@@ -471,11 +471,12 @@ local C = {
     textDim   = Color3.fromRGB(80, 85, 120),
     green     = Color3.fromRGB(40, 200, 100),
     red       = Color3.fromRGB(220, 60, 70),
-    orange    = Color3.fromRGB(255, 165, 0),
     border    = Color3.fromRGB(40, 45, 65),
 }
 
--- ========== MAIN WINDOW ==========
+-- ============================================================
+-- MAIN WINDOW
+-- ============================================================
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 660, 0, 500)
 main.Position = UDim2.new(0.5, -330, 0.5, -250)
@@ -489,7 +490,9 @@ local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Color = C.border
 mainStroke.Thickness = 1
 
--- ========== TOP BAR ==========
+-- ============================================================
+-- TOP BAR
+-- ============================================================
 local topBar = Instance.new("Frame", main)
 topBar.Size = UDim2.new(1, 0, 0, 46)
 topBar.BackgroundColor3 = C.surface
@@ -512,6 +515,7 @@ do
     titleLbl.TextSize = 15
     titleLbl.TextColor3 = C.text
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.TextStrokeTransparency = 1
 end
 
 local closeBtn = Instance.new("TextButton", topBar)
@@ -523,6 +527,7 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 12
 closeBtn.TextColor3 = C.red
 closeBtn.BorderSizePixel = 0
+closeBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
 closeBtn.MouseButton1Click:Connect(function()
@@ -538,9 +543,12 @@ minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 14
 minBtn.TextColor3 = C.textMid
 minBtn.BorderSizePixel = 0
+minBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
--- ========== SIDEBAR ==========
+-- ============================================================
+-- SIDEBAR
+-- ============================================================
 local sidebar = Instance.new("Frame", main)
 sidebar.Size = UDim2.new(0, 80, 1, -46)
 sidebar.Position = UDim2.new(0, 0, 0, 46)
@@ -564,7 +572,9 @@ sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
 local sidebarPad = Instance.new("UIPadding", sidebar)
 sidebarPad.PaddingTop = UDim.new(0, 10)
 
--- ========== CONTENT AREA ==========
+-- ============================================================
+-- CONTENT AREA
+-- ============================================================
 local content = Instance.new("Frame", main)
 content.Size = UDim2.new(1, -80, 1, -46)
 content.Position = UDim2.new(0, 80, 0, 46)
@@ -572,7 +582,9 @@ content.BackgroundColor3 = C.panel
 content.ClipsDescendants = true
 Instance.new("UICorner", content).CornerRadius = UDim.new(0, 0)
 
--- ========== TAB SYSTEM ==========
+-- ============================================================
+-- TAB SYSTEM
+-- ============================================================
 local pages = {}
 local tabBtns = {}
 local currentTab = nil
@@ -585,7 +597,6 @@ local tabDefs = {
     {label = "BUY",      order = 5},
     {label = "SELL",     order = 6},
     {label = "SETTINGS", order = 7},
-    {label = "FULLY NV", order = 8},
 }
 
 local function switchTab(name)
@@ -615,6 +626,7 @@ for i, def in ipairs(tabDefs) do
     btn.TextColor3 = C.textDim
     btn.BorderSizePixel = 0
     btn.LayoutOrder = def.order
+    btn.TextStrokeTransparency = 1
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
 
     local indicator = Instance.new("Frame", btn)
@@ -655,7 +667,9 @@ for i, def in ipairs(tabDefs) do
     end)
 end
 
--- ========== UI COMPONENT BUILDERS ==========
+-- ============================================================
+-- UI COMPONENT BUILDERS
+-- ============================================================
 local function sectionLabel(parent, text, order)
     local wrap = Instance.new("Frame", parent)
     wrap.Size = UDim2.new(1, 0, 0, 22)
@@ -670,6 +684,7 @@ local function sectionLabel(parent, text, order)
     lbl.TextSize = 9
     lbl.TextColor3 = C.textDim
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.LayoutOrder = order or 0
     lbl.TextStrokeTransparency = 1
 
     local line = Instance.new("Frame", wrap)
@@ -701,6 +716,7 @@ local function makeActionBtn(parent, text, color, order)
     f.Text = text
     f.BorderSizePixel = 0
     f.LayoutOrder = order or 0
+    f.TextStrokeTransparency = 1
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
 
     f.MouseEnter:Connect(function()
@@ -724,6 +740,7 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     lbl.TextSize = 11
     lbl.TextColor3 = C.textMid
     lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextStrokeTransparency = 1
 
     local valLbl = Instance.new("TextLabel", wrap)
     valLbl.Position = UDim2.new(1, -52, 0, 8)
@@ -734,6 +751,7 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     valLbl.TextSize = 12
     valLbl.TextColor3 = C.accentGlow
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
+    valLbl.TextStrokeTransparency = 1
 
     local track = Instance.new("Frame", wrap)
     track.Position = UDim2.new(0, 12, 0, 34)
@@ -806,6 +824,7 @@ local function makeStatusRow(parent, label, order)
     lbl2.TextSize = 11
     lbl2.TextColor3 = C.textMid
     lbl2.TextXAlignment = Enum.TextXAlignment.Left
+    lbl2.TextStrokeTransparency = 1
 
     local val2 = Instance.new("TextLabel", f)
     val2.Position = UDim2.new(0.6, 0, 0, 0)
@@ -816,11 +835,14 @@ local function makeStatusRow(parent, label, order)
     val2.TextSize = 12
     val2.TextColor3 = C.accentGlow
     val2.TextXAlignment = Enum.TextXAlignment.Right
+    val2.TextStrokeTransparency = 1
 
     return val2
 end
 
--- ========== AUTO PAGE ==========
+-- ============================================================
+-- AUTO PAGE (MS LOOP)
+-- ============================================================
 local ap = pages["AUTO"]
 
 sectionLabel(ap, "MS LOOP AUTO COOK", 1)
@@ -842,6 +864,7 @@ msStatusLbl.Font = Enum.Font.GothamBold
 msStatusLbl.TextSize = 13
 msStatusLbl.TextColor3 = C.red
 msStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+msStatusLbl.TextStrokeTransparency = 1
 
 local msStartBtn = makeActionBtn(ap, "START MS LOOP", C.green, 8)
 local msStopBtn = makeActionBtn(ap, "STOP MS LOOP", C.red, 9)
@@ -855,6 +878,7 @@ local function updateAutoInventory()
     emptyValAuto.Text = tostring(countItem("Empty Bag"))
 end
 
+-- FUNGSI MASAK SEDERHANA
 local function cookProcess()
     pcall(function()
         equip("Water")
@@ -909,7 +933,9 @@ msStopBtn.MouseButton1Click:Connect(function()
     msStatusLbl.TextColor3 = C.red
 end)
 
--- ========== FULLY PAGE ==========
+-- ============================================================
+-- FULLY PAGE
+-- ============================================================
 local fullyPage = pages["FULLY"]
 
 sectionLabel(fullyPage, "AUTO FULLY", 1)
@@ -935,10 +961,12 @@ fullyStatusLbl.Font = Enum.Font.GothamBold
 fullyStatusLbl.TextSize = 13
 fullyStatusLbl.TextColor3 = C.red
 fullyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+fullyStatusLbl.TextStrokeTransparency = 1
 
 local fullyStartBtn = makeActionBtn(fullyPage, "START FULLY", C.green, 9)
 local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 10)
 
+-- FULLY LOGIC
 local fullyRunning = false
 local fullySavedPos = nil
 local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
@@ -992,10 +1020,12 @@ local function fullySell()
     task.wait(1)
 end
 
+-- LOOP FULLY
 local function fullyLoop()
     setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
     
     while fullyRunning do
+        -- BELI
         setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -1003,6 +1033,7 @@ local function fullyLoop()
         fullyBuy(fullyTarget)
         if not fullyRunning then break end
         
+        -- KEMBALI
         if fullySavedPos then
             setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
             stepTeleport(fullySavedPos)
@@ -1011,6 +1042,7 @@ local function fullyLoop()
         
         updateFullyInventory()
         
+        -- MASAK
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
             setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
@@ -1022,6 +1054,7 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
+        -- JUAL
         setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
         stepTeleport(NPC_MS_POS)
         task.wait(1)
@@ -1067,7 +1100,9 @@ fullyStopBtn.MouseButton1Click:Connect(function()
     setFullyStatus("STOPPING...", C.orange)
 end)
 
--- ========== TP PAGE ==========
+-- ============================================================
+-- TP PAGE
+-- ============================================================
 local tp = pages["TP"]
 
 local LOCATIONS = {
@@ -1093,7 +1128,9 @@ for i, loc in ipairs(LOCATIONS) do
     end)
 end
 
--- ========== MS POT PAGE ==========
+-- ============================================================
+-- MS POT PAGE
+-- ============================================================
 local mspot = pages["MS POT"]
 
 sectionLabel(mspot, "HAPUS PART DIBAWAH", 1)
@@ -1225,7 +1262,9 @@ undoBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ========== BUY PAGE ==========
+-- ============================================================
+-- BUY PAGE
+-- ============================================================
 local buyp = pages["BUY"]
 
 sectionLabel(buyp, "AUTO BUY INGREDIENTS", 1)
@@ -1240,6 +1279,7 @@ buyStatusLbl.Font = Enum.Font.GothamBold
 buyStatusLbl.TextSize = 13
 buyStatusLbl.TextColor3 = C.red
 buyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+buyStatusLbl.TextStrokeTransparency = 1
 
 local buyTotalCard = card(buyp, 30, 3)
 local buyTotalLbl = Instance.new("TextLabel", buyTotalCard)
@@ -1251,6 +1291,7 @@ buyTotalLbl.Font = Enum.Font.Gotham
 buyTotalLbl.TextSize = 11
 buyTotalLbl.TextColor3 = C.textMid
 buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
+buyTotalLbl.TextStrokeTransparency = 1
 
 local buySliderWrap, buyValLbl = makeSlider(buyp, "BUY AMOUNT PER ITEM", 1, 50, 10, 4, function(v)
     buyAmount = v
@@ -1321,7 +1362,9 @@ end
 buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
 buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
 
--- ========== SELL PAGE ==========
+-- ============================================================
+-- SELL PAGE
+-- ============================================================
 local sellp = pages["SELL"]
 
 sectionLabel(sellp, "AUTO SELL MARSHMALLOW BAGS", 1)
@@ -1336,6 +1379,7 @@ sellStatusLbl.Font = Enum.Font.GothamBold
 sellStatusLbl.TextSize = 13
 sellStatusLbl.TextColor3 = C.red
 sellStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+sellStatusLbl.TextStrokeTransparency = 1
 
 local sellCounterCard = card(sellp, 30, 3)
 local sellCounterLbl = Instance.new("TextLabel", sellCounterCard)
@@ -1347,6 +1391,7 @@ sellCounterLbl.Font = Enum.Font.GothamBold
 sellCounterLbl.TextSize = 12
 sellCounterLbl.TextColor3 = C.accentGlow
 sellCounterLbl.TextXAlignment = Enum.TextXAlignment.Left
+sellCounterLbl.TextStrokeTransparency = 1
 
 local sellStartBtn = makeActionBtn(sellp, "START SELL", C.green, 4)
 local sellStopBtn = makeActionBtn(sellp, "STOP SELL", C.red, 5)
@@ -1427,7 +1472,9 @@ end
 sellStartBtn.MouseButton1Click:Connect(startAutoSell)
 sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
 
--- ========== SETTINGS PAGE ==========
+-- ============================================================
+-- SETTINGS PAGE (DENGAN MACRO F)
+-- ============================================================
 local settingsp = pages["SETTINGS"]
 
 sectionLabel(settingsp, "SHORTCUT SETTINGS", 1)
@@ -1442,6 +1489,7 @@ blinkToggleTitle.Font = Enum.Font.GothamSemibold
 blinkToggleTitle.TextSize = 12
 blinkToggleTitle.TextColor3 = C.text
 blinkToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+blinkToggleTitle.TextStrokeTransparency = 1
 
 local blinkToggleBtn = Instance.new("TextButton", blinkToggleCard)
 blinkToggleBtn.Size = UDim2.new(0, 80, 0, 32)
@@ -1452,6 +1500,7 @@ blinkToggleBtn.Font = Enum.Font.GothamBold
 blinkToggleBtn.TextSize = 12
 blinkToggleBtn.TextColor3 = C.text
 blinkToggleBtn.BorderSizePixel = 0
+blinkToggleBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", blinkToggleBtn).CornerRadius = UDim.new(0, 6)
 
 blinkToggleBtn.MouseButton1Click:Connect(function()
@@ -1477,387 +1526,153 @@ blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
 blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
 blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
 
--- ========== FULLY NV PAGE (PAKAI FLY UNTUK TURUN/NAIK) ==========
-local nvPage = pages["FULLY NV"]
+-- ============================================================
+-- MACRO F SECTION DI SETTINGS PAGE
+-- ============================================================
+sectionLabel(settingsp, "MACRO F (AUTO KOKANG)", 8)
 
-sectionLabel(nvPage, "AUTO FULLY NON VEHICLE", 1)
+local macroFCard = card(settingsp, 120, 9)
 
-local waterValNV = makeStatusRow(nvPage, "Water", 2)
-local sugarValNV = makeStatusRow(nvPage, "Sugar Block Bag", 3)
-local gelatinValNV = makeStatusRow(nvPage, "Gelatin", 4)
-local emptyValNV = makeStatusRow(nvPage, "Empty Bag", 5)
+-- Title dan toggle ON/OFF
+local macroFTitle = Instance.new("TextLabel", macroFCard)
+macroFTitle.Size = UDim2.new(0.6, 0, 0, 24)
+macroFTitle.Position = UDim2.new(0, 12, 0, 4)
+macroFTitle.BackgroundTransparency = 1
+macroFTitle.Text = "🔫 Macro F (Spam F otomatis)"
+macroFTitle.Font = Enum.Font.GothamSemibold
+macroFTitle.TextSize = 12
+macroFTitle.TextColor3 = C.text
+macroFTitle.TextXAlignment = Enum.TextXAlignment.Left
+macroFTitle.TextStrokeTransparency = 1
 
-sectionLabel(nvPage, "APARTMENT SELECTION", 6)
+local macroFToggleBtn = Instance.new("TextButton", macroFCard)
+macroFToggleBtn.Size = UDim2.new(0, 80, 0, 32)
+macroFToggleBtn.Position = UDim2.new(1, -92, 0, 4)
+macroFToggleBtn.BackgroundColor3 = C.red
+macroFToggleBtn.Text = "OFF"
+macroFToggleBtn.Font = Enum.Font.GothamBold
+macroFToggleBtn.TextSize = 12
+macroFToggleBtn.TextColor3 = C.text
+macroFToggleBtn.BorderSizePixel = 0
+macroFToggleBtn.TextStrokeTransparency = 1
+Instance.new("UICorner", macroFToggleBtn).CornerRadius = UDim.new(0, 6)
 
-local apartFrame = card(nvPage, 120, 7)
-local apartTitle = Instance.new("TextLabel", apartFrame)
-apartTitle.Size = UDim2.new(1, -20, 0, 25)
-apartTitle.Position = UDim2.new(0, 12, 0, 5)
-apartTitle.BackgroundTransparency = 1
-apartTitle.Text = "PILIH APARTEMEN"
-apartTitle.Font = Enum.Font.GothamBold
-apartTitle.TextSize = 12
-apartTitle.TextColor3 = C.accentGlow
-apartTitle.TextXAlignment = Enum.TextXAlignment.Left
-
-local apartGrid = Instance.new("Frame", apartFrame)
-apartGrid.Size = UDim2.new(1, -24, 0, 80)
-apartGrid.Position = UDim2.new(0, 12, 0, 35)
-apartGrid.BackgroundTransparency = 1
-
-local apartGridLayout = Instance.new("UIGridLayout", apartGrid)
-apartGridLayout.CellSize = UDim2.new(0, 90, 0, 35)
-apartGridLayout.CellPadding = UDim2.new(0, 5, 0, 5)
-apartGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-
-local apartemenList = {
-    {name = "Apart 1", pos = Vector3.new(1137.992, 9.932, 449.753)},
-    {name = "Apart 2", pos = Vector3.new(1139.174, 9.932, 420.556)},
-    {name = "Apart 3", pos = Vector3.new(984.856, 9.932, 247.280)},
-    {name = "Apart 4", pos = Vector3.new(988.311, 9.932, 221.664)},
-    {name = "Apart 5", pos = Vector3.new(923.954, 9.932, 42.202)},
-    {name = "Apart 6", pos = Vector3.new(895.721, 9.932, 41.928)},
-    {name = "Casino 1", pos = Vector3.new(1202.30, 3.71, -220.91)},
-    {name = "Casino 2", pos = Vector3.new(1179.72, 3.71, -230.21)},
-    {name = "Casino 3", pos = Vector3.new(1202.31, 3.71, -182.55)},
-}
-
-local selectedApart = "Apart 1"
-local apartButtons = {}
-
-for _, apart in ipairs(apartemenList) do
-    local btn = Instance.new("TextButton", apartGrid)
-    btn.Size = UDim2.new(1, 0, 1, 0)
-    btn.BackgroundColor3 = C.card
-    btn.Text = apart.name
-    btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 10
-    btn.TextColor3 = C.textMid
-    btn.BorderSizePixel = 0
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    
-    btn.MouseButton1Click:Connect(function()
-        selectedApart = apart.name
-        for _, b in pairs(apartButtons) do
-            b.BackgroundColor3 = C.card
-            b.TextColor3 = C.textMid
-        end
-        btn.BackgroundColor3 = C.accentDim
-        btn.TextColor3 = C.accentGlow
-    end)
-    
-    apartButtons[apart.name] = btn
-end
-
-if apartButtons["Apart 1"] then
-    apartButtons["Apart 1"].BackgroundColor3 = C.accentDim
-    apartButtons["Apart 1"].TextColor3 = C.accentGlow
-end
-
-sectionLabel(nvPage, "SETTINGS", 8)
-
-local targetSliderNV, targetValNV = makeSlider(nvPage, "TARGET FULLY", 1, 50, 5, 9, function(v)
-    fullyTarget = v
-end)
-
-local nvStatusCard = card(nvPage, 40, 10)
-local nvStatusLbl = Instance.new("TextLabel", nvStatusCard)
-nvStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-nvStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-nvStatusLbl.BackgroundTransparency = 1
-nvStatusLbl.Text = "STOPPED"
-nvStatusLbl.Font = Enum.Font.GothamBold
-nvStatusLbl.TextSize = 13
-nvStatusLbl.TextColor3 = C.red
-nvStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local nvStartBtn = makeActionBtn(nvPage, "START FULLY NV", C.green, 11)
-local nvStopBtn = makeActionBtn(nvPage, "STOP FULLY NV", C.red, 12)
-
--- ========== LOGIC FULLY NV (PAKAI FLY) ==========
-local nvRunning = false
-local nvWalkSpeed = 10
-
-local function getSelectedApartPosition()
-    local apartData = nil
-    for _, apart in ipairs(apartemenList) do
-        if apart.name == selectedApart then
-            apartData = apart
-            break
-        end
-    end
-    if not apartData then return Vector3.new(1137.992, 9.932, 449.753) end
-    
-    local pos = apartData.pos
-    local isCasino = string.find(selectedApart, "Casino")
-    
-    if isCasino then
-        pos = pos + Vector3.new(0, 5, 0)
-        if selectedApart == "Casino 1" then
-            pos = pos + Vector3.new(-2, 0, 0)
-        elseif selectedApart == "Casino 2" then
-            pos = pos + Vector3.new(2, 0, -2)
-        elseif selectedApart == "Casino 3" then
-            pos = pos + Vector3.new(-2, 0, -2)
-        end
-    end
-    
-    return pos
-end
-
--- JALAN KAKI (Pathfinding)
-local function walkToPosition(targetPos)
-    local character = player.Character
-    if not character then return false end
-    
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not humanoid or not hrp then return false end
-    
-    local originalWalkSpeed = humanoid.WalkSpeed
-    humanoid.WalkSpeed = nvWalkSpeed
-    humanoid.AutoRotate = true
-    
-    local path = PathfindingService:CreatePath({AgentRadius = 2, AgentHeight = 5, AgentCanJump = true, AgentMaxSlope = 45})
-    local success = pcall(function() path:ComputeAsync(hrp.Position, targetPos) end)
-    
-    if success and path.Status == Enum.PathStatus.Success then
-        local waypoints = path:GetWaypoints()
-        for _, waypoint in ipairs(waypoints) do
-            if not nvRunning then break end
-            humanoid:MoveTo(waypoint.Position)
-            humanoid.MoveToFinished:Wait(5)
-        end
+macroFToggleBtn.MouseButton1Click:Connect(function()
+    macroFEnabled = not macroFEnabled
+    if macroFEnabled then
+        macroFToggleBtn.Text = "ON"
+        macroFToggleBtn.BackgroundColor3 = C.green
+        macroFHeld = false
     else
-        humanoid:MoveTo(targetPos)
-        humanoid.MoveToFinished:Wait(10)
-    end
-    
-    humanoid.WalkSpeed = originalWalkSpeed
-    return (targetPos - hrp.Position).Magnitude < 5
-end
-
--- TURUN 5 STUDS (PAKAI FLY)
-local function goDownFly()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    local targetPos = hrp.Position - Vector3.new(0, 5, 0)
-    flyToPosition(targetPos)
-end
-
--- NAIK 5 STUDS (PAKAI FLY)
-local function goUpFly()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
-    local targetPos = hrp.Position + Vector3.new(0, 5, 0)
-    flyToPosition(targetPos)
-end
-
--- NAIK KE APARTEMEN (PAKAI FLY)
-local function goUpToApartFly()
-    local targetPos = getSelectedApartPosition()
-    flyToPosition(targetPos)
-end
-
-local function updateNVInventory()
-    waterValNV.Text = tostring(countItem("Water"))
-    sugarValNV.Text = tostring(countItem("Sugar Block Bag"))
-    gelatinValNV.Text = tostring(countItem("Gelatin"))
-    emptyValNV.Text = tostring(countItem("Empty Bag"))
-end
-
-local function setNVStatus(msg, color)
-    nvStatusLbl.Text = msg
-    nvStatusLbl.TextColor3 = color or C.textMid
-end
-
-local function nvBuy(qty)
-    if not storePurchaseRE then return end
-    local items = {"Water", "Sugar Block Bag", "Gelatin", "Empty Bag"}
-    for _, item in ipairs(items) do
-        if not nvRunning then break end
-        setNVStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
-        for i = 1, qty do
-            if not nvRunning then break end
-            pcall(function() storePurchaseRE:FireServer(item, 1) end)
-            task.wait(0.4)
-        end
-        task.wait(0.5)
-    end
-    setNVStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
-    task.wait(1)
-end
-
-local function nvSell()
-    local sellItems = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
-    for _, item in ipairs(sellItems) do
-        if not nvRunning then break end
-        while countItem(item) > 0 and nvRunning do
-            setNVStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
-            pcall(function()
-                equip(item)
-                holdE(0.7)
-                task.wait(1)
-            end)
-        end
-    end
-    setNVStatus("SELLING COMPLETE!", Color3.fromRGB(52, 210, 110))
-    task.wait(1)
-end
-
-local function nvCook()
-    pcall(function()
-        equip("Water")
-        holdE(0.7)
-        for i = 20, 1, -1 do if not nvRunning then break end task.wait(1) end
-        if not nvRunning then return end
-        equip("Sugar Block Bag")
-        holdE(0.7)
-        task.wait(1)
-        if not nvRunning then return end
-        equip("Gelatin")
-        holdE(0.7)
-        task.wait(1)
-        if not nvRunning then return end
-        for i = 45, 1, -1 do if not nvRunning then break end task.wait(1) end
-        if not nvRunning then return end
-        equip("Empty Bag")
-        holdE(0.7)
-        task.wait(1)
-    end)
-end
-
--- LOOP UTAMA (PAKAI FLY)
-local function nvLoop()
-    setNVStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
-    local npcPos = Vector3.new(510.061, 4.476, 600.548)
-    
-    while nvRunning do
-        -- TURUN 5 STUDS (FLY)
-        setNVStatus("FLYING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownFly()
-        task.wait(0.1)
-        
-        -- JALAN KE NPC
-        setNVStatus("WALKING TO NPC...", Color3.fromRGB(100, 180, 255))
-        walkToPosition(npcPos)
-        task.wait(0.3)
-        
-        -- NAIK 5 STUDS (FLY)
-        setNVStatus("FLYING UP...", Color3.fromRGB(255, 200, 100))
-        goUpFly()
-        task.wait(0.1)
-        
-        if not nvRunning then break end
-        
-        -- BELI BAHAN
-        nvBuy(fullyTarget)
-        if not nvRunning then break end
-        
-        -- TURUN 5 STUDS (FLY)
-        setNVStatus("FLYING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownFly()
-        task.wait(0.1)
-        
-        -- JALAN KEMBALI KE APARTEMEN
-        local apartPos = getSelectedApartPosition()
-        local groundApartPos = Vector3.new(apartPos.X, apartPos.Y - 5, apartPos.Z)
-        
-        setNVStatus("WALKING BACK TO APARTMENT...", Color3.fromRGB(148, 80, 255))
-        walkToPosition(groundApartPos)
-        task.wait(0.3)
-        
-        -- NAIK KE APARTEMEN (FLY)
-        setNVStatus("FLYING TO APARTMENT...", Color3.fromRGB(255, 200, 100))
-        goUpToApartFly()
-        task.wait(0.1)
-        
-        if not nvRunning then break end
-        
-        -- UPDATE INVENTORY DAN MASAK
-        updateNVInventory()
-        
-        local cooked = 0
-        while nvRunning and cooked < fullyTarget do
-            setNVStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
-            nvCook()
-            cooked = cooked + 1
-            updateNVInventory()
-            task.wait(0.5)
-        end
-        if not nvRunning then break end
-        
-        -- TURUN 5 STUDS (FLY)
-        setNVStatus("FLYING DOWN...", Color3.fromRGB(255, 200, 100))
-        goDownFly()
-        task.wait(0.1)
-        
-        -- JALAN KE NPC UNTUK JUAL
-        setNVStatus("WALKING TO NPC FOR SELLING...", Color3.fromRGB(52, 210, 110))
-        walkToPosition(npcPos)
-        task.wait(0.3)
-        
-        -- NAIK 5 STUDS (FLY)
-        setNVStatus("FLYING UP...", Color3.fromRGB(255, 200, 100))
-        goUpFly()
-        task.wait(0.1)
-        
-        if not nvRunning then break end
-        
-        -- JUAL HASIL MASAKAN
-        nvSell()
-        if not nvRunning then break end
-        
-        -- LOOP LAGI
-        setNVStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
-        task.wait(2)
-    end
-    
-    nvRunning = false
-    nvStartBtn.Text = "START FULLY NV"
-    TweenService:Create(nvStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
-    setNVStatus("STOPPED", C.red)
-    
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.WalkSpeed = 16 end
-end
-
-nvStartBtn.MouseButton1Click:Connect(function()
-    if nvRunning then return end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        setNVStatus("CANNOT GET POSITION!", C.red)
-        return
-    end
-    nvRunning = true
-    startHPMonitoring()
-    nvStartBtn.Text = "RUNNING..."
-    TweenService:Create(nvStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
-    setNVStatus("RUNNING", C.green)
-    task.spawn(nvLoop)
-end)
-
-nvStopBtn.MouseButton1Click:Connect(function()
-    if not nvRunning then return end
-    nvRunning = false
-    stopHPMonitoring()
-    setNVStatus("STOPPING...", C.orange)
-    stopFly()
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum:MoveTo(hum.Parent.HumanoidRootPart.Position)
-        hum.WalkSpeed = 16
+        macroFToggleBtn.Text = "OFF"
+        macroFToggleBtn.BackgroundColor3 = C.red
+        macroFHeld = false
     end
 end)
 
--- ========== INVENTORY UPDATE LOOP ==========
+-- Info text
+local macroFInfo = Instance.new("TextLabel", macroFCard)
+macroFInfo.Size = UDim2.new(1, -24, 0, 32)
+macroFInfo.Position = UDim2.new(0, 12, 0, 42)
+macroFInfo.BackgroundTransparency = 1
+macroFInfo.Text = "⚠️ Tekan dan tahan trigger untuk spam F otomatis"
+macroFInfo.Font = Enum.Font.Gotham
+macroFInfo.TextSize = 10
+macroFInfo.TextColor3 = C.textDim
+macroFInfo.TextXAlignment = Enum.TextXAlignment.Left
+macroFInfo.TextWrapped = true
+macroFInfo.TextStrokeTransparency = 1
+
+-- Slider untuk interval spam F
+local intervalSliderWrap, intervalValLbl = makeSlider(settingsp, "INTERVAL SPAM F (x0.1 detik)", 1, 30, 3, 10, function(v)
+    macroFInterval = v / 10
+    intervalValLbl.Text = string.format("%.1f", macroFInterval) .. "s"
+end)
+intervalValLbl.Text = "0.3s"
+macroFInterval = 0.3
+
+-- Section untuk trigger selector
+sectionLabel(settingsp, "MACRO F TRIGGER", 11)
+
+local triggerCard = card(settingsp, 50, 12)
+
+local triggerTitle = Instance.new("TextLabel", triggerCard)
+triggerTitle.Size = UDim2.new(0.5, 0, 1, 0)
+triggerTitle.Position = UDim2.new(0, 12, 0, 0)
+triggerTitle.BackgroundTransparency = 1
+triggerTitle.Text = "Trigger Button:"
+triggerTitle.Font = Enum.Font.GothamSemibold
+triggerTitle.TextSize = 11
+triggerTitle.TextColor3 = C.textMid
+triggerTitle.TextXAlignment = Enum.TextXAlignment.Left
+triggerTitle.TextStrokeTransparency = 1
+
+-- Tombol pilihan trigger
+local triggerLeftBtn = Instance.new("TextButton", triggerCard)
+triggerLeftBtn.Size = UDim2.new(0, 100, 0, 32)
+triggerLeftBtn.Position = UDim2.new(0.5, -110, 0.5, -16)
+triggerLeftBtn.BackgroundColor3 = C.green
+triggerLeftBtn.Text = "Klik Kiri"
+triggerLeftBtn.Font = Enum.Font.GothamBold
+triggerLeftBtn.TextSize = 11
+triggerLeftBtn.TextColor3 = C.text
+triggerLeftBtn.BorderSizePixel = 0
+Instance.new("UICorner", triggerLeftBtn).CornerRadius = UDim.new(0, 6)
+
+local triggerXBtn = Instance.new("TextButton", triggerCard)
+triggerXBtn.Size = UDim2.new(0, 70, 0, 32)
+triggerXBtn.Position = UDim2.new(0.5, 10, 0.5, -16)
+triggerXBtn.BackgroundColor3 = C.card
+triggerXBtn.Text = "Tombol X"
+triggerXBtn.Font = Enum.Font.GothamBold
+triggerXBtn.TextSize = 11
+triggerXBtn.TextColor3 = C.textDim
+triggerXBtn.BorderSizePixel = 0
+Instance.new("UICorner", triggerXBtn).CornerRadius = UDim.new(0, 6)
+
+local triggerZBtn = Instance.new("TextButton", triggerCard)
+triggerZBtn.Size = UDim2.new(0, 70, 0, 32)
+triggerZBtn.Position = UDim2.new(0.5, 90, 0.5, -16)
+triggerZBtn.BackgroundColor3 = C.card
+triggerZBtn.Text = "Tombol Z"
+triggerZBtn.Font = Enum.Font.GothamBold
+triggerZBtn.TextSize = 11
+triggerZBtn.TextColor3 = C.textDim
+triggerZBtn.BorderSizePixel = 0
+Instance.new("UICorner", triggerZBtn).CornerRadius = UDim.new(0, 6)
+
+local function updateMacroTrigger(trigger, activeBtn)
+    macroFTrigger = trigger
+    macroFHeld = false
+    
+    triggerLeftBtn.BackgroundColor3 = C.card
+    triggerLeftBtn.TextColor3 = C.textDim
+    triggerXBtn.BackgroundColor3 = C.card
+    triggerXBtn.TextColor3 = C.textDim
+    triggerZBtn.BackgroundColor3 = C.card
+    triggerZBtn.TextColor3 = C.textDim
+    
+    activeBtn.BackgroundColor3 = C.green
+    activeBtn.TextColor3 = C.text
+end
+
+triggerLeftBtn.MouseButton1Click:Connect(function()
+    updateMacroTrigger("LeftMouse", triggerLeftBtn)
+end)
+
+triggerXBtn.MouseButton1Click:Connect(function()
+    updateMacroTrigger("KeyX", triggerXBtn)
+end)
+
+triggerZBtn.MouseButton1Click:Connect(function()
+    updateMacroTrigger("KeyZ", triggerZBtn)
+end)
+
+updateMacroTrigger("LeftMouse", triggerLeftBtn)
+
+-- ============================================================
+-- INVENTORY UPDATE LOOP
+-- ============================================================
 task.spawn(function()
     while gui and gui.Parent do
         if pages["AUTO"] and pages["AUTO"].Visible then
@@ -1866,14 +1681,13 @@ task.spawn(function()
         if pages["FULLY"] and pages["FULLY"].Visible then
             updateFullyInventory()
         end
-        if pages["FULLY NV"] and pages["FULLY NV"].Visible then
-            updateNVInventory()
-        end
         task.wait(1)
     end
 end)
 
--- ========== MINIMIZE BUTTON ==========
+-- ============================================================
+-- MINIMIZE BUTTON
+-- ============================================================
 local bodyVisible = true
 
 minBtn.MouseButton1Click:Connect(function()
@@ -1887,16 +1701,18 @@ minBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ========== KEYBIND Z ==========
+-- ============================================================
+-- KEYBIND Z UNTUK HIDE/SHOW GUI
+-- ============================================================
 ContextActionService:BindAction("toggleUI_191", function(_, state)
     if state == Enum.UserInputState.Begin then
         main.Visible = not main.Visible
     end
 end, false, Enum.KeyCode.Z)
 
--- ========== STARTUP ==========
+-- ============================================================
+-- STARTUP
+-- ============================================================
 switchTab("AUTO")
 
-print("191 STORE SCRIPT LOADED - FULLY NV PAKAI FLY!")
-print("Turun/naik pake FLY, ga bakal jatoh!")
-print("Tekan Z untuk hide/show GUI")
+print("[191 STORE + MACRO F] Script loaded!")

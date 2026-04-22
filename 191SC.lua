@@ -1,3 +1,7 @@
+-- ======================================================
+--   191 STORE + MACRO F (FULL VERSION)
+-- ======================================================
+
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
@@ -8,281 +12,100 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ContextActionService = game:GetService("ContextActionService")
 local VirtualUser = game:GetService("VirtualUser")
 
--- ========== CUSTOM RESPAWN ==========
-local RESPAWN_POINT = CFrame.new(729.86, 3.71, 444.46) * CFrame.Angles(-3.14, 0.01, -3.14)
+repeat task.wait() until player.Character
+local playerGui = player:WaitForChild("PlayerGui")
 
-local function setupCustomRespawn()
-    player.CharacterAdded:Connect(function(character)
-        task.wait(0.1)
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Anchored = true
-            hrp.CFrame = RESPAWN_POINT
-            task.wait(0.05)
-            hrp.Anchored = false
-        end
+-- ========== VARIABLES ==========
+local remotes = ReplicatedStorage:FindFirstChild("RemoteEvents")
+local storePurchaseRE = remotes and remotes:FindFirstChild("StorePurchase")
+local blinkEnabled = true
+
+-- ========== MACRO F (TEKAN & TAHAN KLIK KIRI) ==========
+local macroFEnabled = false
+local macroFHeld = false
+local macroFInterval = 0.3
+
+local function pressF()
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
     end)
 end
 
-setupCustomRespawn()
-
--- ========== AMBIL REMOTE EVENTS ==========
-local remotes = ReplicatedStorage:FindFirstChild("RemoteEvents")
-local storePurchaseRE = remotes and remotes:FindFirstChild("StorePurchase")
-
-repeat task.wait() until player.Character
-
-local playerGui = player:WaitForChild("PlayerGui")
-
--- Variables
-
-local SAFE_ZONE_CFRAME = CFrame.new(537.71, 4.59, -537.09) * CFrame.Angles(-1.20, -1.56, -1.20)
-
-local buyAmount = 10
-local blinkEnabled = true
-local fullyTarget = 5
-
--- ========== HP SAFE ZONE (AUTO TELEPORT SAAT KENA HIT) ==========
-local hpMonitoringActive = false
-local isInSafeZone = false
-local originalCFrame = nil
-local safeZoneTimerThread = nil
-local currentHumanoid = nil
-local lastHealthPercent = 100
-
-local function teleportToSafeZone()
-    local character = player.Character
-    local hum = character and character:FindFirstChildOfClass("Humanoid")
-    if not character or not hum then return false end
-    
-    local seatPart = hum.SeatPart
-    if seatPart then
-        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
-        if vehicle then
-            local anchor = vehicle.PrimaryPart or vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
-            if anchor then
-                for _,p in ipairs(vehicle:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        pcall(function()
-                            p.AssemblyLinearVelocity = Vector3.zero
-                            p.AssemblyAngularVelocity = Vector3.zero
-                            p.Anchored = true
-                        end)
-                    end
-                end
-                task.wait(0.05)
-                
-                if vehicle.PrimaryPart then
-                    vehicle:SetPrimaryPartCFrame(SAFE_ZONE_CFRAME)
-                else
-                    anchor.CFrame = SAFE_ZONE_CFRAME
-                end
-                task.wait(0.05)
-                
-                for _,p in ipairs(vehicle:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        pcall(function()
-                            p.Anchored = false
-                            p.AssemblyLinearVelocity = Vector3.zero
-                            p.AssemblyAngularVelocity = Vector3.zero
-                        end)
-                    end
-                end
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and macroFEnabled then
+        macroFHeld = true
+        task.spawn(function()
+            while macroFHeld and macroFEnabled do
+                pressF()
+                task.wait(macroFInterval)
             end
-            return true
-        end
-    else
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Anchored = true
-            hrp.CFrame = SAFE_ZONE_CFRAME
-            task.wait(0.05)
-            hrp.Anchored = false
-            return true
-        end
+        end)
     end
-    return false
-end
+end)
 
-local function teleportToOriginalCFrame(targetCFrame)
-    local character = player.Character
-    local hum = character and character:FindFirstChildOfClass("Humanoid")
-    if not character or not hum then return false end
-    
-    local seatPart = hum.SeatPart
-    if seatPart then
-        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
-        if vehicle then
-            local anchor = vehicle.PrimaryPart or vehicle:FindFirstChildOfClass("VehicleSeat") or vehicle:FindFirstChildOfClass("BasePart")
-            if anchor then
-                for _,p in ipairs(vehicle:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        pcall(function()
-                            p.AssemblyLinearVelocity = Vector3.zero
-                            p.AssemblyAngularVelocity = Vector3.zero
-                            p.Anchored = true
-                        end)
-                    end
-                end
-                task.wait(0.05)
-                
-                if vehicle.PrimaryPart then
-                    vehicle:SetPrimaryPartCFrame(targetCFrame)
-                else
-                    anchor.CFrame = targetCFrame
-                end
-                task.wait(0.05)
-                
-                for _,p in ipairs(vehicle:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        pcall(function()
-                            p.Anchored = false
-                            p.AssemblyLinearVelocity = Vector3.zero
-                            p.AssemblyAngularVelocity = Vector3.zero
-                        end)
-                    end
-                end
-            end
-            return true
-        end
-    else
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Anchored = true
-            hrp.CFrame = targetCFrame
-            task.wait(0.05)
-            hrp.Anchored = false
-            return true
-        end
+UIS.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        macroFHeld = false
     end
-    return false
+end)
+
+-- ========== ANTI AFK ==========
+player.Idled:Connect(function()
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end)
+end)
+
+-- ========== FUNGSI HELPERS ==========
+local function holdE(t)
+    VirtualInputManager:SendKeyEvent(true, "E", false, game)
+    task.wait(t or 0.7)
+    VirtualInputManager:SendKeyEvent(false, "E", false, game)
 end
 
-local function onCharacterAdded(character)
-    currentHumanoid = character:WaitForChild("Humanoid")
-    lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
-    isInSafeZone = false
-    originalCFrame = nil
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-        safeZoneTimerThread = nil
-    end
-end
-
-if player.Character then
-    onCharacterAdded(player.Character)
-end
-player.CharacterAdded:Connect(onCharacterAdded)
-
-local function saveOriginalPosition()
-    local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        originalCFrame = hrp.CFrame
+local function equip(name)
+    local char = player.Character
+    local tool = player.Backpack:FindFirstChild(name) or (char and char:FindFirstChild(name))
+    if tool and char and char.Humanoid then
+        char.Humanoid:EquipTool(tool)
+        task.wait(0.3)
         return true
     end
     return false
 end
 
-local function teleportBackToOriginal()
-    if originalCFrame then
-        teleportToOriginalCFrame(originalCFrame)
-        originalCFrame = nil
-    end
-    isInSafeZone = false
-end
-
-local function startSafeZoneTimer()
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-    end
-    
-    safeZoneTimerThread = task.spawn(function()
-        task.wait(8)
-        if isInSafeZone and hpMonitoringActive then
-            teleportBackToOriginal()
+local function countItem(name)
+    local total = 0
+    if player.Backpack then
+        for _, v in pairs(player.Backpack:GetChildren()) do
+            if v.Name == name then total = total + 1 end
         end
-        safeZoneTimerThread = nil
-    end)
-end
-
-local function checkHealthAndTeleport()
-    if not hpMonitoringActive then return end
-    if not currentHumanoid or currentHumanoid.Parent == nil then
-        local character = player.Character
-        if character then
-            currentHumanoid = character:FindFirstChildOfClass("Humanoid")
+    end
+    local char = player.Character
+    if char then
+        for _, v in pairs(char:GetChildren()) do
+            if v:IsA("Tool") and v.Name == name then total = total + 1 end
         end
-        if not currentHumanoid then return end
     end
-    
-    local currentHealth = currentHumanoid.Health
-    local maxHealth = currentHumanoid.MaxHealth
-    
-    if maxHealth > 0 then
-        local currentPercent = (currentHealth / maxHealth) * 100
-        local percentDropped = lastHealthPercent - currentPercent
-        
-        if percentDropped >= 1 and not isInSafeZone then
-            saveOriginalPosition()
-            if teleportToSafeZone() then
-                isInSafeZone = true
-                startSafeZoneTimer()
-            end
-        end
-        
-        lastHealthPercent = currentPercent
+    return total
+end
+
+local function stepTeleport(pos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.Anchored = true
+        hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+        task.wait(0.05)
+        hrp.Anchored = false
     end
 end
 
-local hpMonitorThread = nil
-local function startHPMonitoring()
-    if hpMonitoringActive then return end
-    hpMonitoringActive = true
-    isInSafeZone = false
-    originalCFrame = nil
-    
-    if currentHumanoid then
-        lastHealthPercent = (currentHumanoid.Health / currentHumanoid.MaxHealth) * 100
-    else
-        lastHealthPercent = 100
-    end
-    
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-        safeZoneTimerThread = nil
-    end
-    
-    hpMonitorThread = task.spawn(function()
-        while hpMonitoringActive do
-            checkHealthAndTeleport()
-            task.wait(0.3)
-        end
-    end)
-end
-
-local function stopHPMonitoring()
-    hpMonitoringActive = false
-    
-    if safeZoneTimerThread then
-        task.cancel(safeZoneTimerThread)
-        safeZoneTimerThread = nil
-    end
-    
-    if hpMonitorThread then
-        task.cancel(hpMonitorThread)
-        hpMonitorThread = nil
-    end
-    
-    if isInSafeZone then
-        teleportBackToOriginal()
-    end
-    
-    isInSafeZone = false
-    originalCFrame = nil
-end
-
--- ========== BLINK FUNCTIONS ==========
 local function blinkMaju()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -291,94 +114,27 @@ local function blinkMaju()
     end
 end
 
-local function blinkMundur()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame - hrp.CFrame.LookVector * 8
-    end
-end
-
-local function blinkAtas()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, 5, 0)
-    end
-end
-
-local function blinkBawah()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -5, 0)
-    end
-end
-
-ContextActionService:BindAction("blink_forward", function(_, state)
-    if state == Enum.UserInputState.Begin and blinkEnabled then
-        blinkMaju()
-    end
-end, false, Enum.KeyCode.T)
-
--- ============================================================
--- ANTI AFK
--- ============================================================
-player.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-end)
-
--- ============================================================
--- HELPERS
--- ============================================================
-local function holdE(t)
-    VirtualInputManager:SendKeyEvent(true,"E",false,game)
-    task.wait(t or 0.7)
-    VirtualInputManager:SendKeyEvent(false,"E",false,game)
-end
-
-local function equip(name)
-    local char = player.Character
-    local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
-    if tool then
-        char.Humanoid:EquipTool(tool)
-        task.wait(.3)
-        return true
-    end
-    return false
-end
-
-local function countItem(name)
-    local total = 0
-    for _,v in pairs(player.Backpack:GetChildren()) do
-        if v.Name == name then total += 1 end
-    end
-    for _,v in pairs(player.Character:GetChildren()) do
-        if v:IsA("Tool") and v.Name == name then total += 1 end
-    end
-    return total
-end
-
-local function stepTeleport(targetPos)
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not char or not hum then return end
-    local seatPart = hum.SeatPart
-    if seatPart then
-        local vehicle = seatPart:FindFirstAncestorOfClass("Model")
-        if vehicle and vehicle.PrimaryPart then
-            vehicle:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 2, 0)))
-        end
-    else
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.Anchored = true
-            hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-            task.wait(0.05)
-            hrp.Anchored = false
-        end
-    end
+-- ========== COOK PROCESS ==========
+local function cookProcess()
+    pcall(function()
+        equip("Water")
+        holdE(0.7)
+        for i = 1, 20 do task.wait(1) end
+        
+        equip("Sugar Block Bag")
+        holdE(0.7)
+        task.wait(1)
+        
+        equip("Gelatin")
+        holdE(0.7)
+        task.wait(1)
+        
+        for i = 1, 45 do task.wait(1) end
+        
+        equip("Empty Bag")
+        holdE(0.7)
+        task.wait(1)
+    end)
 end
 
 -- ============================================================
@@ -388,72 +144,47 @@ local gui = Instance.new("ScreenGui")
 gui.Name = "191_STORE"
 gui.Parent = playerGui
 gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- ============================================================
--- COLOR PALETTE
--- ============================================================
 local C = {
-    bg        = Color3.fromRGB(8,  8,  16),
-    surface   = Color3.fromRGB(13, 13, 22),
-    panel     = Color3.fromRGB(18, 18, 28),
-    card      = Color3.fromRGB(22, 22, 36),
-    sidebar   = Color3.fromRGB(10, 10, 20),
-    accent    = Color3.fromRGB(0, 110, 220),
+    bg = Color3.fromRGB(8, 8, 16),
+    surface = Color3.fromRGB(13, 13, 22),
+    panel = Color3.fromRGB(18, 18, 28),
+    card = Color3.fromRGB(22, 22, 36),
+    sidebar = Color3.fromRGB(10, 10, 20),
+    accent = Color3.fromRGB(0, 110, 220),
     accentDim = Color3.fromRGB(0, 70, 150),
-    accentGlow= Color3.fromRGB(50, 150, 255),
-    accentSoft= Color3.fromRGB(0, 90, 190),
-    text      = Color3.fromRGB(230, 235, 255),
-    textMid   = Color3.fromRGB(150, 160, 200),
-    textDim   = Color3.fromRGB(80, 85, 120),
-    green     = Color3.fromRGB(40, 200, 100),
-    red       = Color3.fromRGB(220, 60, 70),
-    border    = Color3.fromRGB(40, 45, 65),
+    text = Color3.fromRGB(230, 235, 255),
+    textMid = Color3.fromRGB(150, 160, 200),
+    textDim = Color3.fromRGB(80, 85, 120),
+    green = Color3.fromRGB(40, 200, 100),
+    red = Color3.fromRGB(220, 60, 70),
+    border = Color3.fromRGB(40, 45, 65),
 }
 
--- ============================================================
--- MAIN WINDOW (UKURAN KECIL)
--- ============================================================
+-- MAIN WINDOW
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 520, 0, 420)
-main.Position = UDim2.new(0.5, -260, 0.5, -210)
+main.Size = UDim2.new(0, 660, 0, 500)
+main.Position = UDim2.new(0.5, -330, 0.5, -250)
 main.BackgroundColor3 = C.bg
 main.Active = true
 main.Draggable = true
-main.ClipsDescendants = false
-
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
-local mainStroke = Instance.new("UIStroke", main)
-mainStroke.Color = C.border
-mainStroke.Thickness = 1
 
--- ============================================================
 -- TOP BAR
--- ============================================================
 local topBar = Instance.new("Frame", main)
 topBar.Size = UDim2.new(1, 0, 0, 46)
 topBar.BackgroundColor3 = C.surface
-topBar.ZIndex = 2
 Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 12)
 
-do
-    local fix = Instance.new("Frame", topBar)
-    fix.Size = UDim2.new(1, 0, 0, 12)
-    fix.Position = UDim2.new(0, 0, 1, -12)
-    fix.BackgroundColor3 = C.surface
-    fix.BorderSizePixel = 0
-
-    local titleLbl = Instance.new("TextLabel", topBar)
-    titleLbl.Position = UDim2.new(0, 28, 0, 0)
-    titleLbl.Size = UDim2.new(0, 160, 1, 0)
-    titleLbl.BackgroundTransparency = 1
-    titleLbl.Text = "191 STORE"
-    titleLbl.Font = Enum.Font.GothamBlack
-    titleLbl.TextSize = 15
-    titleLbl.TextColor3 = C.text
-    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    titleLbl.TextStrokeTransparency = 1
-end
+local titleLbl = Instance.new("TextLabel", topBar)
+titleLbl.Position = UDim2.new(0, 28, 0, 0)
+titleLbl.Size = UDim2.new(0, 160, 1, 0)
+titleLbl.BackgroundTransparency = 1
+titleLbl.Text = "191 STORE"
+titleLbl.Font = Enum.Font.GothamBlack
+titleLbl.TextSize = 15
+titleLbl.TextColor3 = C.text
+titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 
 local closeBtn = Instance.new("TextButton", topBar)
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
@@ -464,75 +195,41 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 12
 closeBtn.TextColor3 = C.red
 closeBtn.BorderSizePixel = 0
-closeBtn.TextStrokeTransparency = 1
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-
 closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
-local minBtn = Instance.new("TextButton", topBar)
-minBtn.Size = UDim2.new(0, 28, 0, 28)
-minBtn.Position = UDim2.new(1, -72, 0.5, -14)
-minBtn.BackgroundColor3 = C.card
-minBtn.Text = "-"
-minBtn.Font = Enum.Font.GothamBold
-minBtn.TextSize = 14
-minBtn.TextColor3 = C.textMid
-minBtn.BorderSizePixel = 0
-minBtn.TextStrokeTransparency = 1
-Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
-
--- ============================================================
--- SIDEBAR (70px)
--- ============================================================
+-- SIDEBAR
 local sidebar = Instance.new("Frame", main)
-sidebar.Size = UDim2.new(0, 70, 1, -46)
+sidebar.Size = UDim2.new(0, 80, 1, -46)
 sidebar.Position = UDim2.new(0, 0, 0, 46)
 sidebar.BackgroundColor3 = C.sidebar
-sidebar.ZIndex = 2
-sidebar.ClipsDescendants = false
 
 local sidebarLine = Instance.new("Frame", main)
 sidebarLine.Size = UDim2.new(0, 1, 1, -46)
-sidebarLine.Position = UDim2.new(0, 69, 0, 46)
+sidebarLine.Position = UDim2.new(0, 79, 0, 46)
 sidebarLine.BackgroundColor3 = C.border
-sidebarLine.BorderSizePixel = 0
-sidebarLine.ZIndex = 3
 
-local sidebarLayout = Instance.new("UIListLayout", sidebar)
-sidebarLayout.Padding = UDim.new(0, 4)
-sidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-sidebarLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local sidebarPad = Instance.new("UIPadding", sidebar)
-sidebarPad.PaddingTop = UDim.new(0, 10)
-
--- ============================================================
 -- CONTENT AREA
--- ============================================================
 local content = Instance.new("Frame", main)
-content.Size = UDim2.new(1, -70, 1, -46)
-content.Position = UDim2.new(0, 70, 0, 46)
+content.Size = UDim2.new(1, -80, 1, -46)
+content.Position = UDim2.new(0, 80, 0, 46)
 content.BackgroundColor3 = C.panel
-content.ClipsDescendants = true
-Instance.new("UICorner", content).CornerRadius = UDim.new(0, 0)
 
 -- ============================================================
 -- TAB SYSTEM
 -- ============================================================
 local pages = {}
 local tabBtns = {}
-local currentTab = nil
 
 local tabDefs = {
-    {label = "AUTO",     order = 1},
-    {label = "FULLY",    order = 2},
-    {label = "TP",       order = 3},
-    {label = "MS POT",   order = 4},
-    {label = "BUY",      order = 5},
-    {label = "SELL",     order = 6},
+    {label = "AUTO", order = 1},
+    {label = "FULLY", order = 2},
+    {label = "TP", order = 3},
+    {label = "MS POT", order = 4},
+    {label = "BUY", order = 5},
+    {label = "SELL", order = 6},
     {label = "SETTINGS", order = 7},
 }
 
@@ -543,101 +240,57 @@ local function switchTab(name)
     for n, b in pairs(tabBtns) do
         if n == name then
             b.BackgroundColor3 = C.accentDim
-            b.BackgroundTransparency = 0
-            b.TextColor3 = C.accentGlow
+            b.TextColor3 = C.accent
         else
-            b.BackgroundTransparency = 1
+            b.BackgroundColor3 = C.sidebar
             b.TextColor3 = C.textDim
         end
     end
-    currentTab = name
 end
 
 for i, def in ipairs(tabDefs) do
     local btn = Instance.new("TextButton", sidebar)
-    btn.Size = UDim2.new(0, 62, 0, 36)
-    btn.BackgroundTransparency = 1
+    btn.Size = UDim2.new(0, 68, 0, 36)
+    btn.Position = UDim2.new(0, 6, 0, 8 + (i - 1) * 40)
+    btn.BackgroundColor3 = C.sidebar
     btn.Text = def.label
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 10
     btn.TextColor3 = C.textDim
     btn.BorderSizePixel = 0
-    btn.LayoutOrder = def.order
-    btn.TextStrokeTransparency = 1
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
-
-    local indicator = Instance.new("Frame", btn)
-    indicator.Size = UDim2.new(0, 2, 0, 18)
-    indicator.Position = UDim2.new(0, 0, 0.5, -9)
-    indicator.BackgroundColor3 = C.accent
-    indicator.BorderSizePixel = 0
-    indicator.Visible = false
-    Instance.new("UICorner", indicator).CornerRadius = UDim.new(0, 2)
 
     local page = Instance.new("ScrollingFrame", content)
     page.Size = UDim2.new(1, 0, 1, 0)
     page.BackgroundTransparency = 1
     page.ScrollBarThickness = 3
-    page.ScrollBarImageColor3 = C.accentSoft
     page.Visible = false
     page.BorderSizePixel = 0
 
     local layout = Instance.new("UIListLayout", page)
-    layout.Padding = UDim.new(0, 6)
+    layout.Padding = UDim.new(0, 7)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
 
     local pad = Instance.new("UIPadding", page)
-    pad.PaddingTop = UDim.new(0, 12)
-    pad.PaddingLeft = UDim.new(0, 10)
-    pad.PaddingRight = UDim.new(0, 10)
-    pad.PaddingBottom = UDim.new(0, 12)
+    pad.PaddingTop = UDim.new(0, 14)
+    pad.PaddingLeft = UDim.new(0, 12)
+    pad.PaddingRight = UDim.new(0, 12)
 
     pages[def.label] = page
     tabBtns[def.label] = btn
 
     btn.MouseButton1Click:Connect(function()
         switchTab(def.label)
-        for _, b2 in pairs(tabBtns) do
-            local ind = b2:FindFirstChild("Frame")
-            if ind then ind.Visible = (b2 == btn) end
-        end
     end)
 end
 
 -- ============================================================
--- UI COMPONENT BUILDERS
+-- UI COMPONENTS
 -- ============================================================
-local function sectionLabel(parent, text, order)
-    local wrap = Instance.new("Frame", parent)
-    wrap.Size = UDim2.new(1, 0, 0, 22)
-    wrap.BackgroundTransparency = 1
-    wrap.LayoutOrder = order or 0
-
-    local lbl = Instance.new("TextLabel", wrap)
-    lbl.Size = UDim2.new(1, 0, 1, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text:upper()
-    lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 9
-    lbl.TextColor3 = C.textDim
-    lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.LayoutOrder = order or 0
-    lbl.TextStrokeTransparency = 1
-
-    local line = Instance.new("Frame", wrap)
-    line.Size = UDim2.new(1, 0, 0, 1)
-    line.Position = UDim2.new(0, 0, 1, -1)
-    line.BackgroundColor3 = C.border
-    line.BorderSizePixel = 0
-
-    return wrap
-end
-
 local function card(parent, h, order)
     local f = Instance.new("Frame", parent)
     f.Size = UDim2.new(1, 0, 0, h or 46)
     f.BackgroundColor3 = C.card
-    f.BorderSizePixel = 0
     f.LayoutOrder = order or 0
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
     return f
@@ -647,38 +300,53 @@ local function makeActionBtn(parent, text, color, order)
     local f = Instance.new("TextButton", parent)
     f.Size = UDim2.new(1, 0, 0, 36)
     f.BackgroundColor3 = color or C.accentDim
+    f.Text = text
     f.Font = Enum.Font.GothamBold
     f.TextSize = 12
     f.TextColor3 = C.text
-    f.Text = text
     f.BorderSizePixel = 0
     f.LayoutOrder = order or 0
-    f.TextStrokeTransparency = 1
     Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
-
-    f.MouseEnter:Connect(function()
-        TweenService:Create(f, TweenInfo.new(0.12), {BackgroundColor3 = C.accent}):Play()
-    end)
-    f.MouseLeave:Connect(function()
-        TweenService:Create(f, TweenInfo.new(0.12), {BackgroundColor3 = color or C.accentDim}):Play()
-    end)
     return f
 end
 
-local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callback)
-    local wrap = card(parent, 54, order)
-
-    local lbl = Instance.new("TextLabel", wrap)
-    lbl.Position = UDim2.new(0, 12, 0, 8)
-    lbl.Size = UDim2.new(1, -80, 0, 16)
+local function makeStatusRow(parent, label, order)
+    local f = card(parent, 30, order)
+    local lbl = Instance.new("TextLabel", f)
+    lbl.Position = UDim2.new(0, 12, 0, 0)
+    lbl.Size = UDim2.new(0.6, 0, 1, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = labelText
+    lbl.Text = label
     lbl.Font = Enum.Font.GothamSemibold
     lbl.TextSize = 11
     lbl.TextColor3 = C.textMid
     lbl.TextXAlignment = Enum.TextXAlignment.Left
-    lbl.TextStrokeTransparency = 1
+    
+    local val = Instance.new("TextLabel", f)
+    val.Position = UDim2.new(0.6, 0, 0, 0)
+    val.Size = UDim2.new(0.4, -10, 1, 0)
+    val.BackgroundTransparency = 1
+    val.Text = "0"
+    val.Font = Enum.Font.GothamBold
+    val.TextSize = 12
+    val.TextColor3 = C.accent
+    val.TextXAlignment = Enum.TextXAlignment.Right
+    return val
+end
 
+local function makeSlider(parent, label, minV, maxV, defaultV, order, callback)
+    local wrap = card(parent, 54, order)
+    
+    local lbl = Instance.new("TextLabel", wrap)
+    lbl.Position = UDim2.new(0, 12, 0, 8)
+    lbl.Size = UDim2.new(1, -80, 0, 16)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = label
+    lbl.Font = Enum.Font.GothamSemibold
+    lbl.TextSize = 11
+    lbl.TextColor3 = C.textMid
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    
     local valLbl = Instance.new("TextLabel", wrap)
     valLbl.Position = UDim2.new(1, -52, 0, 8)
     valLbl.Size = UDim2.new(0, 42, 0, 16)
@@ -686,208 +354,141 @@ local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callba
     valLbl.Text = tostring(defaultV)
     valLbl.Font = Enum.Font.GothamBold
     valLbl.TextSize = 12
-    valLbl.TextColor3 = C.accentGlow
+    valLbl.TextColor3 = C.accent
     valLbl.TextXAlignment = Enum.TextXAlignment.Right
-    valLbl.TextStrokeTransparency = 1
-
+    
     local track = Instance.new("Frame", wrap)
     track.Position = UDim2.new(0, 12, 0, 34)
     track.Size = UDim2.new(1, -24, 0, 5)
     track.BackgroundColor3 = C.border
-    track.BorderSizePixel = 0
     track.Active = true
     Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
-
-    local fill2 = Instance.new("Frame", track)
-    fill2.Size = UDim2.new((defaultV - minV)/(maxV - minV), 0, 1, 0)
-    fill2.BackgroundColor3 = C.accent
-    fill2.BorderSizePixel = 0
-    Instance.new("UICorner", fill2).CornerRadius = UDim.new(1, 0)
-
-    local knob2 = Instance.new("Frame", track)
-    local kp = (defaultV - minV)/(maxV - minV)
-    knob2.Size = UDim2.new(0, 14, 0, 14)
-    knob2.Position = UDim2.new(kp, -7, 0.5, -7)
-    knob2.BackgroundColor3 = Color3.new(1,1,1)
-    knob2.BorderSizePixel = 0
-    Instance.new("UICorner", knob2).CornerRadius = UDim.new(1, 0)
-
-    local ks = Instance.new("UIStroke", knob2)
-    ks.Color = C.accent
-    ks.Thickness = 2
-
+    
+    local fill = Instance.new("Frame", track)
+    fill.Size = UDim2.new((defaultV - minV) / (maxV - minV), 0, 1, 0)
+    fill.BackgroundColor3 = C.accent
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+    
+    local knob = Instance.new("Frame", track)
+    knob.Size = UDim2.new(0, 14, 0, 14)
+    knob.Position = UDim2.new((defaultV - minV) / (maxV - minV), -7, 0.5, -7)
+    knob.BackgroundColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+    
     local dragging = false
-
-    local function update(x)
-        local pos = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
-        local val = math.floor(minV + pos * (maxV - minV))
-        knob2.Position = UDim2.new(pos, -7, 0.5, -7)
-        fill2.Size = UDim2.new(pos, 0, 1, 0)
-        valLbl.Text = tostring(val)
-        if callback then callback(val) end
-    end
-
     track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
-            update(input.Position.X)
+            local x = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+            local val = math.floor(minV + x * (maxV - minV))
+            knob.Position = UDim2.new(x, -7, 0.5, -7)
+            fill.Size = UDim2.new(x, 0, 1, 0)
+            valLbl.Text = tostring(val)
+            if callback then callback(val) end
         end
     end)
-
+    
+    UIS.InputEnded:Connect(function()
+        dragging = false
+    end)
+    
     UIS.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            update(input.Position.X)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local x = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+            local val = math.floor(minV + x * (maxV - minV))
+            knob.Position = UDim2.new(x, -7, 0.5, -7)
+            fill.Size = UDim2.new(x, 0, 1, 0)
+            valLbl.Text = tostring(val)
+            if callback then callback(val) end
         end
     end)
-
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-
-    return wrap, valLbl
-end
-
-local function makeStatusRow(parent, label, order)
-    local f = card(parent, 30, order)
-
-    local lbl2 = Instance.new("TextLabel", f)
-    lbl2.Position = UDim2.new(0, 12, 0, 0)
-    lbl2.Size = UDim2.new(0.6, 0, 1, 0)
-    lbl2.BackgroundTransparency = 1
-    lbl2.Text = label
-    lbl2.Font = Enum.Font.GothamSemibold
-    lbl2.TextSize = 11
-    lbl2.TextColor3 = C.textMid
-    lbl2.TextXAlignment = Enum.TextXAlignment.Left
-    lbl2.TextStrokeTransparency = 1
-
-    local val2 = Instance.new("TextLabel", f)
-    val2.Position = UDim2.new(0.6, 0, 0, 0)
-    val2.Size = UDim2.new(0.4, -10, 1, 0)
-    val2.BackgroundTransparency = 1
-    val2.Text = "0"
-    val2.Font = Enum.Font.GothamBold
-    val2.TextSize = 12
-    val2.TextColor3 = C.accentGlow
-    val2.TextXAlignment = Enum.TextXAlignment.Right
-    val2.TextStrokeTransparency = 1
-
-    return val2
+    
+    return wrap
 end
 
 -- ============================================================
--- AUTO PAGE (MS LOOP)
+-- AUTO PAGE
 -- ============================================================
-local ap = pages["AUTO"]
+local autoPage = pages["AUTO"]
 
-sectionLabel(ap, "MS LOOP AUTO COOK", 1)
+local waterVal = makeStatusRow(autoPage, "Water", 1)
+local sugarVal = makeStatusRow(autoPage, "Sugar Block Bag", 2)
+local gelatinVal = makeStatusRow(autoPage, "Gelatin", 3)
+local emptyVal = makeStatusRow(autoPage, "Empty Bag", 4)
 
-local waterValAuto = makeStatusRow(ap, "Water", 2)
-local sugarValAuto = makeStatusRow(ap, "Sugar Block Bag", 3)
-local gelatinValAuto = makeStatusRow(ap, "Gelatin", 4)
-local emptyValAuto = makeStatusRow(ap, "Empty Bag", 5)
+local statusCard = card(autoPage, 40, 5)
+local statusLbl = Instance.new("TextLabel", statusCard)
+statusLbl.Size = UDim2.new(1, -20, 1, 0)
+statusLbl.Position = UDim2.new(0, 12, 0, 0)
+statusLbl.BackgroundTransparency = 1
+statusLbl.Text = "STOPPED"
+statusLbl.Font = Enum.Font.GothamBold
+statusLbl.TextSize = 13
+statusLbl.TextColor3 = C.red
+statusLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-sectionLabel(ap, "CONTROL", 6)
-
-local msStatusCard = card(ap, 40, 7)
-local msStatusLbl = Instance.new("TextLabel", msStatusCard)
-msStatusLbl.Size = UDim2.new(1, -20, 1, 0)
-msStatusLbl.Position = UDim2.new(0, 12, 0, 0)
-msStatusLbl.BackgroundTransparency = 1
-msStatusLbl.Text = "STOPPED"
-msStatusLbl.Font = Enum.Font.GothamBold
-msStatusLbl.TextSize = 13
-msStatusLbl.TextColor3 = C.red
-msStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-msStatusLbl.TextStrokeTransparency = 1
-
-local msStartBtn = makeActionBtn(ap, "START MS LOOP", C.green, 8)
-local msStopBtn = makeActionBtn(ap, "STOP MS LOOP", C.red, 9)
+local startBtn = makeActionBtn(autoPage, "START MS LOOP", C.green, 6)
+local stopBtn = makeActionBtn(autoPage, "STOP MS LOOP", C.red, 7)
+stopBtn.Visible = false
 
 local msRunning = false
 
-local function updateAutoInventory()
-    waterValAuto.Text = tostring(countItem("Water"))
-    sugarValAuto.Text = tostring(countItem("Sugar Block Bag"))
-    gelatinValAuto.Text = tostring(countItem("Gelatin"))
-    emptyValAuto.Text = tostring(countItem("Empty Bag"))
-end
-
-local function cookProcess()
-    pcall(function()
-        equip("Water")
-        holdE(0.7)
-        for i = 20, 1, -1 do task.wait(1) end
-        
-        equip("Sugar Block Bag")
-        holdE(0.7)
-        task.wait(1)
-        
-        equip("Gelatin")
-        holdE(0.7)
-        task.wait(1)
-        
-        for i = 45, 1, -1 do task.wait(1) end
-        
-        equip("Empty Bag")
-        holdE(0.7)
-        task.wait(1)
-    end)
+local function updateInventory()
+    waterVal.Text = countItem("Water")
+    sugarVal.Text = countItem("Sugar Block Bag")
+    gelatinVal.Text = countItem("Gelatin")
+    emptyVal.Text = countItem("Empty Bag")
 end
 
 local function msLoop()
     while msRunning do
-        updateAutoInventory()
-        msStatusLbl.Text = "COOKING..."
+        updateInventory()
+        statusLbl.Text = "COOKING..."
+        statusLbl.TextColor3 = Color3.fromRGB(255, 200, 0)
         cookProcess()
-        updateAutoInventory()
+        updateInventory()
         task.wait(2)
     end
-    msStatusLbl.Text = "STOPPED"
+    statusLbl.Text = "STOPPED"
+    statusLbl.TextColor3 = C.red
 end
 
-msStartBtn.MouseButton1Click:Connect(function()
+startBtn.MouseButton1Click:Connect(function()
     if not msRunning then
-        startHPMonitoring()
         msRunning = true
-        msStartBtn.Text = "STOP MS LOOP"
-        TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
-        msStatusLbl.Text = "RUNNING"
-        msStatusLbl.TextColor3 = C.green
+        startBtn.Visible = false
+        stopBtn.Visible = true
+        statusLbl.Text = "RUNNING"
+        statusLbl.TextColor3 = C.green
         task.spawn(msLoop)
     end
 end)
 
-msStopBtn.MouseButton1Click:Connect(function()
-    stopHPMonitoring()
+stopBtn.MouseButton1Click:Connect(function()
     msRunning = false
-    msStartBtn.Text = "START MS LOOP"
-    TweenService:Create(msStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
-    msStatusLbl.Text = "STOPPED"
-    msStatusLbl.TextColor3 = C.red
+    startBtn.Visible = true
+    stopBtn.Visible = false
 end)
 
 -- ============================================================
 -- FULLY PAGE
 -- ============================================================
 local fullyPage = pages["FULLY"]
+local fullyRunning = false
+local fullySavedPos = nil
+local fullyTarget = 5
+local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
 
-sectionLabel(fullyPage, "AUTO FULLY", 1)
+local waterValF = makeStatusRow(fullyPage, "Water", 1)
+local sugarValF = makeStatusRow(fullyPage, "Sugar Block Bag", 2)
+local gelatinValF = makeStatusRow(fullyPage, "Gelatin", 3)
+local emptyValF = makeStatusRow(fullyPage, "Empty Bag", 4)
 
-local waterValFully = makeStatusRow(fullyPage, "Water", 2)
-local sugarValFully = makeStatusRow(fullyPage, "Sugar Block Bag", 3)
-local gelatinValFully = makeStatusRow(fullyPage, "Gelatin", 4)
-local emptyValFully = makeStatusRow(fullyPage, "Empty Bag", 5)
-
-sectionLabel(fullyPage, "SETTING", 6)
-
-local targetSliderWrap, targetValLbl = makeSlider(fullyPage, "TARGET FULLY", 1, 50, 5, 7, function(v)
+makeSlider(fullyPage, "TARGET FULLY", 1, 50, 5, 5, function(v)
     fullyTarget = v
 end)
 
-local fullyStatusCard = card(fullyPage, 40, 8)
+local fullyStatusCard = card(fullyPage, 40, 6)
 local fullyStatusLbl = Instance.new("TextLabel", fullyStatusCard)
 fullyStatusLbl.Size = UDim2.new(1, -20, 1, 0)
 fullyStatusLbl.Position = UDim2.new(0, 12, 0, 0)
@@ -897,36 +498,23 @@ fullyStatusLbl.Font = Enum.Font.GothamBold
 fullyStatusLbl.TextSize = 13
 fullyStatusLbl.TextColor3 = C.red
 fullyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-fullyStatusLbl.TextStrokeTransparency = 1
 
-local fullyStartBtn = makeActionBtn(fullyPage, "START FULLY", C.green, 9)
-local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 10)
-
--- FULLY LOGIC
-local fullyRunning = false
-local fullySavedPos = nil
-local NPC_MS_POS = Vector3.new(510.061, 4.476, 600.548)
+local fullyStartBtn = makeActionBtn(fullyPage, "START FULLY", C.green, 7)
+local fullyStopBtn = makeActionBtn(fullyPage, "STOP FULLY", C.red, 8)
+fullyStopBtn.Visible = false
 
 local function updateFullyInventory()
-    waterValFully.Text = tostring(countItem("Water"))
-    sugarValFully.Text = tostring(countItem("Sugar Block Bag"))
-    gelatinValFully.Text = tostring(countItem("Gelatin"))
-    emptyValFully.Text = tostring(countItem("Empty Bag"))
-end
-
-local function setFullyStatus(msg, color)
-    fullyStatusLbl.Text = msg
-    fullyStatusLbl.TextColor3 = color or C.textMid
+    waterValF.Text = countItem("Water")
+    sugarValF.Text = countItem("Sugar Block Bag")
+    gelatinValF.Text = countItem("Gelatin")
+    emptyValF.Text = countItem("Empty Bag")
 end
 
 local function fullyBuy(qty)
     if not storePurchaseRE then return end
-    
     local items = {"Water", "Sugar Block Bag", "Gelatin", "Empty Bag"}
-    
     for _, item in ipairs(items) do
         if not fullyRunning then break end
-        setFullyStatus("BUYING " .. item .. " x" .. qty, Color3.fromRGB(100, 180, 255))
         for i = 1, qty do
             if not fullyRunning then break end
             pcall(function() storePurchaseRE:FireServer(item, 1) end)
@@ -934,17 +522,13 @@ local function fullyBuy(qty)
         end
         task.wait(0.5)
     end
-    setFullyStatus("PURCHASE COMPLETE!", Color3.fromRGB(80, 220, 130))
-    task.wait(1)
 end
 
 local function fullySell()
     local sellItems = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
-    
     for _, item in ipairs(sellItems) do
         if not fullyRunning then break end
         while countItem(item) > 0 and fullyRunning do
-            setFullyStatus("SELLING " .. item, Color3.fromRGB(52, 210, 110))
             pcall(function()
                 equip(item)
                 holdE(0.7)
@@ -952,23 +536,20 @@ local function fullySell()
             end)
         end
     end
-    setFullyStatus("SELLING COMPLETE!", Color3.fromRGB(52, 210, 110))
-    task.wait(1)
 end
 
 local function fullyLoop()
-    setFullyStatus("TARGET: " .. fullyTarget .. " MS PER LOOP", Color3.fromRGB(100, 180, 255))
-    
     while fullyRunning do
-        setFullyStatus("TELEPORT TO NPC", Color3.fromRGB(100, 180, 255))
+        fullyStatusLbl.Text = "TELEPORT TO NPC"
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
+        fullyStatusLbl.Text = "BUYING..."
         fullyBuy(fullyTarget)
         if not fullyRunning then break end
         
         if fullySavedPos then
-            setFullyStatus("RETURN TO APARTMENT", Color3.fromRGB(148, 80, 255))
+            fullyStatusLbl.Text = "RETURN TO APARTMENT"
             stepTeleport(fullySavedPos)
             task.wait(1)
         end
@@ -977,7 +558,7 @@ local function fullyLoop()
         
         local cooked = 0
         while fullyRunning and cooked < fullyTarget do
-            setFullyStatus("COOKING MS " .. (cooked + 1) .. "/" .. fullyTarget, Color3.fromRGB(82, 130, 255))
+            fullyStatusLbl.Text = "COOKING " .. (cooked + 1) .. "/" .. fullyTarget
             cookProcess()
             cooked = cooked + 1
             updateFullyInventory()
@@ -986,74 +567,59 @@ local function fullyLoop()
         
         if not fullyRunning then break end
         
-        setFullyStatus("TELEPORT TO NPC FOR SELLING", Color3.fromRGB(52, 210, 110))
+        fullyStatusLbl.Text = "TELEPORT TO SELL"
         stepTeleport(NPC_MS_POS)
         task.wait(1)
         
+        fullyStatusLbl.Text = "SELLING..."
         fullySell()
         if not fullyRunning then break end
         
-        setFullyStatus("LOOP COMPLETE, RESTARTING...", Color3.fromRGB(100, 180, 255))
         task.wait(2)
     end
-    
     fullyRunning = false
-    fullyStartBtn.Text = "START FULLY"
-    TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
-    setFullyStatus("STOPPED", C.red)
+    fullyStartBtn.Visible = true
+    fullyStopBtn.Visible = false
+    fullyStatusLbl.Text = "STOPPED"
+    fullyStatusLbl.TextColor3 = C.red
 end
 
 fullyStartBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        setFullyStatus("CANNOT GET POSITION!", C.red)
-        return
-    end
-    
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
     fullySavedPos = hrp.Position
     fullyRunning = true
-    startHPMonitoring()
-
-    fullyStartBtn.Text = "RUNNING..."
-    TweenService:Create(fullyStartBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
-    setFullyStatus("RUNNING", C.green)
-    
+    fullyStartBtn.Visible = false
+    fullyStopBtn.Visible = true
+    fullyStatusLbl.Text = "RUNNING"
+    fullyStatusLbl.TextColor3 = C.green
     task.spawn(fullyLoop)
 end)
 
 fullyStopBtn.MouseButton1Click:Connect(function()
-    if not fullyRunning then return end
     fullyRunning = false
-    stopHPMonitoring()
-    setFullyStatus("STOPPING...", C.orange)
 end)
 
 -- ============================================================
 -- TP PAGE
 -- ============================================================
-local tp = pages["TP"]
+local tpPage = pages["TP"]
 
 local LOCATIONS = {
-    {name = "Dealer NPC",      pos = Vector3.new(770.992, 3.71, 433.75)},
+    {name = "Dealer NPC", pos = Vector3.new(770.992, 3.71, 433.75)},
     {name = "NPC Marshmallow", pos = Vector3.new(510.061, 4.476, 600.548)},
-    {name = "Apart 1",         pos = Vector3.new(1137.992, 9.932, 449.753)},
-    {name = "Apart 2",         pos = Vector3.new(1139.174, 9.932, 420.556)},
-    {name = "Apart 3",         pos = Vector3.new(984.856, 9.932, 247.280)},
-    {name = "Apart 4",         pos = Vector3.new(988.311, 9.932, 221.664)},
-    {name = "Apart 5",         pos = Vector3.new(923.954, 9.932, 42.202)},
-    {name = "Apart 6",         pos = Vector3.new(895.721, 9.932, 41.928)},
-    {name = "Casino",          pos = Vector3.new(1166.33, 3.36, -29.77)},
-    {name = "Hospital",        pos = Vector3.new(1065.19, 28.47, 420.76)},
-    {name = "Apt Casino 1",    pos = Vector3.new(1202.30, 3.71, -220.91)},
-    {name = "Apt Casino 2",    pos = Vector3.new(1179.72, 3.71, -230.21)},
-    {name = "Apt Casino 3",    pos = Vector3.new(1202.31, 3.71, -182.55)},
+    {name = "Apart 1", pos = Vector3.new(1137.992, 9.932, 449.753)},
+    {name = "Apart 2", pos = Vector3.new(1139.174, 9.932, 420.556)},
+    {name = "Apart 3", pos = Vector3.new(984.856, 9.932, 247.280)},
+    {name = "Apart 4", pos = Vector3.new(988.311, 9.932, 221.664)},
+    {name = "Apart 5", pos = Vector3.new(923.954, 9.932, 42.202)},
+    {name = "Apart 6", pos = Vector3.new(895.721, 9.932, 41.928)},
+    {name = "Casino", pos = Vector3.new(1166.33, 3.36, -29.77)},
 }
 
 for i, loc in ipairs(LOCATIONS) do
-    local btn = makeActionBtn(tp, loc.name, C.card, i)
+    local btn = makeActionBtn(tpPage, loc.name, C.card, i)
     btn.MouseButton1Click:Connect(function()
         stepTeleport(loc.pos)
     end)
@@ -1062,145 +628,69 @@ end
 -- ============================================================
 -- MS POT PAGE
 -- ============================================================
-local mspot = pages["MS POT"]
+local mspotPage = pages["MS POT"]
 
-sectionLabel(mspot, "HAPUS PART DI BAWAH", 1)
+local deleteBtn = makeActionBtn(mspotPage, "HAPUS PART DI BAWAH", Color3.fromRGB(120, 20, 50), 1)
+local undoBtn = makeActionBtn(mspotPage, "UNDO", C.card, 2)
+local scanBtn = makeActionBtn(mspotPage, "CARI TOMBOL", Color3.fromRGB(0, 100, 80), 3)
 
-local deleteFloorBtn = makeActionBtn(mspot, "HAPUS", Color3.fromRGB(120, 20, 50), 2)
-local undoBtn = makeActionBtn(mspot, "UNDO", C.card, 3)
+local deletedParts = {}
 
-sectionLabel(mspot, "CARI TOMBOL", 4)
-
-local findCookBtn = makeActionBtn(mspot, "CARI AMPE KETEMU", Color3.fromRGB(0, 100, 80), 5)
-
-local deletedStack = {}
-local scannedPrompts = {}
-local SCAN_RADIUS = 50
-local isDeleting = false
-
-local function getPromptPosition(prompt)
-    local p = prompt.Parent
-    if not p then return nil end
-    if p:IsA("BasePart") then return p.Position end
-    if p:IsA("Attachment") then return p.WorldPosition end
-    if p:IsA("Model") then
-        if p.PrimaryPart then return p.PrimaryPart.Position end
-        for _, child in ipairs(p:GetDescendants()) do
-            if child:IsA("BasePart") then return child.Position end
-        end
-    end
-    local gp = p.Parent
-    if gp then
-        if gp:IsA("BasePart") then return gp.Position end
-        if gp:IsA("Model") then
-            if gp.PrimaryPart then return gp.PrimaryPart.Position end
-            for _, child in ipairs(gp:GetDescendants()) do
-                if child:IsA("BasePart") then return child.Position end
-            end
-        end
-    end
-    return nil
-end
-
-local function doPromptScan()
+deleteBtn.MouseButton1Click:Connect(function()
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-
-    for prompt, data in pairs(scannedPrompts) do
-        if prompt and prompt.Parent then
-            prompt.MaxActivationDistance = data.maxDist
-            prompt.RequiresLineOfSight   = data.lineOfSight
-            prompt.Enabled               = data.enabled
-            prompt.HoldDuration          = data.holdDuration
-        end
-    end
-    scannedPrompts = {}
-
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            local pos = getPromptPosition(v)
-            if pos then
-                local dist = (hrp.Position - pos).Magnitude
-                if dist <= SCAN_RADIUS then
-                    scannedPrompts[v] = {
-                        maxDist      = v.MaxActivationDistance,
-                        lineOfSight  = v.RequiresLineOfSight,
-                        enabled      = v.Enabled,
-                        holdDuration = v.HoldDuration,
-                    }
-                    v.Enabled               = true
-                    v.MaxActivationDistance = 20
-                    v.RequiresLineOfSight   = false
-                    v.HoldDuration          = 0
-                end
-            end
-        end
-    end
-end
-
-findCookBtn.MouseButton1Click:Connect(function()
-    findCookBtn.Text = "CARI..."
-    TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 60, 50)}):Play()
-    task.spawn(function()
-        doPromptScan()
-        task.wait(0.3)
-        findCookBtn.Text = "CARI TOMBOL AMPE KETEMU"
-        TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 100, 80)}):Play()
-    end)
-end)
-
-deleteFloorBtn.MouseButton1Click:Connect(function()
-    if isDeleting then return end
-    isDeleting = true
-    deleteFloorBtn.Text = "PROCESSING..."
-    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 0, 30)}):Play()
-
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        isDeleting = false
-        deleteFloorBtn.Text = "HAPUS"
-        TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
-        return
-    end
-
-    local rayOrigin = hrp.Position
-    local rayDir = Vector3.new(0, -15, 0)
+    
     local rayParams = RaycastParams.new()
     rayParams.FilterDescendantsInstances = {char}
     rayParams.FilterType = Enum.RaycastFilterType.Exclude
-
-    local result = workspace:Raycast(rayOrigin, rayDir, rayParams)
+    
+    local result = workspace:Raycast(hrp.Position, Vector3.new(0, -15, 0), rayParams)
     if result and result.Instance then
-        local hit = result.Instance
-        if hit and hit.Parent then
-            table.insert(deletedStack, {object = hit:Clone(), parent = hit.Parent})
-            hit:Destroy()
-        end
+        table.insert(deletedParts, {obj = result.Instance:Clone(), parent = result.Instance.Parent})
+        result.Instance:Destroy()
     end
-
-    task.wait(0.3)
-    isDeleting = false
-    deleteFloorBtn.Text = "HAPUS"
-    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
 end)
 
 undoBtn.MouseButton1Click:Connect(function()
-    local last = table.remove(deletedStack)
-    if last and last.object then
-        last.object.Parent = last.parent
+    local last = table.remove(deletedParts)
+    if last and last.obj then
+        last.obj.Parent = last.parent
     end
+end)
+
+scanBtn.MouseButton1Click:Connect(function()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            local pos = v.Parent and v.Parent:IsA("BasePart") and v.Parent.Position
+            if pos and (hrp.Position - pos).Magnitude <= 50 then
+                v.Enabled = true
+                v.MaxActivationDistance = 20
+                v.RequiresLineOfSight = false
+                v.HoldDuration = 0
+            end
+        end
+    end
+    scanBtn.Text = "DONE!"
+    task.wait(1)
+    scanBtn.Text = "CARI TOMBOL"
 end)
 
 -- ============================================================
 -- BUY PAGE
 -- ============================================================
-local buyp = pages["BUY"]
+local buyPage = pages["BUY"]
+local buyAmount = 10
 
-sectionLabel(buyp, "AUTO BUY INGREDIENTS", 1)
+makeSlider(buyPage, "BUY AMOUNT PER ITEM", 1, 50, 10, 1, function(v)
+    buyAmount = v
+end)
 
-local buyStatusCard = card(buyp, 40, 2)
+local buyStatusCard = card(buyPage, 40, 2)
 local buyStatusLbl = Instance.new("TextLabel", buyStatusCard)
 buyStatusLbl.Size = UDim2.new(1, -20, 1, 0)
 buyStatusLbl.Position = UDim2.new(0, 12, 0, 0)
@@ -1210,97 +700,60 @@ buyStatusLbl.Font = Enum.Font.GothamBold
 buyStatusLbl.TextSize = 13
 buyStatusLbl.TextColor3 = C.red
 buyStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-buyStatusLbl.TextStrokeTransparency = 1
 
-local buyTotalCard = card(buyp, 30, 3)
-local buyTotalLbl = Instance.new("TextLabel", buyTotalCard)
-buyTotalLbl.Size = UDim2.new(1, -20, 1, 0)
-buyTotalLbl.Position = UDim2.new(0, 12, 0, 0)
-buyTotalLbl.BackgroundTransparency = 1
-buyTotalLbl.Text = "Total: 0 items"
-buyTotalLbl.Font = Enum.Font.Gotham
-buyTotalLbl.TextSize = 11
-buyTotalLbl.TextColor3 = C.textMid
-buyTotalLbl.TextXAlignment = Enum.TextXAlignment.Left
-buyTotalLbl.TextStrokeTransparency = 1
-
-local buySliderWrap, buyValLbl = makeSlider(buyp, "BUY AMOUNT PER ITEM", 1, 50, 10, 4, function(v)
-    buyAmount = v
-end)
-
-local buyStartBtn = makeActionBtn(buyp, "START BUY", C.green, 5)
-local buyStopBtn = makeActionBtn(buyp, "STOP BUY", C.red, 6)
+local buyStartBtn = makeActionBtn(buyPage, "START BUY", C.green, 3)
+local buyStopBtn = makeActionBtn(buyPage, "STOP BUY", C.red, 4)
+buyStopBtn.Visible = false
 
 local autoBuyRunning = false
-local autoBuyTotalBought = 0
 
 local function startAutoBuy()
     if autoBuyRunning then return end
-    if not storePurchaseRE then
-        buyStatusLbl.Text = "ERROR!"
-        buyStatusLbl.TextColor3 = C.red
-        task.wait(2)
-        buyStatusLbl.Text = "STOPPED"
-        return
-    end
+    if not storePurchaseRE then return end
     
     autoBuyRunning = true
-    autoBuyTotalBought = 0
-    buyStatusLbl.Text = "RUNNING"
-    buyStatusLbl.TextColor3 = C.green
-    buyTotalLbl.Text = "Total: 0 items"
-    
-    local BUY_ITEMS = {"Water", "Sugar Block Bag", "Gelatin"}
+    buyStartBtn.Visible = false
+    buyStopBtn.Visible = true
+    buyStatusLbl.Text = "BUYING..."
+    buyStatusLbl.TextColor3 = Color3.fromRGB(255, 200, 0)
     
     task.spawn(function()
-        local amount = buyAmount
-        
-        for _, itemName in ipairs(BUY_ITEMS) do
+        local items = {"Water", "Sugar Block Bag", "Gelatin"}
+        for _, item in ipairs(items) do
             if not autoBuyRunning then break end
-            
-            buyStatusLbl.Text = "Buying " .. itemName .. " x" .. amount
-            buyStatusLbl.TextColor3 = Color3.fromRGB(255,255,100)
-            
-            for i = 1, amount do
+            for i = 1, buyAmount do
                 if not autoBuyRunning then break end
-                pcall(function() storePurchaseRE:FireServer(itemName, 1) end)
-                autoBuyTotalBought = autoBuyTotalBought + 1
-                buyTotalLbl.Text = "Total: " .. autoBuyTotalBought .. " items"
-                task.wait(0.5)
+                pcall(function() storePurchaseRE:FireServer(item, 1) end)
+                task.wait(0.4)
             end
-            task.wait(0.8)
+            task.wait(0.5)
         end
-        
-        if autoBuyRunning then
-            buyStatusLbl.Text = "Complete! " .. autoBuyTotalBought .. " items"
-            buyStatusLbl.TextColor3 = C.green
-            task.wait(2)
-            if autoBuyRunning then
-                buyStatusLbl.Text = "STOPPED"
-                buyStatusLbl.TextColor3 = C.red
-                autoBuyRunning = false
-            end
-        end
+        autoBuyRunning = false
+        buyStartBtn.Visible = true
+        buyStopBtn.Visible = false
+        buyStatusLbl.Text = "COMPLETE!"
+        buyStatusLbl.TextColor3 = C.green
+        task.wait(2)
+        buyStatusLbl.Text = "STOPPED"
+        buyStatusLbl.TextColor3 = C.red
     end)
 end
 
-local function stopAutoBuy()
+buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
+buyStopBtn.MouseButton1Click:Connect(function()
     autoBuyRunning = false
+    buyStartBtn.Visible = true
+    buyStopBtn.Visible = false
     buyStatusLbl.Text = "STOPPED"
     buyStatusLbl.TextColor3 = C.red
-end
-
-buyStartBtn.MouseButton1Click:Connect(startAutoBuy)
-buyStopBtn.MouseButton1Click:Connect(stopAutoBuy)
+end)
 
 -- ============================================================
 -- SELL PAGE
 -- ============================================================
-local sellp = pages["SELL"]
+local sellPage = pages["SELL"]
 
-sectionLabel(sellp, "AUTO SELL MARSHMALLOW BAGS", 1)
-
-local sellStatusCard = card(sellp, 40, 2)
+local sellStatusCard = card(sellPage, 40, 1)
 local sellStatusLbl = Instance.new("TextLabel", sellStatusCard)
 sellStatusLbl.Size = UDim2.new(1, -20, 1, 0)
 sellStatusLbl.Position = UDim2.new(0, 12, 0, 0)
@@ -1310,162 +763,267 @@ sellStatusLbl.Font = Enum.Font.GothamBold
 sellStatusLbl.TextSize = 13
 sellStatusLbl.TextColor3 = C.red
 sellStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-sellStatusLbl.TextStrokeTransparency = 1
 
-local sellCounterCard = card(sellp, 30, 3)
-local sellCounterLbl = Instance.new("TextLabel", sellCounterCard)
-sellCounterLbl.Size = UDim2.new(1, -20, 1, 0)
-sellCounterLbl.Position = UDim2.new(0, 12, 0, 0)
-sellCounterLbl.BackgroundTransparency = 1
-sellCounterLbl.Text = "Sold: 0"
-sellCounterLbl.Font = Enum.Font.GothamBold
-sellCounterLbl.TextSize = 12
-sellCounterLbl.TextColor3 = C.accentGlow
-sellCounterLbl.TextXAlignment = Enum.TextXAlignment.Left
-sellCounterLbl.TextStrokeTransparency = 1
-
-local sellStartBtn = makeActionBtn(sellp, "START SELL", C.green, 4)
-local sellStopBtn = makeActionBtn(sellp, "STOP SELL", C.red, 5)
+local sellStartBtn = makeActionBtn(sellPage, "START SELL", C.green, 2)
+local sellStopBtn = makeActionBtn(sellPage, "STOP SELL", C.red, 3)
+sellStopBtn.Visible = false
 
 local autoSellRunning = false
-local autoSellCount = 0
-local SELL_TOOLS = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
-
-local function getSellTools()
-    local tools = {}
-    if player.Character then
-        for _, child in pairs(player.Character:GetChildren()) do
-            if child:IsA("Tool") then
-                for _, toolName in ipairs(SELL_TOOLS) do
-                    if child.Name == toolName then table.insert(tools, child) break end
-                end
-            end
-        end
-    end
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, child in pairs(backpack:GetChildren()) do
-            if child:IsA("Tool") then
-                for _, toolName in ipairs(SELL_TOOLS) do
-                    if child.Name == toolName then table.insert(tools, child) break end
-                end
-            end
-        end
-    end
-    return tools
-end
 
 local function startAutoSell()
     if autoSellRunning then return end
+    
     autoSellRunning = true
-    autoSellCount = 0
-    sellStatusLbl.Text = "RUNNING"
-    sellStatusLbl.TextColor3 = C.green
+    sellStartBtn.Visible = false
+    sellStopBtn.Visible = true
+    sellStatusLbl.Text = "SELLING..."
+    sellStatusLbl.TextColor3 = Color3.fromRGB(255, 200, 0)
     
     task.spawn(function()
-        while autoSellRunning do
-            local tools = getSellTools()
-            
-            if #tools > 0 then
-                for _, tool in ipairs(tools) do
-                    if not autoSellRunning then break end
-                    if tool and tool.Parent then
-                        if tool.Parent == player:FindFirstChild("Backpack") then
-                            local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-                            if humanoid then humanoid:EquipTool(tool) task.wait(0.3) end
-                        end
-                        sellStatusLbl.Text = "SELLING..."
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                        local holdStart = tick()
-                        while autoSellRunning and (tick() - holdStart) < 2 do task.wait(0.1) end
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                        autoSellCount = autoSellCount + 1
-                        sellCounterLbl.Text = "Sold: " .. autoSellCount
-                        sellStatusLbl.Text = "RUNNING"
-                        task.wait(1)
-                    end
-                end
-            else
-                task.wait(2)
+        local sellItems = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
+        for _, item in ipairs(sellItems) do
+            if not autoSellRunning then break end
+            while countItem(item) > 0 and autoSellRunning do
+                pcall(function()
+                    equip(item)
+                    holdE(0.7)
+                    task.wait(1)
+                end)
             end
-            task.wait(0.5)
         end
+        autoSellRunning = false
+        sellStartBtn.Visible = true
+        sellStopBtn.Visible = false
+        sellStatusLbl.Text = "COMPLETE!"
+        sellStatusLbl.TextColor3 = C.green
+        task.wait(2)
+        sellStatusLbl.Text = "STOPPED"
+        sellStatusLbl.TextColor3 = C.red
     end)
 end
 
-local function stopAutoSell()
+sellStartBtn.MouseButton1Click:Connect(startAutoSell)
+sellStopBtn.MouseButton1Click:Connect(function()
     autoSellRunning = false
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    sellStartBtn.Visible = true
+    sellStopBtn.Visible = false
     sellStatusLbl.Text = "STOPPED"
     sellStatusLbl.TextColor3 = C.red
-end
-
-sellStartBtn.MouseButton1Click:Connect(startAutoSell)
-sellStopBtn.MouseButton1Click:Connect(stopAutoSell)
-
--- ============================================================
--- SETTINGS PAGE
--- ============================================================
-local settingsp = pages["SETTINGS"]
-
-sectionLabel(settingsp, "SHORTCUT SETTINGS", 1)
-
-local blinkToggleCard = card(settingsp, 50, 2)
-local blinkToggleTitle = Instance.new("TextLabel", blinkToggleCard)
-blinkToggleTitle.Size = UDim2.new(0.6, 0, 1, 0)
-blinkToggleTitle.Position = UDim2.new(0, 12, 0, 0)
-blinkToggleTitle.BackgroundTransparency = 1
-blinkToggleTitle.Text = "Shortcut T (Blink Forward)"
-blinkToggleTitle.Font = Enum.Font.GothamSemibold
-blinkToggleTitle.TextSize = 12
-blinkToggleTitle.TextColor3 = C.text
-blinkToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
-blinkToggleTitle.TextStrokeTransparency = 1
-
-local blinkToggleBtn = Instance.new("TextButton", blinkToggleCard)
-blinkToggleBtn.Size = UDim2.new(0, 80, 0, 32)
-blinkToggleBtn.Position = UDim2.new(1, -92, 0.5, -16)
-blinkToggleBtn.BackgroundColor3 = C.green
-blinkToggleBtn.Text = "ON"
-blinkToggleBtn.Font = Enum.Font.GothamBold
-blinkToggleBtn.TextSize = 12
-blinkToggleBtn.TextColor3 = C.text
-blinkToggleBtn.BorderSizePixel = 0
-blinkToggleBtn.TextStrokeTransparency = 1
-Instance.new("UICorner", blinkToggleBtn).CornerRadius = UDim.new(0, 6)
-
-blinkToggleBtn.MouseButton1Click:Connect(function()
-    blinkEnabled = not blinkEnabled
-    if blinkEnabled then
-        blinkToggleBtn.Text = "ON"
-        blinkToggleBtn.BackgroundColor3 = C.green
-    else
-        blinkToggleBtn.Text = "OFF"
-        blinkToggleBtn.BackgroundColor3 = C.red
-    end
 end)
 
-sectionLabel(settingsp, "BLINK BUTTONS FOR MOBILE", 3)
+-- ============================================================
+-- SETTINGS PAGE (MACRO F + BLINK)
+-- ============================================================
+local settingsPage = pages["SETTINGS"]
 
-local blinkMajuBtn = makeActionBtn(settingsp, "BLINK FORWARD", C.accentDim, 4)
-local blinkMundurBtn = makeActionBtn(settingsp, "BLINK BACKWARD", C.accentDim, 5)
-local blinkAtasBtn = makeActionBtn(settingsp, "BLINK UP", C.accentDim, 6)
-local blinkBawahBtn = makeActionBtn(settingsp, "BLINK DOWN", C.accentDim, 7)
+-- Blink Toggle
+local blinkCard = card(settingsPage, 50, 1)
+local blinkTitle = Instance.new("TextLabel", blinkCard)
+blinkTitle.Size = UDim2.new(0.6, 0, 1, 0)
+blinkTitle.Position = UDim2.new(0, 12, 0, 0)
+blinkTitle.BackgroundTransparency = 1
+blinkTitle.Text = "Shortcut T (Blink Forward)"
+blinkTitle.Font = Enum.Font.GothamSemibold
+blinkTitle.TextSize = 12
+blinkTitle.TextColor3 = C.text
+blinkTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-blinkMajuBtn.MouseButton1Click:Connect(blinkMaju)
-blinkMundurBtn.MouseButton1Click:Connect(blinkMundur)
-blinkAtasBtn.MouseButton1Click:Connect(blinkAtas)
-blinkBawahBtn.MouseButton1Click:Connect(blinkBawah)
+local blinkToggle = Instance.new("TextButton", blinkCard)
+blinkToggle.Size = UDim2.new(0, 70, 0, 32)
+blinkToggle.Position = UDim2.new(1, -82, 0.5, -16)
+blinkToggle.BackgroundColor3 = C.green
+blinkToggle.Text = "ON"
+blinkToggle.Font = Enum.Font.GothamBold
+blinkToggle.TextSize = 12
+blinkToggle.TextColor3 = C.text
+blinkToggle.BorderSizePixel = 0
+Instance.new("UICorner", blinkToggle).CornerRadius = UDim.new(0, 6)
+
+blinkToggle.MouseButton1Click:Connect(function()
+    blinkEnabled = not blinkEnabled
+    blinkToggle.Text = blinkEnabled and "ON" or "OFF"
+    blinkToggle.BackgroundColor3 = blinkEnabled and C.green or C.red
+end)
+
+-- Macro F Card
+local macroCard = card(settingsPage, 110, 2)
+local macroTitle = Instance.new("TextLabel", macroCard)
+macroTitle.Size = UDim2.new(0.6, 0, 0, 30)
+macroTitle.Position = UDim2.new(0, 12, 0, 5)
+macroTitle.BackgroundTransparency = 1
+macroTitle.Text = "🔫 Macro F (Spam F otomatis)"
+macroTitle.Font = Enum.Font.GothamBold
+macroTitle.TextSize = 12
+macroTitle.TextColor3 = C.text
+macroTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local macroToggle = Instance.new("TextButton", macroCard)
+macroToggle.Size = UDim2.new(0, 70, 0, 32)
+macroToggle.Position = UDim2.new(1, -82, 0, 5)
+macroToggle.BackgroundColor3 = C.red
+macroToggle.Text = "OFF"
+macroToggle.Font = Enum.Font.GothamBold
+macroToggle.TextSize = 12
+macroToggle.TextColor3 = C.text
+macroToggle.BorderSizePixel = 0
+Instance.new("UICorner", macroToggle).CornerRadius = UDim.new(0, 6)
+
+macroToggle.MouseButton1Click:Connect(function()
+    macroFEnabled = not macroFEnabled
+    macroToggle.Text = macroFEnabled and "ON" or "OFF"
+    macroToggle.BackgroundColor3 = macroFEnabled and C.green or C.red
+    if not macroFEnabled then macroFHeld = false end
+end)
+
+local macroInfo = Instance.new("TextLabel", macroCard)
+macroInfo.Size = UDim2.new(1, -24, 0, 50)
+macroInfo.Position = UDim2.new(0, 12, 0, 45)
+macroInfo.BackgroundTransparency = 1
+macroInfo.Text = "⚠️ Tekan dan TAHAN Klik Kiri untuk spam F otomatis\n⚠️ Lepas Klik Kiri untuk berhenti"
+macroInfo.Font = Enum.Font.Gotham
+macroInfo.TextSize = 10
+macroInfo.TextColor3 = C.textDim
+macroInfo.TextXAlignment = Enum.TextXAlignment.Left
+macroInfo.TextWrapped = true
+
+-- Interval Slider
+local intervalCard = card(settingsPage, 80, 3)
+local intervalTitle = Instance.new("TextLabel", intervalCard)
+intervalTitle.Size = UDim2.new(1, -80, 0, 25)
+intervalTitle.Position = UDim2.new(0, 12, 0, 8)
+intervalTitle.BackgroundTransparency = 1
+intervalTitle.Text = "Interval Spam F (detik)"
+intervalTitle.Font = Enum.Font.Gotham
+intervalTitle.TextSize = 11
+intervalTitle.TextColor3 = C.textDim
+intervalTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local intervalVal = Instance.new("TextLabel", intervalCard)
+intervalVal.Size = UDim2.new(0, 50, 0, 25)
+intervalVal.Position = UDim2.new(1, -62, 0, 8)
+intervalVal.BackgroundTransparency = 1
+intervalVal.Text = "0.3s"
+intervalVal.Font = Enum.Font.GothamBold
+intervalVal.TextSize = 12
+intervalVal.TextColor3 = C.accent
+intervalVal.TextXAlignment = Enum.TextXAlignment.Right
+
+local minusBtn = Instance.new("TextButton", intervalCard)
+minusBtn.Size = UDim2.new(0, 40, 0, 35)
+minusBtn.Position = UDim2.new(0, 12, 0, 38)
+minusBtn.BackgroundColor3 = C.accentDim
+minusBtn.Text = "-"
+minusBtn.Font = Enum.Font.GothamBold
+minusBtn.TextSize = 18
+minusBtn.TextColor3 = C.text
+minusBtn.BorderSizePixel = 0
+Instance.new("UICorner", minusBtn).CornerRadius = UDim.new(0, 6)
+
+local intervalDisplay = Instance.new("TextLabel", intervalCard)
+intervalDisplay.Size = UDim2.new(0, 60, 0, 35)
+intervalDisplay.Position = UDim2.new(0.5, -30, 0, 38)
+intervalDisplay.BackgroundColor3 = C.bg
+intervalDisplay.Text = "0.3"
+intervalDisplay.Font = Enum.Font.GothamBold
+intervalDisplay.TextSize = 14
+intervalDisplay.TextColor3 = C.text
+intervalDisplay.BorderSizePixel = 0
+Instance.new("UICorner", intervalDisplay).CornerRadius = UDim.new(0, 6)
+
+local plusBtn = Instance.new("TextButton", intervalCard)
+plusBtn.Size = UDim2.new(0, 40, 0, 35)
+plusBtn.Position = UDim2.new(1, -52, 0, 38)
+plusBtn.BackgroundColor3 = C.accentDim
+plusBtn.Text = "+"
+plusBtn.Font = Enum.Font.GothamBold
+plusBtn.TextSize = 18
+plusBtn.TextColor3 = C.text
+plusBtn.BorderSizePixel = 0
+Instance.new("UICorner", plusBtn).CornerRadius = UDim.new(0, 6)
+
+local function setInterval(val)
+    macroFInterval = val
+    intervalVal.Text = string.format("%.1f", val) .. "s"
+    intervalDisplay.Text = string.format("%.1f", val)
+end
+
+minusBtn.MouseButton1Click:Connect(function()
+    local newVal = math.max(0.1, macroFInterval - 0.1)
+    setInterval(newVal)
+end)
+
+plusBtn.MouseButton1Click:Connect(function()
+    local newVal = math.min(1.0, macroFInterval + 0.1)
+    setInterval(newVal)
+end)
+
+-- Blink Buttons for Mobile
+local mobileCard = card(settingsPage, 130, 4)
+local mobileTitle = Instance.new("TextLabel", mobileCard)
+mobileTitle.Size = UDim2.new(1, -24, 0, 25)
+mobileTitle.Position = UDim2.new(0, 12, 0, 5)
+mobileTitle.BackgroundTransparency = 1
+mobileTitle.Text = "BLINK BUTTONS (MOBILE)"
+mobileTitle.Font = Enum.Font.GothamBold
+mobileTitle.TextSize = 11
+mobileTitle.TextColor3 = C.accent
+mobileTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local function makeMobileBtn(parent, text, y, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0.45, -5, 0, 40)
+    btn.Position = UDim2.new(0.03, 0, 0, y)
+    btn.BackgroundColor3 = C.accentDim
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.TextColor3 = C.text
+    btn.BorderSizePixel = 0
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+makeMobileBtn(mobileCard, "FORWARD →", 35, function()
+    blinkMaju()
+end)
+
+makeMobileBtn(mobileCard, "BACKWARD ←", 35, function()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = hrp.CFrame - hrp.CFrame.LookVector * 8 end
+end)
+
+makeMobileBtn(mobileCard, "UP ↑", 85, function()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, 5, 0) end
+end)
+
+makeMobileBtn(mobileCard, "DOWN ↓", 85, function()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -5, 0) end
+end)
+
+-- ============================================================
+-- BLINK KEYBIND
+-- ============================================================
+ContextActionService:BindAction("blink", function(_, state)
+    if state == Enum.UserInputState.Begin and blinkEnabled then
+        blinkMaju()
+    end
+end, false, Enum.KeyCode.T)
 
 -- ============================================================
 -- INVENTORY UPDATE LOOP
 -- ============================================================
 task.spawn(function()
     while gui and gui.Parent do
-        if pages["AUTO"] and pages["AUTO"].Visible then
-            updateAutoInventory()
+        if autoPage.Visible then
+            updateInventory()
         end
-        if pages["FULLY"] and pages["FULLY"].Visible then
+        if fullyPage.Visible then
             updateFullyInventory()
         end
         task.wait(1)
@@ -1473,49 +1031,9 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- MINIMIZE BUTTON
--- ============================================================
-local bodyVisible = true
-
-minBtn.MouseButton1Click:Connect(function()
-    bodyVisible = not bodyVisible
-    sidebar.Visible = bodyVisible
-    content.Visible = bodyVisible
-    if bodyVisible then
-        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 520, 0, 420)}):Play()
-    else
-        TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 520, 0, 46)}):Play()
-    end
-end)
-
--- ============================================================
--- HIDE BUTTON + KEYBIND Z
--- ============================================================
-local hideBtn = Instance.new("TextButton", gui)
-hideBtn.Size = UDim2.new(0, 42, 0, 42)
-hideBtn.Position = UDim2.new(1, -52, 0.5, -21)
-hideBtn.Text = "191"
-hideBtn.Font = Enum.Font.GothamBlack
-hideBtn.TextSize = 12
-hideBtn.BackgroundColor3 = C.accent
-hideBtn.TextColor3 = Color3.new(1,1,1)
-hideBtn.Active = true
-hideBtn.Draggable = true
-hideBtn.BorderSizePixel = 0
-hideBtn.TextStrokeTransparency = 1
-Instance.new("UICorner", hideBtn).CornerRadius = UDim.new(0, 10)
-
-hideBtn.MouseButton1Click:Connect(function()
-    main.Visible = not main.Visible
-end)
-
-ContextActionService:BindAction("toggleUI_191", function(_, state)
-    if state == Enum.UserInputState.Begin then
-        main.Visible = not main.Visible
-    end
-end, false, Enum.KeyCode.Z)
-
--- ============================================================
 -- STARTUP
 -- ============================================================
 switchTab("AUTO")
+autoPage.Visible = true
+
+print("191 STORE LOADED! Macro F ada di tab SETTINGS - Tekan & Tahan Klik Kiri")

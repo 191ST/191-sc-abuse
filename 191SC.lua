@@ -1,5 +1,6 @@
 -- ============================================================
--- FULLY NV - TWEEN SPEED 0.3 (TANPA DUDUK, TANPA KENDARAAN)
+-- FULLY NV - TWEEN STABIL (TURUN 7 → GERAK → NAIK 7)
+-- TANPA NOCLIP, TANPA MOVETO, TANPA JATUH
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -67,7 +68,6 @@ local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
-local TWEEN_SPEED = 0.3
 
 -- BASE PLATE
 local function getGroundLevel(pos)
@@ -214,23 +214,30 @@ local function jualSemua()
 end
 
 -- ============================================================
--- KETARIK TWEEN SPEED 0.3 (TANPA DUDUK)
+-- KETARIK TWEEN STABIL (TANPA NOCLIP, TANPA MOVETO)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
 
-    -- Turun 7 studs
+    -- MATIKAN ANIMASI BERJALAN (Optional)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.AutoRotate = false
+        hum.PlatformStand = true -- biar gak jatuh
+    end
+
+    -- 1. TURUN 7 STUDS
     local downPos = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
     local downTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = downPos })
     downTween:Play()
     downTween.Completed:Wait()
     task.wait(0.05)
 
-    -- Tween ke target dengan speed 0.3
+    -- 2. TWEEN KE TARGET (SPEED 0.3)
     local distance = (targetPos - hrp.Position).Magnitude
-    local duration = distance / TWEEN_SPEED
+    local duration = distance / 0.3
     duration = math.max(duration, 3)
 
     local targetCF = CFrame.new(targetPos.X, targetPos.Y - 7, targetPos.Z)
@@ -239,11 +246,17 @@ local function ketarikKeTarget(targetPos)
     moveTween.Completed:Wait()
     task.wait(0.05)
 
-    -- Naik 7 studs
+    -- 3. NAIK 7 STUDS
     local upPos = CFrame.new(targetPos)
     local upTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = upPos })
     upTween:Play()
     upTween.Completed:Wait()
+
+    -- KEMBALIKAN SETTING HUMANOD
+    if hum then
+        hum.AutoRotate = true
+        hum.PlatformStand = false
+    end
 
     return true
 end
@@ -271,13 +284,13 @@ local function jalankanFully(statusFunc)
     end
 
     while fullyRunning do
-        statusFunc("🏃 Ketarik ke NPC Buy (speed 0.3)...")
+        statusFunc("🏃 Ketarik ke NPC Buy...")
         ketarikKeTarget(npcPos)
 
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
 
-        statusFunc("🏃 Ketarik ke apart (speed 0.3)...")
+        statusFunc("🏃 Ketarik ke apart...")
         ketarikKeTarget(apartPos)
 
         for i, stage in ipairs(stages) do
@@ -304,7 +317,7 @@ local function jalankanFully(statusFunc)
             end
         end
 
-        statusFunc("🏃 Ketarik ke NPC Jual (speed 0.3)...")
+        statusFunc("🏃 Ketarik ke NPC Jual...")
         ketarikKeTarget(npcPos)
 
         statusFunc("💰 Menjual MS")
@@ -341,7 +354,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 0.3"
+titleText.Text = "FULLY NV - TWEEN STABIL"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -371,17 +384,19 @@ layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- INFO
 local infoCard = Instance.new("Frame", scroll)
-infoCard.Size = UDim2.new(1, 0, 0, 50)
+infoCard.Size = UDim2.new(1, 0, 0, 60)
 infoCard.BackgroundColor3 = Color3.fromRGB(40, 30, 70)
 Instance.new("UICorner", infoCard).CornerRadius = UDim.new(0, 8)
 local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "SPEED 0.3 (pelan banget)"
+infoLbl.Text = "TWEEN SPEED 0.3\nTURUN 7 → GERAK → NAIK 7"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
-infoLbl.TextSize = 12
+infoLbl.TextSize = 11
+infoLbl.TextWrapped = true
+infoLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- BASE PLATE
 local baseCard = Instance.new("Frame", scroll)
@@ -599,7 +614,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed 0.3)...")
+    setStatus("🚀 Memulai Fully NV (Tween stabil)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -610,4 +625,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Speed Tween = 0.3, tanpa duduk, tanpa kendaraan")
+print("✅ FULLY NV TWEEN STABIL SIAP! Gerak mulus, tidak jatuh, tidak noclip.")

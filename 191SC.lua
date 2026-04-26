@@ -1,6 +1,5 @@
 -- ============================================================
--- FULLY NV - TWEEN STABIL (TURUN 7 → GERAK → NAIK 7)
--- TANPA NOCLIP, TANPA MOVETO, TANPA JATUH
+-- FULLY NV - XZ TWEEN (TANPA UBAH Y, TAPI DI DALAM TANAH)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -138,7 +137,52 @@ local function removeBasePlate()
     end
 end
 
--- HELPER
+-- ============================================================
+-- KETARIK PAKAI XZ TWEEN (Y TETAP, TAPI PENGARUH TANAH DIHILANGKAN)
+-- ============================================================
+local function ketarikKeTarget(targetPos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return false end
+
+    -- 1. MATIKAN GRAVITASI DAN COLLISION (SEMENTARA)
+    local oldPlatform = hum.PlatformStand
+    hum.PlatformStand = true
+
+    -- 2. TURUN 7 STUDS (ONCE)
+    local bawahY = hrp.Position.Y - 7
+    local downCF = CFrame.new(hrp.Position.X, bawahY, hrp.Position.Z)
+    local downTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = downCF })
+    downTween:Play()
+    downTween.Completed:Wait()
+    task.wait(0.05)
+
+    -- 3. TWEEN X Z KE TARGET (Y TETAP)
+    local distance = (targetPos - hrp.Position).Magnitude
+    local duration = math.max(distance / 0.3, 3)
+
+    local targetCF_XZ = CFrame.new(targetPos.X, bawahY, targetPos.Z)
+    local moveTween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF_XZ })
+    moveTween:Play()
+    moveTween.Completed:Wait()
+    task.wait(0.05)
+
+    -- 4. NAIK KE POSISI ASLI
+    local upCF = CFrame.new(targetPos)
+    local upTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = upCF })
+    upTween:Play()
+    upTween.Completed:Wait()
+
+    -- 5. KEMBALIKAN STATUS HUMANOD
+    hum.PlatformStand = oldPlatform
+
+    return true
+end
+
+-- ============================================================
+-- HELPER (COUNT, EQUIP, COOK, DLL) SAMA PERSIS KAYA SEBELUMNYA
+-- ============================================================
 local function countItem(name)
     local total = 0
     for _, v in pairs(player.Backpack:GetChildren()) do
@@ -213,54 +257,6 @@ local function jualSemua()
     end
 end
 
--- ============================================================
--- KETARIK TWEEN STABIL (TANPA NOCLIP, TANPA MOVETO)
--- ============================================================
-local function ketarikKeTarget(targetPos)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-
-    -- MATIKAN ANIMASI BERJALAN (Optional)
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.AutoRotate = false
-        hum.PlatformStand = true -- biar gak jatuh
-    end
-
-    -- 1. TURUN 7 STUDS
-    local downPos = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
-    local downTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = downPos })
-    downTween:Play()
-    downTween.Completed:Wait()
-    task.wait(0.05)
-
-    -- 2. TWEEN KE TARGET (SPEED 0.3)
-    local distance = (targetPos - hrp.Position).Magnitude
-    local duration = distance / 0.3
-    duration = math.max(duration, 3)
-
-    local targetCF = CFrame.new(targetPos.X, targetPos.Y - 7, targetPos.Z)
-    local moveTween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF })
-    moveTween:Play()
-    moveTween.Completed:Wait()
-    task.wait(0.05)
-
-    -- 3. NAIK 7 STUDS
-    local upPos = CFrame.new(targetPos)
-    local upTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = upPos })
-    upTween:Play()
-    upTween.Completed:Wait()
-
-    -- KEMBALIKAN SETTING HUMANOD
-    if hum then
-        hum.AutoRotate = true
-        hum.PlatformStand = false
-    end
-
-    return true
-end
-
 local function getStagePos(stage, pot)
     if stage.pos then return stage.pos
     elseif stage[pot] then return stage[pot]
@@ -331,7 +327,9 @@ local function jalankanFully(statusFunc)
     statusFunc("⏹ Dihentikan")
 end
 
--- GUI
+-- ============================================================
+-- GUI (SEDERHANA, SEPERTI SEBELUMNYA)
+-- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
 screenGui.Parent = playerGui
@@ -354,7 +352,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN STABIL"
+titleText.Text = "FULLY NV - XZ TWEEN"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -380,7 +378,6 @@ scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- INFO
 local infoCard = Instance.new("Frame", scroll)
@@ -391,12 +388,11 @@ local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "TWEEN SPEED 0.3\nTURUN 7 → GERAK → NAIK 7"
+infoLbl.Text = "TWEEN XZ SAJA\nTURUN 7 → GERAK MULUS → NAIK 7"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
 infoLbl.TextSize = 11
 infoLbl.TextWrapped = true
-infoLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- BASE PLATE
 local baseCard = Instance.new("Frame", scroll)
@@ -614,7 +610,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (Tween stabil)...")
+    setStatus("🚀 Memulai Fully NV (XZ Tween)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -625,4 +621,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV TWEEN STABIL SIAP! Gerak mulus, tidak jatuh, tidak noclip.")
+print("✅ FULLY NV XZ TWEEN SIAP!")

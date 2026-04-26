@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TWEEN SEDERHANA (TURUN 7 → GERAK → NAIK 7)
+-- FULLY NV - TWEEN 0.3 + DUDUK TANPA KENDARAAN
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -67,9 +67,9 @@ local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
-local TWEEN_SPEED = 10 -- Kecepatan tween (studs per detik)
+local TWEEN_SPEED = 0.3 -- SUPER PELAN
 
--- BASE PLATE (OPSIONAL)
+-- BASE PLATE 
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
@@ -138,7 +138,7 @@ local function removeBasePlate()
     end
 end
 
--- HELPER FUNCTIONS
+-- HELPER
 local function countItem(name)
     local total = 0
     for _, v in pairs(player.Backpack:GetChildren()) do
@@ -214,15 +214,17 @@ local function jualSemua()
 end
 
 -- ============================================================
--- TWEEN KETARIK (TURUN 7 → GERAK → NAIK 7)
+-- KETARIK TWEEN SPEED 0.3 + DUDUK TANPA KENDARAAN
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return false end
 
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum and hum.SeatPart then hum.Sit = false end
+    -- PAKSA DUDUK
+    hum.Sit = true
+    task.wait(0.1)
 
     -- 1. TURUN 7 STUDS
     local downPos = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
@@ -231,9 +233,10 @@ local function ketarikKeTarget(targetPos)
     downTween.Completed:Wait()
     task.wait(0.05)
 
-    -- 2. TWEEN KE TARGET (dengan posisi Y yang sudah turun)
+    -- 2. TWEEN KE TARGET (SPEED 0.3)
     local distance = (targetPos - hrp.Position).Magnitude
-    local duration = distance / 30 -- Kecepatan standar, bisa diatur dengan mengubah angka 30 (semakin kecil semakin lambat)
+    local duration = distance / TWEEN_SPEED
+    duration = math.max(duration, 3) -- minimal 3 detik
 
     local targetCF = CFrame.new(targetPos.X, targetPos.Y - 7, targetPos.Z)
     local moveTween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF })
@@ -247,6 +250,8 @@ local function ketarikKeTarget(targetPos)
     upTween:Play()
     upTween.Completed:Wait()
 
+    -- BEBASKAN DUDUK
+    hum.Sit = false
     return true
 end
 
@@ -273,13 +278,13 @@ local function jalankanFully(statusFunc)
     end
 
     while fullyRunning do
-        statusFunc("🏃 Ketarik ke NPC Buy...")
+        statusFunc("🏃 Ketarik ke NPC Buy (speed 0.3, duduk)...")
         ketarikKeTarget(npcPos)
 
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
 
-        statusFunc("🏃 Ketarik ke apart...")
+        statusFunc("🏃 Ketarik ke apart (speed 0.3, duduk)...")
         ketarikKeTarget(apartPos)
 
         for i, stage in ipairs(stages) do
@@ -306,7 +311,7 @@ local function jalankanFully(statusFunc)
             end
         end
 
-        statusFunc("🏃 Ketarik ke NPC Jual...")
+        statusFunc("🏃 Ketarik ke NPC Jual (speed 0.3, duduk)...")
         ketarikKeTarget(npcPos)
 
         statusFunc("💰 Menjual MS")
@@ -320,9 +325,7 @@ local function jalankanFully(statusFunc)
     statusFunc("⏹ Dihentikan")
 end
 
--- ============================================================
 -- GUI
--- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
 screenGui.Parent = playerGui
@@ -345,10 +348,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN"
+titleText.Text = "FULLY NV - SPEED 0.3 + DUDUK"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 14
+titleText.TextSize = 13
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -382,10 +385,12 @@ local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "TURUN 7 → TWEEN KE TUJUAN → NAIK 7"
+infoLbl.Text = "TWEEN SPEED 0.3 + DUDUK (tanpa kendaraan)"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
-infoLbl.TextSize = 12
+infoLbl.TextSize = 11
+infoLbl.TextWrapped = true
+infoLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- BASE PLATE
 local baseCard = Instance.new("Frame", scroll)
@@ -527,7 +532,7 @@ local potKanan = Instance.new("TextButton", potCard)
 potKanan.Size = UDim2.new(0.45, -5, 0, 35)
 potKanan.Position = UDim2.new(0.03, 0, 0.5, -17.5)
 potKanan.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-potKanan.Text = "POT PANTAT"
+potKanan.Text = "POT KANAN"
 potKanan.TextColor3 = Color3.new(1,1,1)
 potKanan.Font = Enum.Font.GothamBold
 potKanan.TextSize = 12
@@ -603,7 +608,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (Tween)...")
+    setStatus("🚀 Memulai Fully NV (speed 0.3, duduk)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -614,4 +619,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV TWEEN SIAP! Turun 7 → Tween Ke target → Naik 7")
+print("✅ FULLY NV SIAP! Speed Tween = 0.3, karakter duduk tanpa kendaraan")

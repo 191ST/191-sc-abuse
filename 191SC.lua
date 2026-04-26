@@ -1,11 +1,11 @@
 -- ============================================================
--- FULLY NV - STAY LOW STABLE (KAMERA MANIS)
+-- FULLY NV - STABLE MOVE (TURUN 7, JALAN, NAIK 7)
 -- ============================================================
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 repeat task.wait() until player.Character
@@ -14,9 +14,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
--- ============================================================
--- KORDINAT APART CASINO (YANG LO KASIH)
--- ============================================================
+-- KORDINAT APART CASINO
 local apartData = {
     [1] = {
         name = "Apart Casino 1",
@@ -64,86 +62,15 @@ local apartData = {
     }
 }
 
+-- VARIABEL
 local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
 
--- SPEED TARIK (DIAM)
-local SPEED_TARIK = 0.3 -- PELAN BANGET
-
--- BASE PLATE
-local function getGroundLevel(pos)
-    local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {player.Character}
-    params.FilterType = Enum.RaycastFilterType.Blacklist
-    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
-    local rayDir = Vector3.new(0, -50, 0)
-    local result = workspace:Raycast(rayOrigin, rayDir, params)
-    if result then return result.Position.Y end
-    return pos.Y - 5
-end
-
-local function createBasePlate()
-    if basePlate and basePlate.Parent then basePlate:Destroy() end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local groundY = getGroundLevel(hrp.Position)
-    local baseY = groundY - 5
-    basePlate = Instance.new("Part")
-    basePlate.Name = "FullyNV_BasePlate"
-    basePlate.Size = Vector3.new(1000, 1, 1000)
-    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
-    basePlate.Anchored = true
-    basePlate.BrickColor = BrickColor.new("Really black")
-    basePlate.Material = Enum.Material.SmoothPlastic
-    basePlate.Transparency = 0.3
-    local selection = Instance.new("SelectionBox")
-    selection.Adornee = basePlate
-    selection.Color3 = Color3.fromRGB(130, 60, 240)
-    selection.LineThickness = 0.1
-    selection.Transparency = 0.5
-    selection.Parent = basePlate
-    basePlate.Parent = workspace
-    return basePlate
-end
-
-local function createBasePlateRaksasa()
-    if basePlate and basePlate.Parent then basePlate:Destroy() end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local groundY = getGroundLevel(hrp.Position)
-    local baseY = groundY - 5
-    basePlate = Instance.new("Part")
-    basePlate.Name = "FullyNV_BasePlate_Raksasa"
-    basePlate.Size = Vector3.new(5000, 1, 5000)
-    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
-    basePlate.Anchored = true
-    basePlate.BrickColor = BrickColor.new("Really black")
-    basePlate.Material = Enum.Material.SmoothPlastic
-    basePlate.Transparency = 0.2
-    local selection = Instance.new("SelectionBox")
-    selection.Adornee = basePlate
-    selection.Color3 = Color3.fromRGB(130, 60, 240)
-    selection.LineThickness = 0.05
-    selection.Transparency = 0.7
-    selection.Parent = basePlate
-    basePlate.Parent = workspace
-    return basePlate
-end
-
-local function removeBasePlate()
-    if basePlate and basePlate.Parent then
-        basePlate:Destroy()
-        basePlate = nil
-    end
-end
-
 -- ============================================================
--- HELPER (COUNT, EQUIP, COOK, SELL)
+-- HELPER FUNCTIONS
 -- ============================================================
 local function countItem(name)
     local total = 0
@@ -220,38 +147,118 @@ local function jualSemua()
 end
 
 -- ============================================================
--- PENGERAKAN STAY LOW (TANPA BLINK DI TENGAH)
+-- BASE PLATE (OPSIONAL)
 -- ============================================================
-local function pindahKeTarget(targetPos)
+local function getGroundLevel(pos)
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {player.Character}
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
+    local rayDir = Vector3.new(0, -50, 0)
+    local result = workspace:Raycast(rayOrigin, rayDir, params)
+    if result then return result.Position.Y end
+    return pos.Y - 5
+end
+
+local function createBasePlate()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate"
+    basePlate.Size = Vector3.new(1000, 1, 1000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.3
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.1
+    selection.Transparency = 0.5
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
 
-    -- Turunin 4 studs SEKALI (pake CFrame instan, wajar)
-    local currentPos = hrp.Position
-    local groundY = getGroundLevel(currentPos)
-    if currentPos.Y > groundY - 3 then
-        hrp.CFrame = CFrame.new(currentPos.X, currentPos.Y - 4, currentPos.Z)
-        task.wait(0.05)
+local function createBasePlateRaksasa()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate_Raksasa"
+    basePlate.Size = Vector3.new(5000, 1, 5000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.2
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.05
+    selection.Transparency = 0.7
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
+
+local function removeBasePlate()
+    if basePlate and basePlate.Parent then
+        basePlate:Destroy()
+        basePlate = nil
     end
+end
 
-    -- Hitung durasi (pelan)
-    local distance = (targetPos - hrp.Position).Magnitude
-    local duration = math.max(distance / SPEED_TARIK, 3) -- minimal 3 detik
+-- ============================================================
+-- KETARIK PAKAI MOVETO (TURUN 7, JALAN, NAIK 7)
+-- ============================================================
+local function ketarikKeTarget(targetPos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return false end
 
-    -- Tween ke target, tapi Y nya tetap bawah (targetPos.Y - 4)
-    local targetCF = CFrame.new(targetPos.X, targetPos.Y - 4, targetPos.Z)
-    local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF })
+    -- Keluar dari kendaraan
+    if hum.SeatPart then hum.Sit = false end
 
-    tween:Play()
-    while tween.PlaybackState == Enum.PlaybackState.Playing and fullyRunning do
+    -- Simpan walkspeed asli
+    local originalSpeed = hum.WalkSpeed
+    hum.WalkSpeed = 4 -- PELAN BANGET
+
+    -- TURUN 7 STUDS
+    hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
+    task.wait(0.1)
+
+    -- Pindah ke target (posisi Y-7)
+    hum:MoveTo(targetPos.X, targetPos.Y - 7, targetPos.Z)
+
+    -- Tunggu sampai jarak < 3 studs
+    repeat
         task.wait(0.05)
-    end
-    if tween.PlaybackState == Enum.PlaybackState.Playing then tween:Cancel() end
+        if not fullyRunning then
+            hum:MoveTo(hrp.Position)
+            hum.WalkSpeed = originalSpeed
+            return false
+        end
+    until (hrp.Position - Vector3.new(targetPos.X, targetPos.Y - 7, targetPos.Z)).Magnitude < 3
 
-    -- Naikin 4 studs setelah sampai
-    hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y, targetPos.Z)
-    task.wait(0.05)
+    -- Berhenti
+    hum:MoveTo(hrp.Position)
+    task.wait(0.1)
+
+    -- NAIK 7 STUDS
+    hrp.CFrame = CFrame.new(targetPos)
+
+    -- Kembalikan walkspeed
+    hum.WalkSpeed = originalSpeed
     return true
 end
 
@@ -263,7 +270,7 @@ local function getStagePos(stage, pot)
 end
 
 -- ============================================================
--- LOOP UTAMA
+-- MAIN LOOP
 -- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
@@ -280,30 +287,32 @@ local function jalankanFully(statusFunc)
     end
 
     while fullyRunning do
-        statusFunc("🏃 Ke NPC Buy...")
-        pindahKeTarget(npcPos)
+        statusFunc("🏃 Ketarik ke NPC Buy...")
+        ketarikKeTarget(npcPos)
 
-        statusFunc("🛒 Beli x" .. target)
+        statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
 
-        statusFunc("🏃 Ke apart...")
-        pindahKeTarget(apartPos)
+        statusFunc("🏃 Ketarik ke apart...")
+        ketarikKeTarget(apartPos)
 
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
             local targetPos = getStagePos(stage, pot)
             if not targetPos then
-                statusFunc("❌ Stage " .. i .. " gak ada")
+                statusFunc("❌ Stage " .. i .. " tidak ditemukan")
                 break
             end
 
-            statusFunc("📍 Stage " .. i)
-            pindahKeTarget(targetPos)
+            statusFunc("📍 Stage " .. i .. " - Ketarik...")
+            ketarikKeTarget(targetPos)
+
+            statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
             task.wait(0.3)
 
             if stage.isCook then
-                statusFunc("🍳 Masak di stage " .. i)
+                statusFunc("🍳 Memasak di stage " .. i)
                 local success = cook()
                 if not success then break end
                 statusFunc("✅ Masak selesai")
@@ -311,22 +320,22 @@ local function jalankanFully(statusFunc)
             end
         end
 
-        statusFunc("🏃 Ke NPC Jual...")
-        pindahKeTarget(npcPos)
+        statusFunc("🏃 Ketarik ke NPC Jual...")
+        ketarikKeTarget(npcPos)
 
-        statusFunc("💰 Jual MS")
+        statusFunc("💰 Menjual MS")
         jualSemua()
 
-        statusFunc("🔄 Ulang")
+        statusFunc("🔄 Loop selesai, ulang...")
         task.wait(1)
     end
 
     fullyRunning = false
-    statusFunc("⏹ Berhenti")
+    statusFunc("⏹ Dihentikan")
 end
 
 -- ============================================================
--- GUI (SEDERHANA, TAPI LENGKAP)
+-- GUI
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -350,10 +359,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - STAY LOW STABLE"
+titleText.Text = "FULLY NV - TURUN 7 JALAN NAIK 7"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 12
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -380,17 +389,19 @@ layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- INFO
 local infoCard = Instance.new("Frame", scroll)
-infoCard.Size = UDim2.new(1, 0, 0, 50)
+infoCard.Size = UDim2.new(1, 0, 0, 60)
 infoCard.BackgroundColor3 = Color3.fromRGB(40, 30, 70)
 Instance.new("UICorner", infoCard).CornerRadius = UDim.new(0, 8)
 local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "STAY LOW + PELAN (KAMERA STABLE)"
+infoLbl.Text = "TURUN 7 → JALAN PELAN (WS 4) → SAMPAI → NAIK 7"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
-infoLbl.TextSize = 12
+infoLbl.TextSize = 11
+infoLbl.TextWrapped = true
+infoLbl.TextXAlignment = Enum.TextXAlignment.Center
 
 -- BASE PLATE
 local baseCard = Instance.new("Frame", scroll)
@@ -576,7 +587,7 @@ statusText.TextSize = 11
 statusText.TextWrapped = true
 statusText.TextXAlignment = Enum.TextXAlignment.Center
 
--- BUTTON
+-- BUTTONS
 local btnCard2 = Instance.new("Frame", scroll)
 btnCard2.Size = UDim2.new(1, 0, 0, 50)
 btnCard2.BackgroundTransparency = 1
@@ -603,18 +614,20 @@ Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 
 local function setStatus(msg)
     statusText.Text = msg
-    print(msg)
+    print("[FullyNV] " .. msg)
 end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START")
-    task.spawn(function() jalankanFully(setStatus) end)
+    setStatus("🚀 Memulai Fully NV (Turun 7 → Jalan → Naik 7)...")
+    task.spawn(function()
+        jalankanFully(setStatus)
+    end)
 end)
 
 stopBtn.MouseButton1Click:Connect(function()
     fullyRunning = false
-    setStatus("⏹ STOP")
+    setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV - STAY LOW STABLE READY")
+print("✅ FULLY NV SIAP! Turun 7 → Jalan pelan (WS 4) → sampai → Naik 7")

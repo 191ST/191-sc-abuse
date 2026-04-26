@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - KECEPATAN KETARIK BISA DIATUR (DEFAULT 8)
+-- FULLY NV - FIX (KETARIK KE NPC BUY DULU, KE APART, JUAL)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -7,12 +7,13 @@ local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 repeat task.wait() until player.Character
 
 local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
-local npcPos = CFrame.new(510.762817, 3.58721066, 600.791504)
+local npcPos = CFrame.new(510.762817, 3.58721066, 600.791504) -- POSISI NPC BUY & JUAL
 
 -- ============================================================
 -- KORDINAT APART CASINO
@@ -71,7 +72,7 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local tarikSpeed = 8  -- DEFAULT PELAN BANGET
+local tarikSpeed = 8  -- speed pelan
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -118,7 +119,7 @@ local function cook()
         { name = "Water", time = 20 },
         { name = "Sugar Block Bag", time = 1 },
         { name = "Gelatin", time = 1 },
-        { name = "Empty Bag", time = 45, isLast = true }
+        { name = "Empty Bag", time = 45 }
     }
     for _, step in ipairs(steps) do
         if not fullyRunning then return false end
@@ -151,9 +152,9 @@ local function jualSemua()
 end
 
 -- ============================================================
--- KETARIK SMOOTH DENGAN KECEPATAN BISA DIATUR
+-- KETARIK SMOOTH - PAKAI YANG PELAN (BASED ON WALKSPEED)
 -- ============================================================
-local function tarikKeTarget(targetCF)
+local function ketarikKeTarget(targetCF)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
@@ -161,32 +162,37 @@ local function tarikKeTarget(targetCF)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
     
-    local startPos = hrp.Position
-    local targetPos = targetCF.Position
-    local distance = (targetPos - startPos).Magnitude
+    -- Simpan walkspeed asli
+    local originalSpeed = hum.WalkSpeed
+    hum.WalkSpeed = tarikSpeed
     
-    if distance < 2 then
+    local targetPos = targetCF.Position
+    local distance = (targetPos - hrp.Position).Magnitude
+    
+    if distance < 3 then
         hrp.CFrame = targetCF
+        hum.WalkSpeed = originalSpeed
         return true
     end
     
-    -- Hitung durasi berdasarkan jarak dan kecepatan (semakin kecil speed, semakin lama)
-    local duration = distance / tarikSpeed
-    duration = math.clamp(duration, 1, 6) -- minimal 1 detik, maksimal 6 detik
+    -- Pake MoveTo biar geraknya natural pake walkspeed
+    hum:MoveTo(targetPos)
     
-    local startCF = hrp.CFrame
     local startTime = tick()
+    local timeout = math.min(distance / tarikSpeed + 2, 15)
     
-    -- Pake lerp smooth
-    while tick() - startTime < duration and fullyRunning do
-        local alpha = (tick() - startTime) / duration
-        -- pakai easing biar makin smooth
-        local easedAlpha = alpha * alpha * (3 - 2 * alpha) -- smoothstep
-        hrp.CFrame = startCF:Lerp(targetCF, easedAlpha)
-        task.wait(0.03)
+    while tick() - startTime < timeout and fullyRunning do
+        local currentPos = hrp.Position
+        if (currentPos - targetPos).Magnitude < 3 then
+            hum:MoveTo(currentPos)
+            break
+        end
+        task.wait(0.05)
     end
     
+    -- Force set posisi kalo masih jauh
     hrp.CFrame = targetCF
+    hum.WalkSpeed = originalSpeed
     task.wait(0.1)
     return true
 end
@@ -207,7 +213,7 @@ local function getStageCF(stage, pot)
 end
 
 -- ============================================================
--- MAIN LOOP
+-- MAIN LOOP (BENER: BUY DULU → APART → MASAK → JUAL)
 -- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
@@ -224,15 +230,23 @@ local function jalankanFully(statusFunc)
     end
     
     while fullyRunning do
+        -- ========== 1. KETARIK KE NPC BUY ==========
+        statusFunc("🏃 Ketarik ke NPC Buy (speed " .. tarikSpeed .. ")")
+        ketarikKeTarget(npcPos)
+        
+        -- ========== 2. BELI BAHAN ==========
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
+        -- ========== 3. TURUN 4 STUDS ==========
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
+        -- ========== 4. KETARIK KE APART ==========
         statusFunc("🏃 Ketarik ke apart (speed " .. tarikSpeed .. ")")
-        tarikKeTarget(apartPos)
+        ketarikKeTarget(apartPos)
         
+        -- ========== 5. LOOP SEMUA STAGE ==========
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
             local targetCF = getStageCF(stage, pot)
@@ -241,8 +255,8 @@ local function jalankanFully(statusFunc)
                 break
             end
             
-            statusFunc("📍 Stage " .. i .. " - Ketarik (speed " .. tarikSpeed .. ")")
-            tarikKeTarget(targetCF)
+            statusFunc("📍 Stage " .. i .. " - Ketarik")
+            ketarikKeTarget(targetCF)
             
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
@@ -257,12 +271,15 @@ local function jalankanFully(statusFunc)
             end
         end
         
+        -- ========== 6. TURUN 4 STUDS ==========
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
-        statusFunc("🏃 Ketarik ke NPC jual (speed " .. tarikSpeed .. ")")
-        tarikKeTarget(npcPos)
+        -- ========== 7. KETARIK KE NPC JUAL ==========
+        statusFunc("🏃 Ketarik ke NPC Jual (speed " .. tarikSpeed .. ")")
+        ketarikKeTarget(npcPos)
         
+        -- ========== 8. JUAL SEMUA MS ==========
         statusFunc("💰 Menjual MS")
         jualSemua()
         
@@ -327,7 +344,7 @@ local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ==================== SLIDER KECEPATAN ====================
+-- Slider Kecepatan
 local speedCard = Instance.new("Frame", scroll)
 speedCard.Size = UDim2.new(1, 0, 0, 70)
 speedCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
@@ -337,7 +354,7 @@ local speedLabel = Instance.new("TextLabel", speedCard)
 speedLabel.Size = UDim2.new(1, -10, 0, 20)
 speedLabel.Position = UDim2.new(0, 5, 0, 5)
 speedLabel.BackgroundTransparency = 1
-speedLabel.Text = "KECEPATAN KETARIK (1-20)  →  " .. tarikSpeed
+speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
 speedLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
 speedLabel.Font = Enum.Font.GothamBold
 speedLabel.TextSize = 12
@@ -375,17 +392,17 @@ Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
 speedMinus.MouseButton1Click:Connect(function()
     tarikSpeed = math.max(1, tarikSpeed - 1)
     speedValue.Text = tostring(tarikSpeed)
-    speedLabel.Text = "KECEPATAN KETARIK (1-20)  →  " .. tarikSpeed
+    speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
     titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
 end)
 speedPlus.MouseButton1Click:Connect(function()
-    tarikSpeed = math.min(20, tarikSpeed + 1)
+    tarikSpeed = math.min(15, tarikSpeed + 1)
     speedValue.Text = tostring(tarikSpeed)
-    speedLabel.Text = "KECEPATAN KETARIK (1-20)  →  " .. tarikSpeed
+    speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
     titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
 end)
 
--- ==================== TARGET MS ====================
+-- Target MS
 local targetCard = Instance.new("Frame", scroll)
 targetCard.Size = UDim2.new(1, 0, 0, 60)
 targetCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
@@ -439,7 +456,7 @@ plusBtn.MouseButton1Click:Connect(function()
     targetValue.Text = tostring(targetMS)
 end)
 
--- ==================== PILIH APART ====================
+-- Pilih Apart
 local apartLabel = Instance.new("TextLabel", scroll)
 apartLabel.Size = UDim2.new(1, 0, 0, 20)
 apartLabel.BackgroundTransparency = 1
@@ -476,7 +493,7 @@ for i = 1, 4 do
     apartButtons[i] = btn
 end
 
--- ==================== PILIH POT ====================
+-- Pilih Pot
 local potLabel = Instance.new("TextLabel", scroll)
 potLabel.Size = UDim2.new(1, 0, 0, 20)
 potLabel.BackgroundTransparency = 1
@@ -522,7 +539,7 @@ potKiri.MouseButton1Click:Connect(function()
     potKanan.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
 end)
 
--- ==================== STATUS ====================
+-- Status
 local statusCardFrame = Instance.new("Frame", scroll)
 statusCardFrame.Size = UDim2.new(1, 0, 0, 50)
 statusCardFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
@@ -539,7 +556,7 @@ statusText.TextSize = 11
 statusText.TextWrapped = true
 statusText.TextXAlignment = Enum.TextXAlignment.Center
 
--- ==================== BUTTONS ====================
+-- Buttons
 local btnCardFrame = Instance.new("Frame", scroll)
 btnCardFrame.Size = UDim2.new(1, 0, 0, 50)
 btnCardFrame.BackgroundTransparency = 1
@@ -582,4 +599,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Kecepatan default: " .. tarikSpeed .. " (Bisa diatur dengan slider)")
+print("✅ FULLY NV FIX SIAP! START → KE NPC BUY DULU → APART → JUAL")

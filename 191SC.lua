@@ -1,6 +1,4 @@
--- ============================================================
--- FULLY NV - SPEED 0.3 + BASE PLATE 5 STUDS DI BAWAH TANAH
--- ============================================================
+-- FULLY NV - STAY LOW + SPEED SLIDER (Min 0.3, Max 2.0)
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -14,9 +12,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
--- ============================================================
 -- KORDINAT APART CASINO
--- ============================================================
 local apartData = {
     [1] = {
         name = "Apart Casino 1",
@@ -64,96 +60,73 @@ local apartData = {
     }
 }
 
--- ============================================================
--- VARIABEL
--- ============================================================
 local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local tarikSpeed = 0.3 -- SPEED 0.3 (SUPER PELAN)
+local tarikSpeed = 0.3 -- default, bisa diubah slider
 local basePlate = nil
 
 -- ============================================================
--- FUNGSI BASE PLATE - 5 STUDS DI BAWAH PERMUKAAN TANAH
+-- BASE PLATE 5 STUDS DI BAWAH PERMUKAAN
 -- ============================================================
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
     params.FilterType = Enum.RaycastFilterType.Blacklist
-    
     local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
     local rayDir = Vector3.new(0, -50, 0)
     local result = workspace:Raycast(rayOrigin, rayDir, params)
-    
-    if result then
-        return result.Position.Y
-    end
+    if result then return result.Position.Y end
     return pos.Y - 5
 end
 
 local function createBasePlate()
-    if basePlate and basePlate.Parent then
-        basePlate:Destroy()
-    end
-    
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
-    
-    local playerPos = hrp.Position
-    local groundY = getGroundLevel(playerPos)
+    local groundY = getGroundLevel(hrp.Position)
     local baseY = groundY - 5
-    
     basePlate = Instance.new("Part")
     basePlate.Name = "FullyNV_BasePlate"
     basePlate.Size = Vector3.new(1000, 1, 1000)
-    basePlate.Position = Vector3.new(playerPos.X, baseY, playerPos.Z)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
     basePlate.Anchored = true
     basePlate.BrickColor = BrickColor.new("Really black")
     basePlate.Material = Enum.Material.SmoothPlastic
     basePlate.Transparency = 0.3
-    
     local selection = Instance.new("SelectionBox")
     selection.Adornee = basePlate
     selection.Color3 = Color3.fromRGB(130, 60, 240)
     selection.LineThickness = 0.1
     selection.Transparency = 0.5
     selection.Parent = basePlate
-    
     basePlate.Parent = workspace
     return basePlate
 end
 
 local function createBasePlateRaksasa()
-    if basePlate and basePlate.Parent then
-        basePlate:Destroy()
-    end
-    
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
-    
-    local playerPos = hrp.Position
-    local groundY = getGroundLevel(playerPos)
+    local groundY = getGroundLevel(hrp.Position)
     local baseY = groundY - 5
-    
     basePlate = Instance.new("Part")
     basePlate.Name = "FullyNV_BasePlate_Raksasa"
     basePlate.Size = Vector3.new(5000, 1, 5000)
-    basePlate.Position = Vector3.new(playerPos.X, baseY, playerPos.Z)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
     basePlate.Anchored = true
     basePlate.BrickColor = BrickColor.new("Really black")
     basePlate.Material = Enum.Material.SmoothPlastic
     basePlate.Transparency = 0.2
-    
     local selection = Instance.new("SelectionBox")
     selection.Adornee = basePlate
     selection.Color3 = Color3.fromRGB(130, 60, 240)
     selection.LineThickness = 0.05
     selection.Transparency = 0.7
     selection.Parent = basePlate
-    
     basePlate.Parent = workspace
     return basePlate
 end
@@ -242,14 +215,12 @@ local function jualSemua()
     end
 end
 
--- ============================================================
--- BLINK TURUN & NAIK
--- ============================================================
+-- BLINK TURUN/NAIK
 local function blinkTurun(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0)
-        task.wait(0.1)
+        task.wait(0.05)
     end
 end
 
@@ -257,13 +228,11 @@ local function blinkNaik(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0)
-        task.wait(0.1)
+        task.wait(0.05)
     end
 end
 
--- ============================================================
--- KETARIK SPEED 0.3
--- ============================================================
+-- KETARIK PAKAI TWEEN (STAY LOW, NAIK ONLY AFTER ARRIVE)
 local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -272,25 +241,27 @@ local function ketarikKeTarget(targetPos)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
     
-    blinkTurun(4)
+    -- Turun 4 studs (tapi ga usah setiap kali? Kita turunin sekali aja di awal perjalanan)
+    -- Tapi biar konsisten, kita bikin posisi awal tetap di bawah
     
+    local targetCF = CFrame.new(targetPos)
     local distance = (targetPos - hrp.Position).Magnitude
     local duration = distance / tarikSpeed
-    duration = math.clamp(duration, 2.5, 20)
+    duration = math.clamp(duration, 1.0, 15.0) -- minimal 1 detik, maksimal 15 detik
     
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
+    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = targetCF })
     tween:Play()
     
     while tween.PlaybackState == Enum.PlaybackState.Playing and fullyRunning do
         task.wait(0.05)
     end
     
-    if tween.PlaybackState == Enum.PlaybackState.Playing then tween:Cancel() end
-    hrp.CFrame = CFrame.new(targetPos)
+    if tween.PlaybackState == Enum.PlaybackState.Playing then
+        tween:Cancel()
+    end
     
-    blinkNaik(4)
-    
+    hrp.CFrame = targetCF
     task.wait(0.1)
     return true
 end
@@ -302,9 +273,7 @@ local function getStagePos(stage, pot)
     return nil
 end
 
--- ============================================================
 -- MAIN LOOP
--- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
     local apartId = selectedApart
@@ -319,15 +288,25 @@ local function jalankanFully(statusFunc)
         return
     end
     
+    -- Turunin posisi karakter 4 studs di awal (biar stay low selama perjalanan)
+    blinkTurun(4)
+    
     while fullyRunning do
-        statusFunc("🏃 Ketarik ke NPC Buy (speed 0.3)...")
+        statusFunc("🏃 Ketarik ke NPC Buy (speed " .. tarikSpeed .. ")...")
         ketarikKeTarget(npcPos)
+        blinkNaik(4)
+        task.wait(0.2)
         
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
-        statusFunc("🏃 Ketarik ke apart (speed 0.3)...")
+        -- Turun lagi sebelum ke apart
+        blinkTurun(4)
+        
+        statusFunc("🏃 Ketarik ke apart (speed " .. tarikSpeed .. ")...")
         ketarikKeTarget(apartPos)
+        blinkNaik(4)
+        task.wait(0.2)
         
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
@@ -337,8 +316,11 @@ local function jalankanFully(statusFunc)
                 break
             end
             
+            blinkTurun(4)
             statusFunc("📍 Stage " .. i .. " - Ketarik...")
             ketarikKeTarget(targetPos)
+            blinkNaik(4)
+            task.wait(0.2)
             
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
@@ -353,8 +335,11 @@ local function jalankanFully(statusFunc)
             end
         end
         
-        statusFunc("🏃 Ketarik ke NPC Jual (speed 0.3)...")
+        blinkTurun(4)
+        statusFunc("🏃 Ketarik ke NPC Jual (speed " .. tarikSpeed .. ")...")
         ketarikKeTarget(npcPos)
+        blinkNaik(4)
+        task.wait(0.2)
         
         statusFunc("💰 Menjual MS")
         jualSemua()
@@ -367,9 +352,7 @@ local function jalankanFully(statusFunc)
     statusFunc("⏹ Dihentikan")
 end
 
--- ============================================================
--- GUI
--- ============================================================
+-- GUI dengan slider kecepatan (0.3 - 2.0)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
 screenGui.Parent = playerGui
@@ -392,10 +375,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 0.3 + BASE PLATE"
+titleText.Text = "FULLY NV - STAY LOW 4 STUDS"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -407,7 +390,10 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 14
 closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() fullyRunning = false end)
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+    fullyRunning = false
+end)
 
 local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
@@ -420,22 +406,59 @@ local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- INFO SPEED
-local infoCard = Instance.new("Frame", scroll)
-infoCard.Size = UDim2.new(1, 0, 0, 50)
-infoCard.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-Instance.new("UICorner", infoCard).CornerRadius = UDim.new(0, 8)
+-- SLIDER KECEPATAN
+local speedCard = Instance.new("Frame", scroll)
+speedCard.Size = UDim2.new(1, 0, 0, 80)
+speedCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
+Instance.new("UICorner", speedCard).CornerRadius = UDim.new(0, 8)
 
-local infoText = Instance.new("TextLabel", infoCard)
-infoText.Size = UDim2.new(1, -10, 1, 0)
-infoText.Position = UDim2.new(0, 5, 0, 0)
-infoText.BackgroundTransparency = 1
-infoText.Text = "⚡ KECEPATAN: 0.3 (SUPER PELAN)\n⬇️ BLINK TURUN 4 STUDS SEBELUM KETARIK"
-infoText.TextColor3 = Color3.new(1,1,1)
-infoText.Font = Enum.Font.GothamBold
-infoText.TextSize = 11
-infoText.TextWrapped = true
-infoText.TextXAlignment = Enum.TextXAlignment.Center
+local speedLabel = Instance.new("TextLabel", speedCard)
+speedLabel.Size = UDim2.new(1, -10, 0, 20)
+speedLabel.Position = UDim2.new(0, 5, 0, 5)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "KECEPATAN KETARIK (0.3 - 2.0)"
+speedLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextSize = 12
+
+local speedValue = Instance.new("TextLabel", speedCard)
+speedValue.Size = UDim2.new(0, 60, 0, 35)
+speedValue.Position = UDim2.new(0.5, -30, 0, 35)
+speedValue.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+speedValue.Text = string.format("%.1f", tarikSpeed)
+speedValue.TextColor3 = Color3.new(1,1,1)
+speedValue.Font = Enum.Font.GothamBold
+speedValue.TextSize = 14
+Instance.new("UICorner", speedValue).CornerRadius = UDim.new(0, 6)
+
+local speedMinus = Instance.new("TextButton", speedCard)
+speedMinus.Size = UDim2.new(0, 40, 0, 35)
+speedMinus.Position = UDim2.new(0, 10, 0, 35)
+speedMinus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+speedMinus.Text = "-0.1"
+speedMinus.TextColor3 = Color3.new(1,1,1)
+speedMinus.Font = Enum.Font.GothamBold
+speedMinus.TextSize = 12
+Instance.new("UICorner", speedMinus).CornerRadius = UDim.new(0, 6)
+
+local speedPlus = Instance.new("TextButton", speedCard)
+speedPlus.Size = UDim2.new(0, 40, 0, 35)
+speedPlus.Position = UDim2.new(1, -50, 0, 35)
+speedPlus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+speedPlus.Text = "+0.1"
+speedPlus.TextColor3 = Color3.new(1,1,1)
+speedPlus.Font = Enum.Font.GothamBold
+speedPlus.TextSize = 12
+Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
+
+speedMinus.MouseButton1Click:Connect(function()
+    tarikSpeed = math.max(0.3, math.floor((tarikSpeed - 0.1) * 10) / 10)
+    speedValue.Text = string.format("%.1f", tarikSpeed)
+end)
+speedPlus.MouseButton1Click:Connect(function()
+    tarikSpeed = math.min(2.0, math.floor((tarikSpeed + 0.1) * 10) / 10)
+    speedValue.Text = string.format("%.1f", tarikSpeed)
+end)
 
 -- BASE PLATE
 local basePlateCard = Instance.new("Frame", scroll)
@@ -451,15 +474,6 @@ basePlateLabel.Text = "🏗️ BASE PLATE (5 STUDS DI BAWAH TANAH)"
 basePlateLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
 basePlateLabel.Font = Enum.Font.GothamBold
 basePlateLabel.TextSize = 11
-
-local basePlateDesc = Instance.new("TextLabel", basePlateCard)
-basePlateDesc.Size = UDim2.new(1, -10, 0, 20)
-basePlateDesc.Position = UDim2.new(0, 5, 0, 22)
-basePlateDesc.BackgroundTransparency = 1
-basePlateDesc.Text = "Membuat base plate 5 studs DI BAWAH permukaan tanah"
-basePlateDesc.TextColor3 = Color3.fromRGB(145, 138, 175)
-basePlateDesc.Font = Enum.Font.Gotham
-basePlateDesc.TextSize = 10
 
 local createBaseBtn = Instance.new("TextButton", basePlateCard)
 createBaseBtn.Size = UDim2.new(0.3, -5, 0, 40)
@@ -492,31 +506,16 @@ removeBaseBtn.TextSize = 12
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 
 createBaseBtn.MouseButton1Click:Connect(function()
-    local plate = createBasePlate()
-    if plate then
-        createBaseBtn.Text = "✅ DONE!"
-        task.wait(1)
-        createBaseBtn.Text = "➕ CREATE"
-    end
+    createBasePlate()
 end)
-
 createRaksasaBtn.MouseButton1Click:Connect(function()
-    local plate = createBasePlateRaksasa()
-    if plate then
-        createRaksasaBtn.Text = "✅ RAKSASA!"
-        task.wait(1)
-        createRaksasaBtn.Text = "🌍 RAKSASA"
-    end
+    createBasePlateRaksasa()
 end)
-
 removeBaseBtn.MouseButton1Click:Connect(function()
     removeBasePlate()
-    removeBaseBtn.Text = "✅ REMOVED!"
-    task.wait(1)
-    removeBaseBtn.Text = "❌ REMOVE"
 end)
 
--- Target MS
+-- TARGET MS
 local targetCard = Instance.new("Frame", scroll)
 targetCard.Size = UDim2.new(1, 0, 0, 60)
 targetCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
@@ -570,7 +569,7 @@ plusBtn.MouseButton1Click:Connect(function()
     targetValue.Text = tostring(targetMS)
 end)
 
--- Pilih Apart
+-- PILIH APART
 local apartLabel = Instance.new("TextLabel", scroll)
 apartLabel.Size = UDim2.new(1, 0, 0, 20)
 apartLabel.BackgroundTransparency = 1
@@ -607,7 +606,7 @@ for i = 1, 4 do
     apartButtons[i] = btn
 end
 
--- Pilih Pot
+-- PILIH POT
 local potLabel = Instance.new("TextLabel", scroll)
 potLabel.Size = UDim2.new(1, 0, 0, 20)
 potLabel.BackgroundTransparency = 1
@@ -653,7 +652,7 @@ potKiri.MouseButton1Click:Connect(function()
     potKanan.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
 end)
 
--- Status
+-- STATUS
 local statusCardFrame = Instance.new("Frame", scroll)
 statusCardFrame.Size = UDim2.new(1, 0, 0, 50)
 statusCardFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
@@ -670,7 +669,7 @@ statusText.TextSize = 11
 statusText.TextWrapped = true
 statusText.TextXAlignment = Enum.TextXAlignment.Center
 
--- Buttons
+-- BUTTONS
 local btnCardFrame = Instance.new("Frame", scroll)
 btnCardFrame.Size = UDim2.new(1, 0, 0, 50)
 btnCardFrame.BackgroundTransparency = 1
@@ -702,7 +701,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed 0.3)...")
+    setStatus("🚀 Memulai Fully NV (speed " .. string.format("%.1f", tarikSpeed) .. ")...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -713,5 +712,5 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Speed 0.3 (SUPER PELAN)")
-print("✅ Base Plate: 5 studs DI BAWAH PERMUKAAN TANAH")
+print("✅ FULLY NV STAY LOW SIAP! Speed bisa diatur 0.3 - 2.0")
+print("✅ Base plate 5 studs di bawah tanah")

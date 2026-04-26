@@ -1,11 +1,11 @@
 -- ============================================================
--- FULLY NV - STABLE MOVE (TURUN 7, JALAN, NAIK 7)
+-- FULLY NV - TWEEN SEDERHANA (TURUN 7 → GERAK → NAIK 7)
 -- ============================================================
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
-local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 repeat task.wait() until player.Character
@@ -62,16 +62,83 @@ local apartData = {
     }
 }
 
--- VARIABEL
 local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
+local TWEEN_SPEED = 10 -- Kecepatan tween (studs per detik)
 
--- ============================================================
+-- BASE PLATE (OPSIONAL)
+local function getGroundLevel(pos)
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {player.Character}
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
+    local rayDir = Vector3.new(0, -50, 0)
+    local result = workspace:Raycast(rayOrigin, rayDir, params)
+    if result then return result.Position.Y end
+    return pos.Y - 5
+end
+
+local function createBasePlate()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate"
+    basePlate.Size = Vector3.new(1000, 1, 1000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.3
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.1
+    selection.Transparency = 0.5
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
+
+local function createBasePlateRaksasa()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate_Raksasa"
+    basePlate.Size = Vector3.new(5000, 1, 5000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.2
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.05
+    selection.Transparency = 0.7
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
+
+local function removeBasePlate()
+    if basePlate and basePlate.Parent then
+        basePlate:Destroy()
+        basePlate = nil
+    end
+end
+
 -- HELPER FUNCTIONS
--- ============================================================
 local function countItem(name)
     local total = 0
     for _, v in pairs(player.Backpack:GetChildren()) do
@@ -147,118 +214,39 @@ local function jualSemua()
 end
 
 -- ============================================================
--- BASE PLATE (OPSIONAL)
--- ============================================================
-local function getGroundLevel(pos)
-    local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {player.Character}
-    params.FilterType = Enum.RaycastFilterType.Blacklist
-    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
-    local rayDir = Vector3.new(0, -50, 0)
-    local result = workspace:Raycast(rayOrigin, rayDir, params)
-    if result then return result.Position.Y end
-    return pos.Y - 5
-end
-
-local function createBasePlate()
-    if basePlate and basePlate.Parent then basePlate:Destroy() end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local groundY = getGroundLevel(hrp.Position)
-    local baseY = groundY - 5
-    basePlate = Instance.new("Part")
-    basePlate.Name = "FullyNV_BasePlate"
-    basePlate.Size = Vector3.new(1000, 1, 1000)
-    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
-    basePlate.Anchored = true
-    basePlate.BrickColor = BrickColor.new("Really black")
-    basePlate.Material = Enum.Material.SmoothPlastic
-    basePlate.Transparency = 0.3
-    local selection = Instance.new("SelectionBox")
-    selection.Adornee = basePlate
-    selection.Color3 = Color3.fromRGB(130, 60, 240)
-    selection.LineThickness = 0.1
-    selection.Transparency = 0.5
-    selection.Parent = basePlate
-    basePlate.Parent = workspace
-    return basePlate
-end
-
-local function createBasePlateRaksasa()
-    if basePlate and basePlate.Parent then basePlate:Destroy() end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local groundY = getGroundLevel(hrp.Position)
-    local baseY = groundY - 5
-    basePlate = Instance.new("Part")
-    basePlate.Name = "FullyNV_BasePlate_Raksasa"
-    basePlate.Size = Vector3.new(5000, 1, 5000)
-    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
-    basePlate.Anchored = true
-    basePlate.BrickColor = BrickColor.new("Really black")
-    basePlate.Material = Enum.Material.SmoothPlastic
-    basePlate.Transparency = 0.2
-    local selection = Instance.new("SelectionBox")
-    selection.Adornee = basePlate
-    selection.Color3 = Color3.fromRGB(130, 60, 240)
-    selection.LineThickness = 0.05
-    selection.Transparency = 0.7
-    selection.Parent = basePlate
-    basePlate.Parent = workspace
-    return basePlate
-end
-
-local function removeBasePlate()
-    if basePlate and basePlate.Parent then
-        basePlate:Destroy()
-        basePlate = nil
-    end
-end
-
--- ============================================================
--- KETARIK PAKAI MOVETO (TURUN 7, JALAN, NAIK 7)
+-- TWEEN KETARIK (TURUN 7 → GERAK → NAIK 7)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return false end
+    if not hrp then return false end
 
-    -- Keluar dari kendaraan
-    if hum.SeatPart then hum.Sit = false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum and hum.SeatPart then hum.Sit = false end
 
-    -- Simpan walkspeed asli
-    local originalSpeed = hum.WalkSpeed
-    hum.WalkSpeed = 4 -- PELAN BANGET
+    -- 1. TURUN 7 STUDS
+    local downPos = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
+    local downTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = downPos })
+    downTween:Play()
+    downTween.Completed:Wait()
+    task.wait(0.05)
 
-    -- TURUN 7 STUDS
-    hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
-    task.wait(0.1)
+    -- 2. TWEEN KE TARGET (dengan posisi Y yang sudah turun)
+    local distance = (targetPos - hrp.Position).Magnitude
+    local duration = distance / 30 -- Kecepatan standar, bisa diatur dengan mengubah angka 30 (semakin kecil semakin lambat)
 
-    -- Pindah ke target (posisi Y-7)
-    hum:MoveTo(targetPos.X, targetPos.Y - 7, targetPos.Z)
+    local targetCF = CFrame.new(targetPos.X, targetPos.Y - 7, targetPos.Z)
+    local moveTween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF })
+    moveTween:Play()
+    moveTween.Completed:Wait()
+    task.wait(0.05)
 
-    -- Tunggu sampai jarak < 3 studs
-    repeat
-        task.wait(0.05)
-        if not fullyRunning then
-            hum:MoveTo(hrp.Position)
-            hum.WalkSpeed = originalSpeed
-            return false
-        end
-    until (hrp.Position - Vector3.new(targetPos.X, targetPos.Y - 7, targetPos.Z)).Magnitude < 3
+    -- 3. NAIK 7 STUDS
+    local upPos = CFrame.new(targetPos)
+    local upTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = upPos })
+    upTween:Play()
+    upTween.Completed:Wait()
 
-    -- Berhenti
-    hum:MoveTo(hrp.Position)
-    task.wait(0.1)
-
-    -- NAIK 7 STUDS
-    hrp.CFrame = CFrame.new(targetPos)
-
-    -- Kembalikan walkspeed
-    hum.WalkSpeed = originalSpeed
     return true
 end
 
@@ -269,9 +257,7 @@ local function getStagePos(stage, pot)
     return nil
 end
 
--- ============================================================
 -- MAIN LOOP
--- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
     local apartId = selectedApart
@@ -359,10 +345,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TURUN 7 JALAN NAIK 7"
+titleText.Text = "FULLY NV - TWEEN"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 12
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -389,19 +375,17 @@ layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- INFO
 local infoCard = Instance.new("Frame", scroll)
-infoCard.Size = UDim2.new(1, 0, 0, 60)
+infoCard.Size = UDim2.new(1, 0, 0, 50)
 infoCard.BackgroundColor3 = Color3.fromRGB(40, 30, 70)
 Instance.new("UICorner", infoCard).CornerRadius = UDim.new(0, 8)
 local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "TURUN 7 → JALAN PELAN (WS 4) → SAMPAI → NAIK 7"
+infoLbl.Text = "TURUN 7 → TWEEN KE TUJUAN → NAIK 7"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
-infoLbl.TextSize = 11
-infoLbl.TextWrapped = true
-infoLbl.TextXAlignment = Enum.TextXAlignment.Center
+infoLbl.TextSize = 12
 
 -- BASE PLATE
 local baseCard = Instance.new("Frame", scroll)
@@ -619,7 +603,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (Turun 7 → Jalan → Naik 7)...")
+    setStatus("🚀 Memulai Fully NV (Tween)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -630,4 +614,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Turun 7 → Jalan pelan (WS 4) → sampai → Naik 7")
+print("✅ FULLY NV TWEEN SIAP! Turun 7 → Tween Ke target → Naik 7")

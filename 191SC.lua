@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TWEEN KETARIK (HALUS, PASTI GERAK)
+-- FULLY NV - SPEED 2 (PELAN) + BLINK TURUN 4 STUDS
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ repeat task.wait() until player.Character
 
 local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
-local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504) -- Posisi NPC
+local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
 -- ============================================================
 -- KORDINAT APART CASINO
@@ -71,7 +71,7 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local tarikSpeed = 8  -- Speed (semakin kecil semakin lambat)
+local KECEPATAN = 2 -- MAX 2, MIN 2 (SUPER PELAN)
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -151,7 +151,26 @@ local function jualSemua()
 end
 
 -- ============================================================
--- KETARIK PAKAI TWEEN (HALUS, PASTI GERAK)
+-- BLINK TURUN & NAIK
+-- ============================================================
+local function blinkTurun(studs)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0)
+        task.wait(0.15)
+    end
+end
+
+local function blinkNaik(studs)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0)
+        task.wait(0.15)
+    end
+end
+
+-- ============================================================
+-- KETARIK PAKAI TWEEN (SPEED 2)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -161,53 +180,32 @@ local function ketarikKeTarget(targetPos)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
     
+    -- 1. BLINK TURUN 4 STUDS DULU
+    blinkTurun(4)
+    
+    -- 2. HITUNG DURASI BERDASARKAN JARAK (SPEED 2)
     local startPos = hrp.Position
     local distance = (targetPos - startPos).Magnitude
+    local duration = distance / KECEPATAN
+    duration = math.clamp(duration, 0.5, 8) -- minimal 0.5dt, maks 8dt
     
-    if distance < 2 then
-        hrp.CFrame = CFrame.new(targetPos)
-        return true
-    end
-    
-    -- Hitung durasi berdasarkan jarak dan speed
-    local duration = distance / tarikSpeed
-    duration = math.clamp(duration, 0.5, 6) -- minimal 0.5 detik, maksimal 6 detik
-    
-    -- Buat tween info
-    local tweenInfo = TweenInfo.new(
-        duration,
-        Enum.EasingStyle.Linear,
-        Enum.EasingDirection.Out
-    )
-    
-    local goal = { CFrame = CFrame.new(targetPos) }
-    local tween = TweenService:Create(hrp, tweenInfo, goal)
-    
+    -- 3. TWEEK KE TARGET
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
     tween:Play()
     
-    -- Tunggu sambil cek apakah masih running
-    local startTime = tick()
     while tween.PlaybackState == Enum.PlaybackState.Playing and fullyRunning do
         task.wait(0.05)
     end
     
-    -- Stop tween kalo kehentian
-    if tween.PlaybackState == Enum.PlaybackState.Playing then
-        tween:Cancel()
-    end
-    
-    -- Pastikan posisi persis di target
+    if tween.PlaybackState == Enum.PlaybackState.Playing then tween:Cancel() end
     hrp.CFrame = CFrame.new(targetPos)
+    
+    -- 4. BLINK NAIK 4 STUDS
+    blinkNaik(4)
+    
     task.wait(0.1)
     return true
-end
-
-local function turunBlink(studs)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0)
-        task.wait(0.15)
-    end
 end
 
 local function getStagePos(stage, pot)
@@ -236,22 +234,18 @@ local function jalankanFully(statusFunc)
     
     while fullyRunning do
         -- 1. KETARIK KE NPC BUY
-        statusFunc("🏃 Ketarik ke NPC Buy (speed " .. tarikSpeed .. ")")
+        statusFunc("🏃 Ketarik ke NPC Buy (speed 2)...")
         ketarikKeTarget(npcPos)
         
         -- 2. BELI BAHAN
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
-        -- 3. TURUN 4 STUDS
-        statusFunc("⬇️ Turun 4 studs")
-        turunBlink(4)
-        
-        -- 4. KETARIK KE APART
-        statusFunc("🏃 Ketarik ke apart (speed " .. tarikSpeed .. ")")
+        -- 3. KETARIK KE APART
+        statusFunc("🏃 Ketarik ke apart (speed 2)...")
         ketarikKeTarget(apartPos)
         
-        -- 5. LOOP SEMUA STAGE
+        -- 4. LOOP SEMUA STAGE
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
             local targetPos = getStagePos(stage, pot)
@@ -260,7 +254,7 @@ local function jalankanFully(statusFunc)
                 break
             end
             
-            statusFunc("📍 Stage " .. i .. " - Ketarik")
+            statusFunc("📍 Stage " .. i .. " - Ketarik...")
             ketarikKeTarget(targetPos)
             
             statusFunc("🎯 Stage " .. i .. " - Spam E")
@@ -276,15 +270,11 @@ local function jalankanFully(statusFunc)
             end
         end
         
-        -- 6. TURUN 4 STUDS
-        statusFunc("⬇️ Turun 4 studs")
-        turunBlink(4)
-        
-        -- 7. KETARIK KE NPC BUY (JUAL)
-        statusFunc("🏃 Ketarik ke NPC Jual (speed " .. tarikSpeed .. ")")
+        -- 5. KETARIK KE NPC JUAL
+        statusFunc("🏃 Ketarik ke NPC Jual (speed 2)...")
         ketarikKeTarget(npcPos)
         
-        -- 8. JUAL SEMUA MS
+        -- 6. JUAL SEMUA MS
         statusFunc("💰 Menjual MS")
         jualSemua()
         
@@ -297,7 +287,7 @@ local function jalankanFully(statusFunc)
 end
 
 -- ============================================================
--- GUI
+-- GUI SEDERHANA
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -305,14 +295,13 @@ screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 520)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -260)
+mainFrame.Size = UDim2.new(0, 380, 0, 480)
+mainFrame.Position = UDim2.new(0.5, -190, 0.5, -240)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
--- Title Bar
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
@@ -322,7 +311,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN KETARIK"
+titleText.Text = "FULLY NV - SPEED 2 (PELAN)"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -343,68 +332,12 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
 scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- Slider Kecepatan
-local speedCard = Instance.new("Frame", scroll)
-speedCard.Size = UDim2.new(1, 0, 0, 70)
-speedCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-Instance.new("UICorner", speedCard).CornerRadius = UDim.new(0, 8)
-
-local speedLabel = Instance.new("TextLabel", speedCard)
-speedLabel.Size = UDim2.new(1, -10, 0, 20)
-speedLabel.Position = UDim2.new(0, 5, 0, 5)
-speedLabel.BackgroundTransparency = 1
-speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
-speedLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
-speedLabel.Font = Enum.Font.GothamBold
-speedLabel.TextSize = 12
-
-local speedValue = Instance.new("TextLabel", speedCard)
-speedValue.Size = UDim2.new(0, 50, 0, 30)
-speedValue.Position = UDim2.new(0.5, -25, 0, 30)
-speedValue.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-speedValue.Text = tostring(tarikSpeed)
-speedValue.TextColor3 = Color3.new(1,1,1)
-speedValue.Font = Enum.Font.GothamBold
-speedValue.TextSize = 14
-Instance.new("UICorner", speedValue).CornerRadius = UDim.new(0, 6)
-
-local speedMinus = Instance.new("TextButton", speedCard)
-speedMinus.Size = UDim2.new(0, 35, 0, 30)
-speedMinus.Position = UDim2.new(0, 10, 0, 30)
-speedMinus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
-speedMinus.Text = "-"
-speedMinus.TextColor3 = Color3.new(1,1,1)
-speedMinus.Font = Enum.Font.GothamBold
-speedMinus.TextSize = 18
-Instance.new("UICorner", speedMinus).CornerRadius = UDim.new(0, 6)
-
-local speedPlus = Instance.new("TextButton", speedCard)
-speedPlus.Size = UDim2.new(0, 35, 0, 30)
-speedPlus.Position = UDim2.new(1, -45, 0, 30)
-speedPlus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
-speedPlus.Text = "+"
-speedPlus.TextColor3 = Color3.new(1,1,1)
-speedPlus.Font = Enum.Font.GothamBold
-speedPlus.TextSize = 18
-Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
-
-speedMinus.MouseButton1Click:Connect(function()
-    tarikSpeed = math.max(1, tarikSpeed - 1)
-    speedValue.Text = tostring(tarikSpeed)
-    speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
-end)
-speedPlus.MouseButton1Click:Connect(function()
-    tarikSpeed = math.min(15, tarikSpeed + 1)
-    speedValue.Text = tostring(tarikSpeed)
-    speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
-end)
 
 -- Target MS
 local targetCard = Instance.new("Frame", scroll)
@@ -592,7 +525,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed " .. tarikSpeed .. ")...")
+    setStatus("🚀 Memulai Fully NV (speed 2)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -603,4 +536,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV TWEEN KETARIK SIAP! KE HALUS PASTI GERAK")
+print("✅ FULLY NV SIAP! KECEPATAN 2 + BLINK TURUN/NAIK 4 STUDS")

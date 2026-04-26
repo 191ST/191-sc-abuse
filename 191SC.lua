@@ -1,83 +1,112 @@
---[[ 
-    VERSI BRUTAL: Zero Delay + Multi Method Spam
-    Gak peduli bring back, gue spam 1000x/detik
-]]
+-- VERSI YANG BENERAN SPAM TERUS SAMPE BERHASIL
 
 local player = game.Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
 local targetCF = CFrame.new(1202.31, 3.71, -182.55) * CFrame.Angles(3.14, 0.11, 3.14)
-local attempting = true
+
+local spamming = false
 local attempts = 0
 local success = false
 
--- Bikin GUI sederhana
+-- GUI simpel
 local gui = Instance.new("ScreenGui")
 local frame = Instance.new("Frame")
 local label = Instance.new("TextLabel")
+local startBtn = Instance.new("TextButton")
+local stopBtn = Instance.new("TextButton")
 
 gui.Parent = game:GetService("CoreGui")
 frame.Parent = gui
-frame.Size = UDim2.new(0, 250, 0, 100)
+frame.Size = UDim2.new(0, 250, 0, 150)
 frame.Position = UDim2.new(0, 10, 0, 10)
 frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 
 label.Parent = frame
-label.Size = UDim2.new(0, 240, 0, 80)
-label.Position = UDim2.new(0, 5, 0, 10)
-label.Text = "Attempts: 0\nStatus: Spamming..."
-label.TextColor3 = Color3.fromRGB(255,0,0)
+label.Size = UDim2.new(0, 230, 0, 50)
+label.Position = UDim2.new(0, 10, 0, 10)
+label.Text = "Attempts: 0\nStatus: Idle"
+label.TextColor3 = Color3.fromRGB(255,255,0)
 label.TextScaled = true
 
--- FUNGSI SPAM PAKE TASK.WAIT (LEBIH CEPAT DARI WAIT)
-local function spamBrutal()
-    while attempting and not success do
+startBtn.Parent = frame
+startBtn.Size = UDim2.new(0, 100, 0, 30)
+startBtn.Position = UDim2.new(0, 10, 0, 70)
+startBtn.Text = "START SPAM"
+startBtn.BackgroundColor3 = Color3.fromRGB(0,200,0)
+
+stopBtn.Parent = frame
+stopBtn.Size = UDim2.new(0, 100, 0, 30)
+stopBtn.Position = UDim2.new(0, 130, 0, 70)
+stopBtn.Text = "STOP"
+stopBtn.BackgroundColor3 = Color3.fromRGB(200,0,0)
+stopBtn.Visible = false
+
+-- FUNGSI SPAM YANG BENERAN
+local function startSpamming()
+    spamming = true
+    success = false
+    attempts = 0
+    
+    while spamming and not success do
         attempts = attempts + 1
         label.Text = "Attempts: " .. attempts .. "\nStatus: Spamming..."
         
-        -- Method 1: Langsung ubah CFrame
+        -- Teleport ke target
         hrp.CFrame = targetCF
         
-        -- Method 2: Ubah Position langsung
-        hrp.Position = targetCF.Position
+        -- Jeda super pendek (biar loop cepet)
+        task.wait(0.005)
         
-        -- Method 3: Pake teleport via HumanoidRootPart assembly
-        hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+        -- Cek apakah berhasil (masih di target atau udah ke bring back?)
+        local distToTarget = (hrp.Position - targetCF.Position).magnitude
         
-        -- Cek berhasil
-        local dist = (hrp.Position - targetCF.Position).magnitude
-        if dist < 3 then
+        if distToTarget < 5 then
+            -- BERHASIL! Gak kena bring back
             success = true
             label.Text = "SUCCESS! Att: " .. attempts .. "\nTarget tercapai!"
             label.TextColor3 = Color3.fromRGB(0,255,0)
-            attempting = false
-            break
+            spamming = false
+            startBtn.Visible = true
+            stopBtn.Visible = false
+        else
+            -- GAGAL: kena bring back, ulang lagi dari awal (otomatis)
+            -- Gak perlu ngapa-ngapain, loop lanjut lagi
+            if attempts % 50 == 0 then
+                label.Text = "Attempts: " .. attempts .. "\nStill spamming..."
+            end
         end
         
-        -- GAK PAKE JEDA! BIAR SPAM SEBRUTAL MUNGKIN
-        task.wait(0) -- Minimal possible delay
+        -- Jeda lagi biar gak overload, tapi tetep cepet
+        task.wait(0.005)
+    end
+    
+    if not spamming and not success then
+        label.Text = "Stopped at: " .. attempts .. " attempts"
+        startBtn.Visible = true
+        stopBtn.Visible = false
     end
 end
 
--- Tombol Start/Stop pake hotkey (biar simpel)
-local UserInput = game:GetService("UserInputService")
-
-UserInput.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    
-    if input.KeyCode == Enum.KeyCode.F1 then
-        if attempting then
-            attempting = false
-            label.Text = "Stopped at: " .. attempts .. " attempts"
-        else
-            attempting = true
-            success = false
-            spawn(spamBrutal)
-        end
-    end
+-- TOMBOL START
+startBtn.MouseButton1Click:Connect(function()
+    if spamming then return end
+    startBtn.Visible = false
+    stopBtn.Visible = true
+    label.TextColor3 = Color3.fromRGB(255,255,0)
+    spawn(startSpamming)
 end)
 
-label.Text = "Tekan F1 START | F1 STOP\nTarget: 1202, 3.71, -182"
-print("[System] SUPER BRUTAL MODE AKTIF")
-print("[System] Tekan F1 buat start spam zero delay")
+-- TOMBOL STOP
+stopBtn.MouseButton1Click:Connect(function()
+    spamming = false
+    label.Text = "Stopping..."
+    task.wait(0.1)
+    label.Text = "Stopped at: " .. attempts .. " attempts"
+    startBtn.Visible = true
+    stopBtn.Visible = false
+end)
+
+print("[System] V6 READY - Spam tanpa henti sampe berhasil")
+print("[System] Klik START SPAM, biarin jalan, nanti tiba-tiba berhasil")

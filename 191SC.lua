@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - SUPER PELAN (SPEED 0.5 - 3) + BLINK TURUN/NAIK
+-- FULLY NV - SPEED 0.3 + BASE PLATE SYSTEM
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -71,7 +71,114 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local tarikSpeed = 0.8 -- DEFAULT SUPER PELAN
+local tarikSpeed = 0.3 -- SPEED SUPER SUPER PELAN
+local basePlate = nil
+
+-- ============================================================
+-- FUNGSI BASE PLATE
+-- ============================================================
+local function createBasePlate()
+    -- Hapus base plate lama kalo ada
+    if basePlate and basePlate.Parent then
+        basePlate:Destroy()
+    end
+    
+    -- Cari ketinggian rata-rata dari semua stage
+    local minY = 1000
+    local maxX = -1000
+    local minX = 1000
+    local maxZ = -1000
+    local minZ = 1000
+    
+    for apartId, apart in pairs(apartData) do
+        for _, stage in ipairs(apart.stages) do
+            local pos = stage.pos or stage.kanan or stage.kiri
+            if pos then
+                minY = math.min(minY, pos.Y)
+                maxX = math.max(maxX, pos.X)
+                minX = math.min(minX, pos.X)
+                maxZ = math.max(maxZ, pos.Z)
+                minZ = math.min(minZ, pos.Z)
+            end
+            if stage.kanan then
+                minY = math.min(minY, stage.kanan.Y)
+                maxX = math.max(maxX, stage.kanan.X)
+                minX = math.min(minX, stage.kanan.X)
+                maxZ = math.max(maxZ, stage.kanan.Z)
+                minZ = math.min(minZ, stage.kanan.Z)
+            end
+            if stage.kiri then
+                minY = math.min(minY, stage.kiri.Y)
+                maxX = math.max(maxX, stage.kiri.X)
+                minX = math.min(minX, stage.kiri.X)
+                maxZ = math.max(maxZ, stage.kiri.Z)
+                minZ = math.min(minZ, stage.kiri.Z)
+            end
+        end
+    end
+    
+    -- Tambahin NPC pos juga
+    minY = math.min(minY, npcPos.Y)
+    maxX = math.max(maxX, npcPos.X)
+    minX = math.min(minX, npcPos.X)
+    maxZ = math.max(maxZ, npcPos.Z)
+    minZ = math.min(minZ, npcPos.Z)
+    
+    -- Hitung ukuran base plate
+    local width = maxX - minX + 40
+    local length = maxZ - minZ + 40
+    local centerX = (maxX + minX) / 2
+    local centerZ = (maxZ + minZ) / 2
+    local baseY = minY - 5 -- 5 studs di bawah
+    
+    -- Buat base plate
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate"
+    basePlate.Size = Vector3.new(width, 1, length)
+    basePlate.Position = Vector3.new(centerX, baseY, centerZ)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.3
+    
+    -- Tambahin efek glow
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.1
+    selection.Transparency = 0.5
+    selection.Parent = basePlate
+    
+    basePlate.Parent = workspace
+    
+    -- Tambahin part kecil di setiap sudut biar keliatan
+    local cornerSize = 5
+    local corners = {
+        { Vector3.new(centerX - width/2, baseY + 0.5, centerZ - length/2), Color3.fromRGB(130, 60, 240) },
+        { Vector3.new(centerX + width/2, baseY + 0.5, centerZ - length/2), Color3.fromRGB(130, 60, 240) },
+        { Vector3.new(centerX - width/2, baseY + 0.5, centerZ + length/2), Color3.fromRGB(130, 60, 240) },
+        { Vector3.new(centerX + width/2, baseY + 0.5, centerZ + length/2), Color3.fromRGB(130, 60, 240) },
+    }
+    
+    for _, corner in pairs(corners) do
+        local marker = Instance.new("Part")
+        marker.Size = Vector3.new(cornerSize, 0.5, cornerSize)
+        marker.Position = corner[1]
+        marker.Anchored = true
+        marker.BrickColor = BrickColor.new("Bright violet")
+        marker.Material = Enum.Material.Neon
+        marker.Parent = basePlate
+    end
+    
+    return basePlate
+end
+
+local function removeBasePlate()
+    if basePlate and basePlate.Parent then
+        basePlate:Destroy()
+        basePlate = nil
+    end
+end
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -170,7 +277,7 @@ local function blinkNaik(studs)
 end
 
 -- ============================================================
--- KETARIK SUPER PELAN PAKAI TWEEN
+-- KETARIK SUPER PELAN (SPEED 0.3)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -180,15 +287,15 @@ local function ketarikKeTarget(targetPos)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
     
-    -- 1. BLINK TURUN 4 STUDS DULU
+    -- BLINK TURUN 4 STUDS DULU
     blinkTurun(4)
     
-    -- 2. HITUNG DURASI (SPEED BISA 0.5 - 3)
+    -- HITUNG DURASI (SPEED 0.3)
     local distance = (targetPos - hrp.Position).Magnitude
     local duration = distance / tarikSpeed
-    duration = math.clamp(duration, 1, 12) -- minimal 1 detik, maksimal 12 detik
+    duration = math.clamp(duration, 1.5, 20) -- minimal 1.5 detik, maksimal 20 detik
     
-    -- 3. TWEEN KE TARGET
+    -- TWEEN KE TARGET
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
     tween:Play()
@@ -200,7 +307,7 @@ local function ketarikKeTarget(targetPos)
     if tween.PlaybackState == Enum.PlaybackState.Playing then tween:Cancel() end
     hrp.CFrame = CFrame.new(targetPos)
     
-    -- 4. BLINK NAIK 4 STUDS
+    -- BLINK NAIK 4 STUDS
     blinkNaik(4)
     
     task.wait(0.1)
@@ -232,13 +339,13 @@ local function jalankanFully(statusFunc)
     end
     
     while fullyRunning do
-        statusFunc("🏃 Ketarik ke NPC Buy (speed " .. tarikSpeed .. ")...")
+        statusFunc("🏃 Ketarik ke NPC Buy...")
         ketarikKeTarget(npcPos)
         
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
-        statusFunc("🏃 Ketarik ke apart (speed " .. tarikSpeed .. ")...")
+        statusFunc("🏃 Ketarik ke apart...")
         ketarikKeTarget(apartPos)
         
         for i, stage in ipairs(stages) do
@@ -265,7 +372,7 @@ local function jalankanFully(statusFunc)
             end
         end
         
-        statusFunc("🏃 Ketarik ke NPC Jual (speed " .. tarikSpeed .. ")...")
+        statusFunc("🏃 Ketarik ke NPC Jual...")
         ketarikKeTarget(npcPos)
         
         statusFunc("💰 Menjual MS")
@@ -280,7 +387,7 @@ local function jalankanFully(statusFunc)
 end
 
 -- ============================================================
--- GUI DENGAN SLIDER KECEPATAN (0.5 - 3)
+-- GUI DENGAN TOMBOL BASE PLATE
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -288,8 +395,8 @@ screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 520)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -260)
+mainFrame.Size = UDim2.new(0, 400, 0, 550)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -275)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -304,7 +411,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED " .. string.format("%.1f", tarikSpeed)
+titleText.Text = "FULLY NV - SPEED 0.3"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -325,67 +432,80 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 550)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
 scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- SLIDER KECEPATAN (0.5 - 3)
-local speedCard = Instance.new("Frame", scroll)
-speedCard.Size = UDim2.new(1, 0, 0, 80)
-speedCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-Instance.new("UICorner", speedCard).CornerRadius = UDim.new(0, 8)
+-- INFO SPEED
+local infoCard = Instance.new("Frame", scroll)
+infoCard.Size = UDim2.new(1, 0, 0, 40)
+infoCard.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+Instance.new("UICorner", infoCard).CornerRadius = UDim.new(0, 8)
 
-local speedLabel = Instance.new("TextLabel", speedCard)
-speedLabel.Size = UDim2.new(1, -10, 0, 20)
-speedLabel.Position = UDim2.new(0, 5, 0, 5)
-speedLabel.BackgroundTransparency = 1
-speedLabel.Text = "KECEPATAN KETARIK (0.5 - 3)"
-speedLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
-speedLabel.Font = Enum.Font.GothamBold
-speedLabel.TextSize = 12
+local infoText = Instance.new("TextLabel", infoCard)
+infoText.Size = UDim2.new(1, -10, 1, 0)
+infoText.Position = UDim2.new(0, 5, 0, 0)
+infoText.BackgroundTransparency = 1
+infoText.Text = "⚡ KECEPATAN KETARIK: 0.3 (SUPER PELAN)"
+infoText.TextColor3 = Color3.new(1,1,1)
+infoText.Font = Enum.Font.GothamBold
+infoText.TextSize = 12
+infoText.TextXAlignment = Enum.TextXAlignment.Center
 
-local speedValue = Instance.new("TextLabel", speedCard)
-speedValue.Size = UDim2.new(0, 60, 0, 35)
-speedValue.Position = UDim2.new(0.5, -30, 0, 35)
-speedValue.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-speedValue.Text = string.format("%.1f", tarikSpeed)
-speedValue.TextColor3 = Color3.new(1,1,1)
-speedValue.Font = Enum.Font.GothamBold
-speedValue.TextSize = 14
-Instance.new("UICorner", speedValue).CornerRadius = UDim.new(0, 6)
+-- TOMBOL BASE PLATE
+local basePlateCard = Instance.new("Frame", scroll)
+basePlateCard.Size = UDim2.new(1, 0, 0, 80)
+basePlateCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
+Instance.new("UICorner", basePlateCard).CornerRadius = UDim.new(0, 8)
 
-local speedMinus = Instance.new("TextButton", speedCard)
-speedMinus.Size = UDim2.new(0, 40, 0, 35)
-speedMinus.Position = UDim2.new(0, 10, 0, 35)
-speedMinus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
-speedMinus.Text = "-0.1"
-speedMinus.TextColor3 = Color3.new(1,1,1)
-speedMinus.Font = Enum.Font.GothamBold
-speedMinus.TextSize = 12
-Instance.new("UICorner", speedMinus).CornerRadius = UDim.new(0, 6)
+local basePlateLabel = Instance.new("TextLabel", basePlateCard)
+basePlateLabel.Size = UDim2.new(1, -10, 0, 20)
+basePlateLabel.Position = UDim2.new(0, 5, 0, 5)
+basePlateLabel.BackgroundTransparency = 1
+basePlateLabel.Text = "BASE PLATE DI BAWAH MAP (5 STUD)"
+basePlateLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
+basePlateLabel.Font = Enum.Font.GothamBold
+basePlateLabel.TextSize = 11
 
-local speedPlus = Instance.new("TextButton", speedCard)
-speedPlus.Size = UDim2.new(0, 40, 0, 35)
-speedPlus.Position = UDim2.new(1, -50, 0, 35)
-speedPlus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
-speedPlus.Text = "+0.1"
-speedPlus.TextColor3 = Color3.new(1,1,1)
-speedPlus.Font = Enum.Font.GothamBold
-speedPlus.TextSize = 12
-Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
+local createBaseBtn = Instance.new("TextButton", basePlateCard)
+createBaseBtn.Size = UDim2.new(0.45, -5, 0, 40)
+createBaseBtn.Position = UDim2.new(0.03, 0, 0.45, 0)
+createBaseBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+createBaseBtn.Text = "➕ CREATE BASE PLATE"
+createBaseBtn.TextColor3 = Color3.new(1,1,1)
+createBaseBtn.Font = Enum.Font.GothamBold
+createBaseBtn.TextSize = 11
+Instance.new("UICorner", createBaseBtn).CornerRadius = UDim.new(0, 6)
 
-speedMinus.MouseButton1Click:Connect(function()
-    tarikSpeed = math.max(0.5, tarikSpeed - 0.1)
-    speedValue.Text = string.format("%.1f", tarikSpeed)
-    titleText.Text = "FULLY NV - SPEED " .. string.format("%.1f", tarikSpeed)
+local removeBaseBtn = Instance.new("TextButton", basePlateCard)
+removeBaseBtn.Size = UDim2.new(0.45, -5, 0, 40)
+removeBaseBtn.Position = UDim2.new(0.52, 0, 0.45, 0)
+removeBaseBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
+removeBaseBtn.Text = "❌ REMOVE BASE PLATE"
+removeBaseBtn.TextColor3 = Color3.new(1,1,1)
+removeBaseBtn.Font = Enum.Font.GothamBold
+removeBaseBtn.TextSize = 11
+Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
+
+createBaseBtn.MouseButton1Click:Connect(function()
+    local plate = createBasePlate()
+    if plate then
+        createBaseBtn.Text = "✅ BASE PLATE CREATED!"
+        task.wait(1.5)
+        createBaseBtn.Text = "➕ CREATE BASE PLATE"
+        notify("Base Plate", "Base plate created 5 studs below map!", "success")
+    end
 end)
-speedPlus.MouseButton1Click:Connect(function()
-    tarikSpeed = math.min(3, tarikSpeed + 0.1)
-    speedValue.Text = string.format("%.1f", tarikSpeed)
-    titleText.Text = "FULLY NV - SPEED " .. string.format("%.1f", tarikSpeed)
+
+removeBaseBtn.MouseButton1Click:Connect(function()
+    removeBasePlate()
+    removeBaseBtn.Text = "✅ BASE PLATE REMOVED!"
+    task.wait(1.5)
+    removeBaseBtn.Text = "❌ REMOVE BASE PLATE"
+    notify("Base Plate", "Base plate removed!", "info")
 end)
 
 -- Target MS
@@ -572,9 +692,44 @@ local function setStatus(msg)
     print("[FullyNV] " .. msg)
 end
 
+local function notify(title, msg, ntype)
+    local color = ntype == "success" and Color3.fromRGB(55,200,110) or Color3.fromRGB(220,60,75)
+    local notifCard = Instance.new("Frame", screenGui)
+    notifCard.Size = UDim2.new(0, 250, 0, 40)
+    notifCard.Position = UDim2.new(1, -260, 1, -50)
+    notifCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
+    Instance.new("UICorner", notifCard).CornerRadius = UDim.new(0, 8)
+    
+    local notifTitle = Instance.new("TextLabel", notifCard)
+    notifTitle.Size = UDim2.new(1, -10, 0, 18)
+    notifTitle.Position = UDim2.new(0, 5, 0, 2)
+    notifTitle.BackgroundTransparency = 1
+    notifTitle.Text = title
+    notifTitle.TextColor3 = color
+    notifTitle.Font = Enum.Font.GothamBold
+    notifTitle.TextSize = 11
+    
+    local notifMsg = Instance.new("TextLabel", notifCard)
+    notifMsg.Size = UDim2.new(1, -10, 0, 18)
+    notifMsg.Position = UDim2.new(0, 5, 0, 20)
+    notifMsg.BackgroundTransparency = 1
+    notifMsg.Text = msg
+    notifMsg.TextColor3 = Color3.fromRGB(220, 215, 245)
+    notifMsg.Font = Enum.Font.Gotham
+    notifMsg.TextSize = 10
+    
+    notifCard.Position = UDim2.new(1, -260, 1, -50)
+    TweenService:Create(notifCard, TweenInfo.new(0.3), {Position = UDim2.new(1, -270, 1, -50)}):Play()
+    task.delay(3, function()
+        TweenService:Create(notifCard, TweenInfo.new(0.3), {Position = UDim2.new(1, -260, 1, -50)}):Play()
+        task.wait(0.3)
+        notifCard:Destroy()
+    end)
+end
+
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed " .. string.format("%.1f", tarikSpeed) .. ")...")
+    setStatus("🚀 Memulai Fully NV (speed 0.3)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -585,4 +740,5 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Speed default 0.8 (bisa diatur ke 0.5 paling pelan)")
+print("✅ FULLY NV SIAP! Speed 0.3 (SUPER PELAN)")
+print("✅ Fitur Base Plate: Klik 'CREATE BASE PLATE' untuk membuat landasan 5 studs di bawah map")

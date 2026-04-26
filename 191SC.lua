@@ -1,12 +1,10 @@
 -- ============================================================
--- FULLY NV STANDALONE (KETARIK + TURUN 4 STUDS)
--- TIDAK BENTROK DENGAN SCRIPT LAIN
+-- FULLY NV STANDALONE (KETARIK SMOOTH SPEED 22)
 -- ============================================================
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -73,6 +71,7 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
+local TARIK_SPEED = 22  -- <-- KECEPATAN SMOOTH 22
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -151,13 +150,29 @@ local function jualSemua()
     end
 end
 
-local function tarikKeTarget(targetCF, duration)
+-- ============================================================
+-- KETARIK SMOOTH DENGAN KECEPATAN 22
+-- ============================================================
+local function tarikKeTarget(targetCF)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
+    
+    local startPos = hrp.Position
+    local targetPos = targetCF.Position
+    local distance = (targetPos - startPos).Magnitude
+    
+    if distance < 2 then
+        hrp.CFrame = targetCF
+        return true
+    end
+    
+    -- Hitung durasi berdasarkan jarak dan kecepatan 22
+    local duration = distance / TARIK_SPEED
+    duration = math.clamp(duration, 0.5, 4) -- antara 0.5 - 4 detik
     
     local startCF = hrp.CFrame
     local startTime = tick()
@@ -167,6 +182,7 @@ local function tarikKeTarget(targetCF, duration)
         hrp.CFrame = startCF:Lerp(targetCF, alpha)
         task.wait()
     end
+    
     hrp.CFrame = targetCF
     task.wait(0.1)
     return true
@@ -211,8 +227,8 @@ local function jalankanFully(statusFunc)
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
-        statusFunc("🏃 Ketarik ke apart")
-        tarikKeTarget(apartPos, 1.5)
+        statusFunc("🏃 Ketarik ke apart (speed " .. TARIK_SPEED .. ")")
+        tarikKeTarget(apartPos)
         
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
@@ -223,7 +239,7 @@ local function jalankanFully(statusFunc)
             end
             
             statusFunc("📍 Stage " .. i .. " - Ketarik")
-            tarikKeTarget(targetCF, 0.8)
+            tarikKeTarget(targetCF)
             
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
@@ -241,8 +257,8 @@ local function jalankanFully(statusFunc)
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
-        statusFunc("🏃 Ketarik ke NPC jual")
-        tarikKeTarget(npcPos, 1.5)
+        statusFunc("🏃 Ketarik ke NPC jual (speed " .. TARIK_SPEED .. ")")
+        tarikKeTarget(npcPos)
         
         statusFunc("💰 Menjual MS")
         jualSemua()
@@ -280,10 +296,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - KETARIK"
+titleText.Text = "FULLY NV - KETARIK SPEED " .. TARIK_SPEED
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 16
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -446,12 +462,12 @@ potKiri.MouseButton1Click:Connect(function()
 end)
 
 -- Status
-local statusCard = Instance.new("Frame", scroll)
-statusCard.Size = UDim2.new(1, 0, 0, 50)
-statusCard.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
-Instance.new("UICorner", statusCard).CornerRadius = UDim.new(0, 8)
+local statusCardFrame = Instance.new("Frame", scroll)
+statusCardFrame.Size = UDim2.new(1, 0, 0, 50)
+statusCardFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
+Instance.new("UICorner", statusCardFrame).CornerRadius = UDim.new(0, 8)
 
-local statusText = Instance.new("TextLabel", statusCard)
+local statusText = Instance.new("TextLabel", statusCardFrame)
 statusText.Size = UDim2.new(1, -10, 1, 0)
 statusText.Position = UDim2.new(0, 5, 0, 0)
 statusText.BackgroundTransparency = 1
@@ -463,11 +479,11 @@ statusText.TextWrapped = true
 statusText.TextXAlignment = Enum.TextXAlignment.Center
 
 -- Buttons
-local btnCard = Instance.new("Frame", scroll)
-btnCard.Size = UDim2.new(1, 0, 0, 50)
-btnCard.BackgroundTransparency = 1
+local btnCardFrame = Instance.new("Frame", scroll)
+btnCardFrame.Size = UDim2.new(1, 0, 0, 50)
+btnCardFrame.BackgroundTransparency = 1
 
-local startBtn = Instance.new("TextButton", btnCard)
+local startBtn = Instance.new("TextButton", btnCardFrame)
 startBtn.Size = UDim2.new(0.45, -5, 0, 40)
 startBtn.Position = UDim2.new(0.03, 0, 0.5, -20)
 startBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
@@ -477,7 +493,7 @@ startBtn.Font = Enum.Font.GothamBold
 startBtn.TextSize = 14
 Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
-local stopBtn = Instance.new("TextButton", btnCard)
+local stopBtn = Instance.new("TextButton", btnCardFrame)
 stopBtn.Size = UDim2.new(0.45, -5, 0, 40)
 stopBtn.Position = UDim2.new(0.52, 0, 0.5, -20)
 stopBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
@@ -494,7 +510,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV...")
+    setStatus("🚀 Memulai Fully NV (speed " .. TARIK_SPEED .. ")...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -505,4 +521,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV STANDALONE SIAP! GUI akan muncul.")
+print("✅ FULLY NV SIAP! Kecepatan ketarik: " .. TARIK_SPEED)

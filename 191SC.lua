@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV STANDALONE (KETARIK SMOOTH SPEED 22)
+-- FULLY NV - KECEPATAN KETARIK BISA DIATUR (DEFAULT 8)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -71,7 +71,7 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local TARIK_SPEED = 22  -- <-- KECEPATAN SMOOTH 22
+local tarikSpeed = 8  -- DEFAULT PELAN BANGET
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -151,7 +151,7 @@ local function jualSemua()
 end
 
 -- ============================================================
--- KETARIK SMOOTH DENGAN KECEPATAN 22
+-- KETARIK SMOOTH DENGAN KECEPATAN BISA DIATUR
 -- ============================================================
 local function tarikKeTarget(targetCF)
     local char = player.Character
@@ -170,17 +170,20 @@ local function tarikKeTarget(targetCF)
         return true
     end
     
-    -- Hitung durasi berdasarkan jarak dan kecepatan 22
-    local duration = distance / TARIK_SPEED
-    duration = math.clamp(duration, 0.5, 4) -- antara 0.5 - 4 detik
+    -- Hitung durasi berdasarkan jarak dan kecepatan (semakin kecil speed, semakin lama)
+    local duration = distance / tarikSpeed
+    duration = math.clamp(duration, 1, 6) -- minimal 1 detik, maksimal 6 detik
     
     local startCF = hrp.CFrame
     local startTime = tick()
     
+    -- Pake lerp smooth
     while tick() - startTime < duration and fullyRunning do
         local alpha = (tick() - startTime) / duration
-        hrp.CFrame = startCF:Lerp(targetCF, alpha)
-        task.wait()
+        -- pakai easing biar makin smooth
+        local easedAlpha = alpha * alpha * (3 - 2 * alpha) -- smoothstep
+        hrp.CFrame = startCF:Lerp(targetCF, easedAlpha)
+        task.wait(0.03)
     end
     
     hrp.CFrame = targetCF
@@ -227,7 +230,7 @@ local function jalankanFully(statusFunc)
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
-        statusFunc("🏃 Ketarik ke apart (speed " .. TARIK_SPEED .. ")")
+        statusFunc("🏃 Ketarik ke apart (speed " .. tarikSpeed .. ")")
         tarikKeTarget(apartPos)
         
         for i, stage in ipairs(stages) do
@@ -238,7 +241,7 @@ local function jalankanFully(statusFunc)
                 break
             end
             
-            statusFunc("📍 Stage " .. i .. " - Ketarik")
+            statusFunc("📍 Stage " .. i .. " - Ketarik (speed " .. tarikSpeed .. ")")
             tarikKeTarget(targetCF)
             
             statusFunc("🎯 Stage " .. i .. " - Spam E")
@@ -257,7 +260,7 @@ local function jalankanFully(statusFunc)
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
-        statusFunc("🏃 Ketarik ke NPC jual (speed " .. TARIK_SPEED .. ")")
+        statusFunc("🏃 Ketarik ke NPC jual (speed " .. tarikSpeed .. ")")
         tarikKeTarget(npcPos)
         
         statusFunc("💰 Menjual MS")
@@ -280,8 +283,8 @@ screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 380, 0, 480)
-mainFrame.Position = UDim2.new(0.5, -190, 0.5, -240)
+mainFrame.Size = UDim2.new(0, 400, 0, 520)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -260)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -296,7 +299,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - KETARIK SPEED " .. TARIK_SPEED
+titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -317,14 +320,72 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
 scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Target MS
+-- ==================== SLIDER KECEPATAN ====================
+local speedCard = Instance.new("Frame", scroll)
+speedCard.Size = UDim2.new(1, 0, 0, 70)
+speedCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
+Instance.new("UICorner", speedCard).CornerRadius = UDim.new(0, 8)
+
+local speedLabel = Instance.new("TextLabel", speedCard)
+speedLabel.Size = UDim2.new(1, -10, 0, 20)
+speedLabel.Position = UDim2.new(0, 5, 0, 5)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "KECEPATAN KETARIK (1-20)  →  " .. tarikSpeed
+speedLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextSize = 12
+
+local speedValue = Instance.new("TextLabel", speedCard)
+speedValue.Size = UDim2.new(0, 50, 0, 30)
+speedValue.Position = UDim2.new(0.5, -25, 0, 30)
+speedValue.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+speedValue.Text = tostring(tarikSpeed)
+speedValue.TextColor3 = Color3.new(1,1,1)
+speedValue.Font = Enum.Font.GothamBold
+speedValue.TextSize = 14
+Instance.new("UICorner", speedValue).CornerRadius = UDim.new(0, 6)
+
+local speedMinus = Instance.new("TextButton", speedCard)
+speedMinus.Size = UDim2.new(0, 35, 0, 30)
+speedMinus.Position = UDim2.new(0, 10, 0, 30)
+speedMinus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+speedMinus.Text = "-"
+speedMinus.TextColor3 = Color3.new(1,1,1)
+speedMinus.Font = Enum.Font.GothamBold
+speedMinus.TextSize = 18
+Instance.new("UICorner", speedMinus).CornerRadius = UDim.new(0, 6)
+
+local speedPlus = Instance.new("TextButton", speedCard)
+speedPlus.Size = UDim2.new(0, 35, 0, 30)
+speedPlus.Position = UDim2.new(1, -45, 0, 30)
+speedPlus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+speedPlus.Text = "+"
+speedPlus.TextColor3 = Color3.new(1,1,1)
+speedPlus.Font = Enum.Font.GothamBold
+speedPlus.TextSize = 18
+Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
+
+speedMinus.MouseButton1Click:Connect(function()
+    tarikSpeed = math.max(1, tarikSpeed - 1)
+    speedValue.Text = tostring(tarikSpeed)
+    speedLabel.Text = "KECEPATAN KETARIK (1-20)  →  " .. tarikSpeed
+    titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
+end)
+speedPlus.MouseButton1Click:Connect(function()
+    tarikSpeed = math.min(20, tarikSpeed + 1)
+    speedValue.Text = tostring(tarikSpeed)
+    speedLabel.Text = "KECEPATAN KETARIK (1-20)  →  " .. tarikSpeed
+    titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
+end)
+
+-- ==================== TARGET MS ====================
 local targetCard = Instance.new("Frame", scroll)
 targetCard.Size = UDim2.new(1, 0, 0, 60)
 targetCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
@@ -378,7 +439,7 @@ plusBtn.MouseButton1Click:Connect(function()
     targetValue.Text = tostring(targetMS)
 end)
 
--- Pilih Apart
+-- ==================== PILIH APART ====================
 local apartLabel = Instance.new("TextLabel", scroll)
 apartLabel.Size = UDim2.new(1, 0, 0, 20)
 apartLabel.BackgroundTransparency = 1
@@ -415,7 +476,7 @@ for i = 1, 4 do
     apartButtons[i] = btn
 end
 
--- Pilih Pot
+-- ==================== PILIH POT ====================
 local potLabel = Instance.new("TextLabel", scroll)
 potLabel.Size = UDim2.new(1, 0, 0, 20)
 potLabel.BackgroundTransparency = 1
@@ -461,7 +522,7 @@ potKiri.MouseButton1Click:Connect(function()
     potKanan.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
 end)
 
--- Status
+-- ==================== STATUS ====================
 local statusCardFrame = Instance.new("Frame", scroll)
 statusCardFrame.Size = UDim2.new(1, 0, 0, 50)
 statusCardFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
@@ -478,7 +539,7 @@ statusText.TextSize = 11
 statusText.TextWrapped = true
 statusText.TextXAlignment = Enum.TextXAlignment.Center
 
--- Buttons
+-- ==================== BUTTONS ====================
 local btnCardFrame = Instance.new("Frame", scroll)
 btnCardFrame.Size = UDim2.new(1, 0, 0, 50)
 btnCardFrame.BackgroundTransparency = 1
@@ -510,7 +571,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed " .. TARIK_SPEED .. ")...")
+    setStatus("🚀 Memulai Fully NV (speed " .. tarikSpeed .. ")...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -521,4 +582,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Kecepatan ketarik: " .. TARIK_SPEED)
+print("✅ FULLY NV SIAP! Kecepatan default: " .. tarikSpeed .. " (Bisa diatur dengan slider)")

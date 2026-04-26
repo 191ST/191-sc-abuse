@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - SPEED 0.4 + BASE PLATE 5 STUDS DI BAWAH (FIX)
+-- FULLY NV - SPEED 0.3 + BASE PLATE 5 STUDS DI BAWAH TANAH
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -71,47 +71,40 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local tarikSpeed = 0.4 -- SPEED 0.4 (PELAN)
+local tarikSpeed = 0.3 -- SPEED 0.3 (SUPER PELAN)
 local basePlate = nil
 
 -- ============================================================
 -- FUNGSI BASE PLATE - 5 STUDS DI BAWAH PERMUKAAN TANAH
 -- ============================================================
 local function getGroundLevel(pos)
-    -- Raycast ke bawah untuk mendapatkan permukaan tanah
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
     params.FilterType = Enum.RaycastFilterType.Blacklist
     
-    local rayOrigin = Vector3.new(pos.X, pos.Y + 10, pos.Z)
+    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
     local rayDir = Vector3.new(0, -50, 0)
     local result = workspace:Raycast(rayOrigin, rayDir, params)
     
     if result then
         return result.Position.Y
     end
-    return pos.Y - 5 -- fallback
+    return pos.Y - 5
 end
 
 local function createBasePlate()
-    -- Hapus base plate lama
     if basePlate and basePlate.Parent then
         basePlate:Destroy()
     end
     
-    -- Dapatkan posisi karakter
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        return nil
-    end
+    if not hrp then return nil end
     
     local playerPos = hrp.Position
-    -- Cari permukaan tanah di bawah karakter
     local groundY = getGroundLevel(playerPos)
-    local baseY = groundY - 5 -- 5 STUDS DI BAWAH PERMUKAAN TANAH
+    local baseY = groundY - 5
     
-    -- Buat base plate ukuran 1000x1000
     basePlate = Instance.new("Part")
     basePlate.Name = "FullyNV_BasePlate"
     basePlate.Size = Vector3.new(1000, 1, 1000)
@@ -121,7 +114,6 @@ local function createBasePlate()
     basePlate.Material = Enum.Material.SmoothPlastic
     basePlate.Transparency = 0.3
     
-    -- Tambah selection box biar keliatan
     local selection = Instance.new("SelectionBox")
     selection.Adornee = basePlate
     selection.Color3 = Color3.fromRGB(130, 60, 240)
@@ -130,30 +122,22 @@ local function createBasePlate()
     selection.Parent = basePlate
     
     basePlate.Parent = workspace
-    
-    print("[BasePlate] Dibuat di Y: " .. baseY .. " (5 studs di bawah tanah)")
     return basePlate
 end
 
 local function createBasePlateRaksasa()
-    -- Hapus base plate lama
     if basePlate and basePlate.Parent then
         basePlate:Destroy()
     end
     
-    -- Dapatkan posisi karakter
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        return nil
-    end
+    if not hrp then return nil end
     
     local playerPos = hrp.Position
-    -- Cari permukaan tanah di bawah karakter
     local groundY = getGroundLevel(playerPos)
-    local baseY = groundY - 5 -- 5 STUDS DI BAWAH PERMUKAAN TANAH
+    local baseY = groundY - 5
     
-    -- Buat base plate RAKSASA (5000x5000)
     basePlate = Instance.new("Part")
     basePlate.Name = "FullyNV_BasePlate_Raksasa"
     basePlate.Size = Vector3.new(5000, 1, 5000)
@@ -171,8 +155,6 @@ local function createBasePlateRaksasa()
     selection.Parent = basePlate
     
     basePlate.Parent = workspace
-    
-    print("[BasePlate] RAKSASA dibuat di Y: " .. baseY .. " (5 studs di bawah tanah)")
     return basePlate
 end
 
@@ -180,7 +162,6 @@ local function removeBasePlate()
     if basePlate and basePlate.Parent then
         basePlate:Destroy()
         basePlate = nil
-        print("[BasePlate] Dihapus")
     end
 end
 
@@ -281,7 +262,7 @@ local function blinkNaik(studs)
 end
 
 -- ============================================================
--- KETARIK SPEED 0.4
+-- KETARIK SPEED 0.3
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -291,15 +272,12 @@ local function ketarikKeTarget(targetPos)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
     
-    -- BLINK TURUN 4 STUDS
     blinkTurun(4)
     
-    -- HITUNG DURASI (SPEED 0.4)
     local distance = (targetPos - hrp.Position).Magnitude
     local duration = distance / tarikSpeed
-    duration = math.clamp(duration, 2, 18)
+    duration = math.clamp(duration, 2.5, 20)
     
-    -- TWEEN KE TARGET
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
     tween:Play()
@@ -311,7 +289,6 @@ local function ketarikKeTarget(targetPos)
     if tween.PlaybackState == Enum.PlaybackState.Playing then tween:Cancel() end
     hrp.CFrame = CFrame.new(targetPos)
     
-    -- BLINK NAIK 4 STUDS
     blinkNaik(4)
     
     task.wait(0.1)
@@ -343,13 +320,13 @@ local function jalankanFully(statusFunc)
     end
     
     while fullyRunning do
-        statusFunc("🏃 Ketarik ke NPC Buy...")
+        statusFunc("🏃 Ketarik ke NPC Buy (speed 0.3)...")
         ketarikKeTarget(npcPos)
         
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
-        statusFunc("🏃 Ketarik ke apart...")
+        statusFunc("🏃 Ketarik ke apart (speed 0.3)...")
         ketarikKeTarget(apartPos)
         
         for i, stage in ipairs(stages) do
@@ -376,7 +353,7 @@ local function jalankanFully(statusFunc)
             end
         end
         
-        statusFunc("🏃 Ketarik ke NPC Jual...")
+        statusFunc("🏃 Ketarik ke NPC Jual (speed 0.3)...")
         ketarikKeTarget(npcPos)
         
         statusFunc("💰 Menjual MS")
@@ -415,7 +392,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 0.4 + BASE PLATE"
+titleText.Text = "FULLY NV - SPEED 0.3 + BASE PLATE"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 13
@@ -453,7 +430,7 @@ local infoText = Instance.new("TextLabel", infoCard)
 infoText.Size = UDim2.new(1, -10, 1, 0)
 infoText.Position = UDim2.new(0, 5, 0, 0)
 infoText.BackgroundTransparency = 1
-infoText.Text = "⚡ KECEPATAN: 0.4 (PELAN)\n⬇️ BLINK TURUN 4 STUDS SEBELUM KETARIK"
+infoText.Text = "⚡ KECEPATAN: 0.3 (SUPER PELAN)\n⬇️ BLINK TURUN 4 STUDS SEBELUM KETARIK"
 infoText.TextColor3 = Color3.new(1,1,1)
 infoText.Font = Enum.Font.GothamBold
 infoText.TextSize = 11
@@ -724,7 +701,8 @@ local function setStatus(msg)
 end
 
 startBtn.MouseButton1Click:Connect(function()
-    if fullyRunning then return end    setStatus("🚀 Memulai Fully NV (speed 0.4)...")
+    if fullyRunning then return end
+    setStatus("🚀 Memulai Fully NV (speed 0.3)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -735,5 +713,5 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Speed 0.4")
-print("✅ Base Plate: 5 studs DI BAWAH PERMUKAAN TANAH (bukan di bawah kaki)")
+print("✅ FULLY NV SIAP! Speed 0.3 (SUPER PELAN)")
+print("✅ Base Plate: 5 studs DI BAWAH PERMUKAAN TANAH")

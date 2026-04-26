@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - FINAL (PASTI DI BAWAH + PELAN + WORK)
+-- FULLY NV - STAY LOW STABLE (KAMERA MANIS)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -15,7 +15,7 @@ local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("S
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
 -- ============================================================
--- KORDINAT APART CASINO
+-- KORDINAT APART CASINO (YANG LO KASIH)
 -- ============================================================
 local apartData = {
     [1] = {
@@ -70,9 +70,10 @@ local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
 
--- ============================================================
--- BASE PLATE (OPSIONAL, TAPI LO MINTA)
--- ============================================================
+-- SPEED TARIK (DIAM)
+local SPEED_TARIK = 0.3 -- PELAN BANGET
+
+-- BASE PLATE
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
@@ -142,7 +143,7 @@ local function removeBasePlate()
 end
 
 -- ============================================================
--- HELPER (ITEMS, COOK, SELL)
+-- HELPER (COUNT, EQUIP, COOK, SELL)
 -- ============================================================
 local function countItem(name)
     local total = 0
@@ -219,37 +220,28 @@ local function jualSemua()
 end
 
 -- ============================================================
--- MOVE + STAY LOW (PASTI DI BAWAH)
+-- PENGERAKAN STAY LOW (TANPA BLINK DI TENGAH)
 -- ============================================================
-local function blinkTurun(studs)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0)
-        task.wait(0.05)
-    end
-end
-
-local function blinkNaik(studs)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0)
-        task.wait(0.05)
-    end
-end
-
 local function pindahKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
 
-    -- Turunin 4 studs (biar di bawah)
-    blinkTurun(4)
+    -- Turunin 4 studs SEKALI (pake CFrame instan, wajar)
+    local currentPos = hrp.Position
+    local groundY = getGroundLevel(currentPos)
+    if currentPos.Y > groundY - 3 then
+        hrp.CFrame = CFrame.new(currentPos.X, currentPos.Y - 4, currentPos.Z)
+        task.wait(0.05)
+    end
 
+    -- Hitung durasi (pelan)
     local distance = (targetPos - hrp.Position).Magnitude
-    local duration = math.max(distance / 0.25, 5) -- DIPAKSA PELAN
+    local duration = math.max(distance / SPEED_TARIK, 3) -- minimal 3 detik
 
-    local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear),
-        { CFrame = CFrame.new(targetPos.X, targetPos.Y - 4, targetPos.Z) })
+    -- Tween ke target, tapi Y nya tetap bawah (targetPos.Y - 4)
+    local targetCF = CFrame.new(targetPos.X, targetPos.Y - 4, targetPos.Z)
+    local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF })
 
     tween:Play()
     while tween.PlaybackState == Enum.PlaybackState.Playing and fullyRunning do
@@ -257,8 +249,9 @@ local function pindahKeTarget(targetPos)
     end
     if tween.PlaybackState == Enum.PlaybackState.Playing then tween:Cancel() end
 
-    -- Naikin lagi setelah sampai
-    blinkNaik(4)
+    -- Naikin 4 studs setelah sampai
+    hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y, targetPos.Z)
+    task.wait(0.05)
     return true
 end
 
@@ -270,7 +263,7 @@ local function getStagePos(stage, pot)
 end
 
 -- ============================================================
--- MAIN LOOP
+-- LOOP UTAMA
 -- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
@@ -333,7 +326,7 @@ local function jalankanFully(statusFunc)
 end
 
 -- ============================================================
--- GUI
+-- GUI (SEDERHANA, TAPI LENGKAP)
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -344,20 +337,23 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 400, 0, 550)
 mainFrame.Position = UDim2.new(0.5, -200, 0.5, -275)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+titleBar.BorderSizePixel = 0
 Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - LAST TRY"
+titleText.Text = "FULLY NV - STAY LOW STABLE"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 14
+titleText.TextSize = 13
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -367,6 +363,7 @@ closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.new(1,1,1)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 14
+closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() fullyRunning = false end)
 
@@ -379,8 +376,9 @@ scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Info
+-- INFO
 local infoCard = Instance.new("Frame", scroll)
 infoCard.Size = UDim2.new(1, 0, 0, 50)
 infoCard.BackgroundColor3 = Color3.fromRGB(40, 30, 70)
@@ -389,12 +387,12 @@ local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "PASTI DI BAWAH + PELAN (5 DETIK MIN)"
+infoLbl.Text = "STAY LOW + PELAN (KAMERA STABLE)"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
 infoLbl.TextSize = 12
 
--- Base Plate
+-- BASE PLATE
 local baseCard = Instance.new("Frame", scroll)
 baseCard.Size = UDim2.new(1, 0, 0, 80)
 baseCard.BackgroundColor3 = Color3.fromRGB(30, 28, 45)
@@ -402,7 +400,7 @@ Instance.new("UICorner", baseCard).CornerRadius = UDim.new(0, 8)
 
 local createBtn = Instance.new("TextButton", baseCard)
 createBtn.Size = UDim2.new(0.3, -5, 0, 35)
-createBtn.Position = UDim2.new(0.02, 0, 0.5, -17)
+createBtn.Position = UDim2.new(0.02, 0, 0.5, -17.5)
 createBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
 createBtn.Text = "CREATE"
 createBtn.TextColor3 = Color3.new(1,1,1)
@@ -412,7 +410,7 @@ createBtn.MouseButton1Click:Connect(createBasePlate)
 
 local raksasaBtn = Instance.new("TextButton", baseCard)
 raksasaBtn.Size = UDim2.new(0.3, -5, 0, 35)
-raksasaBtn.Position = UDim2.new(0.35, 0, 0.5, -17)
+raksasaBtn.Position = UDim2.new(0.35, 0, 0.5, -17.5)
 raksasaBtn.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
 raksasaBtn.Text = "RAKSASA"
 raksasaBtn.TextColor3 = Color3.new(1,1,1)
@@ -422,7 +420,7 @@ raksasaBtn.MouseButton1Click:Connect(createBasePlateRaksasa)
 
 local removeBtn = Instance.new("TextButton", baseCard)
 removeBtn.Size = UDim2.new(0.3, -5, 0, 35)
-removeBtn.Position = UDim2.new(0.68, 0, 0.5, -17)
+removeBtn.Position = UDim2.new(0.68, 0, 0.5, -17.5)
 removeBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
 removeBtn.Text = "REMOVE"
 removeBtn.TextColor3 = Color3.new(1,1,1)
@@ -430,7 +428,7 @@ removeBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", removeBtn).CornerRadius = UDim.new(0, 6)
 removeBtn.MouseButton1Click:Connect(removeBasePlate)
 
--- Target MS
+-- TARGET MS
 local targetCard = Instance.new("Frame", scroll)
 targetCard.Size = UDim2.new(1, 0, 0, 70)
 targetCard.BackgroundColor3 = Color3.fromRGB(30, 28, 45)
@@ -575,8 +573,10 @@ statusText.Text = "Belum dimulai"
 statusText.TextColor3 = Color3.fromRGB(145, 138, 175)
 statusText.Font = Enum.Font.GothamBold
 statusText.TextSize = 11
+statusText.TextWrapped = true
+statusText.TextXAlignment = Enum.TextXAlignment.Center
 
--- BUTTONS
+-- BUTTON
 local btnCard2 = Instance.new("Frame", scroll)
 btnCard2.Size = UDim2.new(1, 0, 0, 50)
 btnCard2.BackgroundTransparency = 1
@@ -608,13 +608,13 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("START")
+    setStatus("🚀 START")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
 stopBtn.MouseButton1Click:Connect(function()
     fullyRunning = false
-    setStatus("STOP")
+    setStatus("⏹ STOP")
 end)
 
-print("✅ FULLY NV LAST TRY READY. PASTI DI BAWAH + PELAN.")
+print("✅ FULLY NV - STAY LOW STABLE READY")

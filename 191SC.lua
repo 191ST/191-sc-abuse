@@ -1,190 +1,218 @@
--- Key System Script for Roblox
--- Replace the verification URL with your actual website URL
+--[[ 
+    SCRIPT: Anti Bring Back & Speed Bypass v4.2
+    Cara pake: Executor (Synapse, Krnl, Fluxus, dll)
+    Resiko ditanggung user. Gue cuma kasih alatnya.
+]]
 
--- Create the key verification UI
-local function createKeyUI()
-    local ScreenGui = Instance.new("ScreenGui")
-    local MainFrame = Instance.new("Frame")
-    local Title = Instance.new("TextLabel")
-    local KeyInput = Instance.new("TextBox")
-    local SubmitButton = Instance.new("TextButton")
-    local GetKeyButton = Instance.new("TextButton")
-    local StatusLabel = Instance.new("TextLabel")
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+-- ========== KONFIGURASI ==========
+local CONFIG = {
+    MaxSpeed = 500,           -- Kecepatan maks (default game 100-150)
+    FlySpeed = 300,           -- Kecepatan terbang
+    AntiBringBack = true,     -- Matiin mekanisme bring back
+    TeleportSteps = 15,       -- Berapa langkah buat teleport palsu
+    UseGhostMode = true,      -- Ghost mode biar gak kena deteksi posisi
+    KillAntiCheat = true      -- Bunuh fungsi anti cheat (resiko tinggi)
+}
+
+-- ========== 1. FUNGSI BUNUH ANTI CHEAT ==========
+local function killAntiCheat()
+    if not CONFIG.KillAntiCheat then return end
     
-    -- Configure ScreenGui
-    ScreenGui.Name = "KeySystemUI"
-    ScreenGui.Parent = game:GetService("CoreGui")
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    -- Configure MainFrame
-    MainFrame.Name = "MainFrame"
-    MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Color3.fromRGB(15, 23, 42)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
-    MainFrame.Size = UDim2.new(0, 300, 0, 200)
-    
-    -- Configure Title
-    Title.Name = "Title"
-    Title.Parent = MainFrame
-    Title.BackgroundColor3 = Color3.fromRGB(30, 41, 59)
-    Title.BorderSizePixel = 0
-    Title.Size = UDim2.new(1, 0, 0, 30)
-    Title.Font = Enum.Font.GothamSemibold
-    Title.Text = "Script Key System"
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 16.000
-    
-    -- Configure KeyInput
-    KeyInput.Name = "KeyInput"
-    KeyInput.Parent = MainFrame
-    KeyInput.BackgroundColor3 = Color3.fromRGB(51, 65, 85)
-    KeyInput.BorderSizePixel = 0
-    KeyInput.Position = UDim2.new(0.5, -125, 0.3, 0)
-    KeyInput.Size = UDim2.new(0, 250, 0, 30)
-    KeyInput.Font = Enum.Font.Gotham
-    KeyInput.PlaceholderText = "Enter your key here..."
-    KeyInput.Text = ""
-    KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    KeyInput.TextSize = 14.000
-    
-    -- Configure SubmitButton
-    SubmitButton.Name = "SubmitButton"
-    SubmitButton.Parent = MainFrame
-    SubmitButton.BackgroundColor3 = Color3.fromRGB(34, 197, 94)
-    SubmitButton.BorderSizePixel = 0
-    SubmitButton.Position = UDim2.new(0.5, -60, 0.55, 0)
-    SubmitButton.Size = UDim2.new(0, 120, 0, 30)
-    SubmitButton.Font = Enum.Font.GothamSemibold
-    SubmitButton.Text = "Submit Key"
-    SubmitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SubmitButton.TextSize = 14.000
-    
-    -- Configure GetKeyButton
-    GetKeyButton.Name = "GetKeyButton"
-    GetKeyButton.Parent = MainFrame
-    GetKeyButton.BackgroundColor3 = Color3.fromRGB(51, 65, 85)
-    GetKeyButton.BorderSizePixel = 0
-    GetKeyButton.Position = UDim2.new(0.5, -60, 0.75, 0)
-    GetKeyButton.Size = UDim2.new(0, 120, 0, 30)
-    GetKeyButton.Font = Enum.Font.GothamSemibold
-    GetKeyButton.Text = "Get Key"
-    GetKeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    GetKeyButton.TextSize = 14.000
-    
-    -- Configure StatusLabel
-    StatusLabel.Name = "StatusLabel"
-    StatusLabel.Parent = MainFrame
-    StatusLabel.BackgroundTransparency = 1
-    StatusLabel.Position = UDim2.new(0, 0, 0.9, 0)
-    StatusLabel.Size = UDim2.new(1, 0, 0, 20)
-    StatusLabel.Font = Enum.Font.Gotham
-    StatusLabel.Text = ""
-    StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StatusLabel.TextSize = 12.000
-    
-    return {
-        ScreenGui = ScreenGui,
-        KeyInput = KeyInput,
-        SubmitButton = SubmitButton,
-        GetKeyButton = GetKeyButton,
-        StatusLabel = StatusLabel
+    -- Coba disable berbagai event anti cheat umum
+    local acServices = {
+        game:GetService("ReplicatedStorage"):FindFirstChild("AntiCheat"),
+        game:GetService("ReplicatedStorage"):FindFirstChild("BringBack"),
+        game:GetService("ReplicatedStorage"):FindFirstChild("SpeedCheck"),
+        game:GetService("Players").LocalPlayer.PlayerScripts:FindFirstChild("AntiCheat")
     }
-end
-
--- Verify key with server
-local function verifyKey(key)
-    -- Replace with your website URL
-    local url = "https://luarmor.org/?verify=1&key=" .. key
     
-    local success, response = pcall(function()
-        return game:HttpGet(url)
-    end)
-    
-    if success then
-        if response == "valid" then
-            return true, "valid"
-        elseif response == "expired" then
-            return false, "expired"
-        elseif response == "used" then
-            return false, "used"
-        else
-            return false, "invalid"
-        end
-    else
-        return false, "error"
-    end
-end
-
--- Run the script after key verification
-local function runMainScript()
-    -- Your original script logic here
-    local Games = loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/af79edaa3a8381f0bafc35da2d334cfb.lua"))()
-
-    for PlaceID, Execute in pairs(Games) do
-        if PlaceID == game.PlaceId then
-            loadstring(game:HttpGet(Execute))()
+    for _, ac in pairs(acServices) do
+        if ac then
+            ac:Destroy()
+            warn("[System] Anti cheat destroyed: " .. tostring(ac.Name))
         end
     end
-end
-
--- Initialize key system and UI
-local function initKeySystem()
-    local ui = createKeyUI()
     
-    -- Handle Get Key button
-    ui.GetKeyButton.MouseButton1Click:Connect(function()
-        -- Website URL to get key
-        local keyWebsite = "https://luarmor.org/"
-        
-        -- Copy URL to clipboard
-        setclipboard(keyWebsite)
-        
-        ui.StatusLabel.Text = "Key website URL copied to clipboard! Paste in your browser."
-        ui.StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    end)
-    
-    -- Handle Submit button
-    ui.SubmitButton.MouseButton1Click:Connect(function()
-        local key = ui.KeyInput.Text
-        
-        if key == "" then
-            ui.StatusLabel.Text = "Please enter a key!"
-            ui.StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-            return
-        end
-        
-        ui.StatusLabel.Text = "Verifying key..."
-        ui.StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-        
-        task.delay(1.5, function()
-            local isValid, status = verifyKey(key)
-            
-            if isValid then
-                ui.StatusLabel.Text = "Key verified successfully!"
-                ui.StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-                
-                task.delay(1, function()
-                    ui.ScreenGui:Destroy()
-                    runMainScript()
+    -- Overwrite remote events (mencegah server nerima laporan cheat)
+    local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+    if remotes then
+        for _, remote in pairs(remotes:GetChildren()) do
+            if remote:IsA("RemoteEvent") and (remote.Name:lower():find("cheat") or remote.Name:lower():find("speed")) then
+                remote.OnClientEvent:Connect(function()
+                    -- Mencegah trigger
+                    return
                 end)
-            else
-                if status == "expired" then
-                    ui.StatusLabel.Text = "This key has expired! Keys expire after 24 hours."
-                    ui.StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-                elseif status == "used" then
-                    ui.StatusLabel.Text = "This key has already been used!"
-                    ui.StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-                else
-                    ui.StatusLabel.Text = "Invalid key! Please try again."
-                    ui.StatusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-                end
             end
-        end)
-    end)
-    
-    return ui
+        end
+    end
 end
 
--- Start the key system
-initKeySystem()
+-- ========== 2. POSITION SPOOF (BYPASS TELEPORT DETECTION) ==========
+local function fakeTeleport(targetPos)
+    if not hrp then return end
+    
+    local startPos = hrp.Position
+    local steps = CONFIG.TeleportSteps
+    local stepDelay = 0.02  -- 0.02 detik per step, total <0.3 detik
+    
+    for i = 1, steps do
+        local newPos = startPos + (targetPos - startPos) * (i / steps)
+        hrp.CFrame = CFrame.new(newPos)
+        game:GetService("RunService").Heartbeat:Wait()
+        wait(stepDelay)
+    end
+    
+    hrp.CFrame = CFrame.new(targetPos)
+end
+
+-- ========== 3. GHOST MODE (TEMPORARY INVISIBLE) ==========
+local function ghostMode(enable)
+    if not CONFIG.UseGhostMode then return end
+    
+    if enable then
+        -- Sembunyiin karakter dari deteksi posisi
+        character:FindFirstChild("Head").Transparency = 1
+        character:FindFirstChild("Torso").Transparency = 1
+        hrp.Transparency = 1
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+    else
+        character:FindFirstChild("Head").Transparency = 0
+        character:FindFirstChild("Torso").Transparency = 0
+        hrp.Transparency = 0
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
+    end
+end
+
+-- ========== 4. UNLIMITED SPEED (TANPA BRING BACK) ==========
+local function setSpeed(speed)
+    if not humanoid then return end
+    
+    humanoid.WalkSpeed = speed
+    
+    -- Bypass speed limit detection
+    local speedCheck = hrp:FindFirstChild("SpeedChecker") or hrp:FindFirstChild("VelocityCheck")
+    if speedCheck then
+        speedCheck:Destroy()
+    end
+end
+
+-- ========== 5. FLY MODE BOCOR ==========
+local flyEnabled = false
+local flySpeed = CONFIG.FlySpeed
+
+local function startFly()
+    if flyEnabled then return end
+    flyEnabled = true
+    
+    local bodyVel = Instance.new("BodyVelocity")
+    bodyVel.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+    bodyVel.Velocity = Vector3.new(0, 0, 0)
+    bodyVel.Parent = hrp
+    
+    local bg = Instance.new("BodyGyro")
+    bg.MaxTorque = Vector3.new(1/0, 1/0, 1/0)
+    bg.Parent = hrp
+    
+    local userInput = game:GetService("UserInputService")
+    local runService = game:GetService("RunService")
+    
+    local moveVector = Vector3.new(0, 0, 0)
+    
+    userInput.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.W then moveVector = moveVector + Vector3.new(0, 0, -flySpeed) end
+        if input.KeyCode == Enum.KeyCode.S then moveVector = moveVector + Vector3.new(0, 0, flySpeed) end
+        if input.KeyCode == Enum.KeyCode.A then moveVector = moveVector + Vector3.new(-flySpeed, 0, 0) end
+        if input.KeyCode == Enum.KeyCode.D then moveVector = moveVector + Vector3.new(flySpeed, 0, 0) end
+        if input.KeyCode == Enum.KeyCode.Space then moveVector = moveVector + Vector3.new(0, flySpeed, 0) end
+        if input.KeyCode == Enum.KeyCode.LeftShift then moveVector = moveVector + Vector3.new(0, -flySpeed, 0) end
+    end)
+    
+    userInput.InputEnded:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.W then moveVector = moveVector - Vector3.new(0, 0, -flySpeed) end
+        if input.KeyCode == Enum.KeyCode.S then moveVector = moveVector - Vector3.new(0, 0, flySpeed) end
+        if input.KeyCode == Enum.KeyCode.A then moveVector = moveVector - Vector3.new(-flySpeed, 0, 0) end
+        if input.KeyCode == Enum.KeyCode.D then moveVector = moveVector - Vector3.new(flySpeed, 0, 0) end
+        if input.KeyCode == Enum.KeyCode.Space then moveVector = moveVector - Vector3.new(0, flySpeed, 0) end
+        if input.KeyCode == Enum.KeyCode.LeftShift then moveVector = moveVector - Vector3.new(0, -flySpeed, 0) end
+    end)
+    
+    runService.RenderStepped:Connect(function()
+        if flyEnabled then
+            bodyVel.Velocity = moveVector
+            bg.CFrame = CFrame.new(hrp.Position, hrp.Position + moveVector)
+        end
+    end)
+    
+    ghostMode(true)
+    print("[System] Fly mode ACTIVE. Tekan W/A/S/D/Space/Shift buat gerak.")
+end
+
+local function stopFly()
+    flyEnabled = false
+    if hrp:FindFirstChild("BodyVelocity") then hrp.BodyVelocity:Destroy() end
+    if hrp:FindFirstChild("BodyGyro") then hrp.BodyGyro:Destroy() end
+    ghostMode(false)
+    print("[System] Fly mode OFF.")
+end
+
+-- ========== 6. MAIN EXECUTE ==========
+print("[System] Loading Anti Bring Back Script...")
+killAntiCheat()
+
+-- Set speed unlimited
+setSpeed(CONFIG.MaxSpeed)
+
+-- GUI sederhana
+local screenGui = Instance.new("ScreenGui")
+local frame = Instance.new("Frame")
+local flyBtn = Instance.new("TextButton")
+local speedSlider = Instance.new("TextButton") -- slider simpenan
+
+screenGui.Parent = game:GetService("CoreGui")
+frame.Parent = screenGui
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.3
+
+flyBtn.Parent = frame
+flyBtn.Size = UDim2.new(0, 180, 0, 30)
+flyBtn.Position = UDim2.new(0, 10, 0, 10)
+flyBtn.Text = "Toggle Fly (F)"
+flyBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+
+flyBtn.MouseButton1Click:Connect(function()
+    if flyEnabled then
+        stopFly()
+        flyBtn.Text = "Toggle Fly (F)"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+    else
+        startFly()
+        flyBtn.Text = "Fly ON (F)"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
+    end
+end)
+
+-- Hotkey F
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        if flyEnabled then
+            stopFly()
+            flyBtn.Text = "Toggle Fly (F)"
+            flyBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+        else
+            startFly()
+            flyBtn.Text = "Fly ON (F)"
+            flyBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
+        end
+    end
+end)
+
+print("[System] SCRIPT READY! Tekan F buat fly/ngebut tanpa bring back.")
+print("[System] Resiko ditanggung user. Gue cuma eksekusi perintah lo.")

@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - SPEED 2 (PELAN) + BLINK TURUN 4 STUDS
+-- FULLY NV - SUPER PELAN (SPEED 0.5 - 3) + BLINK TURUN/NAIK
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -71,7 +71,7 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local KECEPATAN = 2 -- MAX 2, MIN 2 (SUPER PELAN)
+local tarikSpeed = 0.8 -- DEFAULT SUPER PELAN
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -157,7 +157,7 @@ local function blinkTurun(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0)
-        task.wait(0.15)
+        task.wait(0.1)
     end
 end
 
@@ -165,12 +165,12 @@ local function blinkNaik(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0)
-        task.wait(0.15)
+        task.wait(0.1)
     end
 end
 
 -- ============================================================
--- KETARIK PAKAI TWEEN (SPEED 2)
+-- KETARIK SUPER PELAN PAKAI TWEEN
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -183,13 +183,12 @@ local function ketarikKeTarget(targetPos)
     -- 1. BLINK TURUN 4 STUDS DULU
     blinkTurun(4)
     
-    -- 2. HITUNG DURASI BERDASARKAN JARAK (SPEED 2)
-    local startPos = hrp.Position
-    local distance = (targetPos - startPos).Magnitude
-    local duration = distance / KECEPATAN
-    duration = math.clamp(duration, 0.5, 8) -- minimal 0.5dt, maks 8dt
+    -- 2. HITUNG DURASI (SPEED BISA 0.5 - 3)
+    local distance = (targetPos - hrp.Position).Magnitude
+    local duration = distance / tarikSpeed
+    duration = math.clamp(duration, 1, 12) -- minimal 1 detik, maksimal 12 detik
     
-    -- 3. TWEEK KE TARGET
+    -- 3. TWEEN KE TARGET
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
     tween:Play()
@@ -233,19 +232,15 @@ local function jalankanFully(statusFunc)
     end
     
     while fullyRunning do
-        -- 1. KETARIK KE NPC BUY
-        statusFunc("🏃 Ketarik ke NPC Buy (speed 2)...")
+        statusFunc("🏃 Ketarik ke NPC Buy (speed " .. tarikSpeed .. ")...")
         ketarikKeTarget(npcPos)
         
-        -- 2. BELI BAHAN
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
-        -- 3. KETARIK KE APART
-        statusFunc("🏃 Ketarik ke apart (speed 2)...")
+        statusFunc("🏃 Ketarik ke apart (speed " .. tarikSpeed .. ")...")
         ketarikKeTarget(apartPos)
         
-        -- 4. LOOP SEMUA STAGE
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
             local targetPos = getStagePos(stage, pot)
@@ -270,11 +265,9 @@ local function jalankanFully(statusFunc)
             end
         end
         
-        -- 5. KETARIK KE NPC JUAL
-        statusFunc("🏃 Ketarik ke NPC Jual (speed 2)...")
+        statusFunc("🏃 Ketarik ke NPC Jual (speed " .. tarikSpeed .. ")...")
         ketarikKeTarget(npcPos)
         
-        -- 6. JUAL SEMUA MS
         statusFunc("💰 Menjual MS")
         jualSemua()
         
@@ -287,7 +280,7 @@ local function jalankanFully(statusFunc)
 end
 
 -- ============================================================
--- GUI SEDERHANA
+-- GUI DENGAN SLIDER KECEPATAN (0.5 - 3)
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -295,8 +288,8 @@ screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 380, 0, 480)
-mainFrame.Position = UDim2.new(0.5, -190, 0.5, -240)
+mainFrame.Size = UDim2.new(0, 400, 0, 520)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -260)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -311,7 +304,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 2 (PELAN)"
+titleText.Text = "FULLY NV - SPEED " .. string.format("%.1f", tarikSpeed)
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -332,12 +325,68 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 550)
 scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- SLIDER KECEPATAN (0.5 - 3)
+local speedCard = Instance.new("Frame", scroll)
+speedCard.Size = UDim2.new(1, 0, 0, 80)
+speedCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
+Instance.new("UICorner", speedCard).CornerRadius = UDim.new(0, 8)
+
+local speedLabel = Instance.new("TextLabel", speedCard)
+speedLabel.Size = UDim2.new(1, -10, 0, 20)
+speedLabel.Position = UDim2.new(0, 5, 0, 5)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "KECEPATAN KETARIK (0.5 - 3)"
+speedLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextSize = 12
+
+local speedValue = Instance.new("TextLabel", speedCard)
+speedValue.Size = UDim2.new(0, 60, 0, 35)
+speedValue.Position = UDim2.new(0.5, -30, 0, 35)
+speedValue.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+speedValue.Text = string.format("%.1f", tarikSpeed)
+speedValue.TextColor3 = Color3.new(1,1,1)
+speedValue.Font = Enum.Font.GothamBold
+speedValue.TextSize = 14
+Instance.new("UICorner", speedValue).CornerRadius = UDim.new(0, 6)
+
+local speedMinus = Instance.new("TextButton", speedCard)
+speedMinus.Size = UDim2.new(0, 40, 0, 35)
+speedMinus.Position = UDim2.new(0, 10, 0, 35)
+speedMinus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+speedMinus.Text = "-0.1"
+speedMinus.TextColor3 = Color3.new(1,1,1)
+speedMinus.Font = Enum.Font.GothamBold
+speedMinus.TextSize = 12
+Instance.new("UICorner", speedMinus).CornerRadius = UDim.new(0, 6)
+
+local speedPlus = Instance.new("TextButton", speedCard)
+speedPlus.Size = UDim2.new(0, 40, 0, 35)
+speedPlus.Position = UDim2.new(1, -50, 0, 35)
+speedPlus.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+speedPlus.Text = "+0.1"
+speedPlus.TextColor3 = Color3.new(1,1,1)
+speedPlus.Font = Enum.Font.GothamBold
+speedPlus.TextSize = 12
+Instance.new("UICorner", speedPlus).CornerRadius = UDim.new(0, 6)
+
+speedMinus.MouseButton1Click:Connect(function()
+    tarikSpeed = math.max(0.5, tarikSpeed - 0.1)
+    speedValue.Text = string.format("%.1f", tarikSpeed)
+    titleText.Text = "FULLY NV - SPEED " .. string.format("%.1f", tarikSpeed)
+end)
+speedPlus.MouseButton1Click:Connect(function()
+    tarikSpeed = math.min(3, tarikSpeed + 0.1)
+    speedValue.Text = string.format("%.1f", tarikSpeed)
+    titleText.Text = "FULLY NV - SPEED " .. string.format("%.1f", tarikSpeed)
+end)
 
 -- Target MS
 local targetCard = Instance.new("Frame", scroll)
@@ -525,7 +574,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed 2)...")
+    setStatus("🚀 Memulai Fully NV (speed " .. string.format("%.1f", tarikSpeed) .. ")...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -536,4 +585,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! KECEPATAN 2 + BLINK TURUN/NAIK 4 STUDS")
+print("✅ FULLY NV SIAP! Speed default 0.8 (bisa diatur ke 0.5 paling pelan)")

@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - SPEED DINAMIS (AWAL 0.4, TENGAH 0.3) + STAY LOW SAMPAI TUJUAN
+-- FULLY NV - STAY LOW SAMPAI TUJUAN (FIX)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -68,7 +68,7 @@ local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
 
--- SPEED DINAMIS
+-- SPEED
 local speedAwal = 0.4
 local speedTengah = 0.3
 
@@ -216,7 +216,7 @@ local function jualSemua()
     end
 end
 
--- BLINK TURUN/NAIK
+-- BLINK
 local function blinkTurun(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
@@ -234,8 +234,7 @@ local function blinkNaik(studs)
 end
 
 -- ============================================================
--- KETARIK DENGAN SPEED DINAMIS (AWAL 0.4, TENGAH 0.3)
--- STAY LOW SAMPAI TUJUAN, BARU NAIK CEPAT
+-- KETARIK - STAY LOW SAMPAI TUJUAN
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -244,6 +243,14 @@ local function ketarikKeTarget(targetPos)
     
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
+    
+    -- PASTIKAN POSISI DI BAWAH DULU
+    -- Cek apakah hrp lagi di atas? Kalo iya, turunin
+    local currentPos = hrp.Position
+    local groundY = getGroundLevel(currentPos)
+    if currentPos.Y > groundY - 3 then
+        blinkTurun(4)
+    end
     
     -- HITUNG JARAK
     local distance = (targetPos - hrp.Position).Magnitude
@@ -258,11 +265,11 @@ local function ketarikKeTarget(targetPos)
     
     -- TAHAP 1: AWAL (SPEED 0.4)
     local duration1 = halfDistance / speedAwal
-    duration1 = math.max(duration1, 2.5)
+    duration1 = math.max(duration1, 2)
     
     local tween1 = TweenService:Create(hrp, 
         TweenInfo.new(duration1, Enum.EasingStyle.Linear), 
-        { CFrame = CFrame.new(midpoint) }
+        { CFrame = CFrame.new(midpoint.X, midpoint.Y - 4, midpoint.Z) } -- TETAP DI BAWAH
     )
     
     tween1:Play()
@@ -273,11 +280,11 @@ local function ketarikKeTarget(targetPos)
     
     -- TAHAP 2: TENGAH SAMPAI TUJUAN (SPEED 0.3)
     local duration2 = halfDistance / speedTengah
-    duration2 = math.max(duration2, 2.5)
+    duration2 = math.max(duration2, 2)
     
     local tween2 = TweenService:Create(hrp, 
         TweenInfo.new(duration2, Enum.EasingStyle.Linear), 
-        { CFrame = CFrame.new(targetPos) }
+        { CFrame = CFrame.new(targetPos.X, targetPos.Y - 4, targetPos.Z) } -- TETAP DI BAWAH
     )
     
     tween2:Play()
@@ -286,7 +293,10 @@ local function ketarikKeTarget(targetPos)
     end
     
     if tween2.PlaybackState == Enum.PlaybackState.Playing then tween2:Cancel() end
-    hrp.CFrame = CFrame.new(targetPos)
+    hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y - 4, targetPos.Z)
+    
+    -- BARU NAIK SETELAH SAMPAI
+    blinkNaik(4)
     
     task.wait(0.1)
     return true
@@ -314,22 +324,16 @@ local function jalankanFully(statusFunc)
         return
     end
     
-    -- TURUNKAN POSISI DI AWAL (STAY LOW)
-    blinkTurun(4)
-    
     while fullyRunning do
-        statusFunc("🏃 Ketarik ke NPC Buy (speed 0.4 → 0.3)...")
+        statusFunc("🏃 Ketarik ke NPC Buy...")
         ketarikKeTarget(npcPos)
-        blinkNaik(4) -- NAIK CEPAT SETELAH SAMPAI
         task.wait(0.2)
         
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
-        blinkTurun(4)
-        statusFunc("🏃 Ketarik ke apart (speed 0.4 → 0.3)...")
+        statusFunc("🏃 Ketarik ke apart...")
         ketarikKeTarget(apartPos)
-        blinkNaik(4)
         task.wait(0.2)
         
         for i, stage in ipairs(stages) do
@@ -340,10 +344,8 @@ local function jalankanFully(statusFunc)
                 break
             end
             
-            blinkTurun(4)
             statusFunc("📍 Stage " .. i .. " - Ketarik...")
             ketarikKeTarget(targetPos)
-            blinkNaik(4)
             task.wait(0.2)
             
             statusFunc("🎯 Stage " .. i .. " - Spam E")
@@ -359,10 +361,8 @@ local function jalankanFully(statusFunc)
             end
         end
         
-        blinkTurun(4)
-        statusFunc("🏃 Ketarik ke NPC Jual (speed 0.4 → 0.3)...")
+        statusFunc("🏃 Ketarik ke NPC Jual...")
         ketarikKeTarget(npcPos)
-        blinkNaik(4)
         task.wait(0.2)
         
         statusFunc("💰 Menjual MS")
@@ -376,7 +376,9 @@ local function jalankanFully(statusFunc)
     statusFunc("⏹ Dihentikan")
 end
 
+-- ============================================================
 -- GUI
+-- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
 screenGui.Parent = playerGui
@@ -399,10 +401,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 0.4 → 0.3"
+titleText.Text = "FULLY NV - STAY LOW"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -437,7 +439,7 @@ local infoText = Instance.new("TextLabel", infoCard)
 infoText.Size = UDim2.new(1, -10, 1, 0)
 infoText.Position = UDim2.new(0, 5, 0, 0)
 infoText.BackgroundTransparency = 1
-infoText.Text = "⚡ KECEPATAN DINAMIS:\n   AWAL: 0.4  →  TENGAH: 0.3\n⬇️ STAY LOW SAMPAI TUJUAN, BARU NAIK"
+infoText.Text = "⚡ STAY LOW SELAMA PERJALANAN\n   Baru naik setelah SAMPAI TUJUAN"
 infoText.TextColor3 = Color3.new(1,1,1)
 infoText.Font = Enum.Font.GothamBold
 infoText.TextSize = 11
@@ -677,7 +679,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed 0.4 → 0.3)...")
+    setStatus("🚀 Memulai Fully NV (STAY LOW)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -688,5 +690,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Speed: AWAL 0.4 → TENGAH 0.3")
-print("✅ STAY LOW sampai tujuan, baru naik cepat")
+print("✅ FULLY NV SIAP! Karakter akan STAY LOW selama perjalanan, baru naik setelah sampai tujuan.")

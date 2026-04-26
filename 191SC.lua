@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - SPEED 0.3 + BASE PLATE RAKSASA (5 STUDS DI BAWAH)
+-- FULLY NV - SPEED 0.5 (FIX) + BASE PLATE 7 STUDS DI BAWAH
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -71,67 +71,13 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local tarikSpeed = 0.3
+local tarikSpeed = 0.5 -- SPEED 0.5 (MAX & MIN)
 local basePlate = nil
 
 -- ============================================================
--- FUNGSI BASE PLATE RAKSASA (10000x10000)
+-- FUNGSI BASE PLATE 7 STUDS DI BAWAH KARAKTER
 -- ============================================================
 local function createBasePlate()
-    -- Hapus base plate lama kalo ada
-    if basePlate and basePlate.Parent then
-        basePlate:Destroy()
-    end
-    
-    -- Dapatkan posisi karakter saat ini
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        return nil
-    end
-    
-    local playerPos = hrp.Position
-    local baseY = playerPos.Y - 5 -- 5 studs DI BAWAH KARAKTER
-    
-    -- Buat BASE PLATE RAKSASA (10.000 x 10.000)
-    local raksasaSize = 10000
-    basePlate = Instance.new("Part")
-    basePlate.Name = "FullyNV_BasePlate_Raksasa"
-    basePlate.Size = Vector3.new(raksasaSize, 1, raksasaSize)
-    basePlate.Position = Vector3.new(playerPos.X, baseY, playerPos.Z)
-    basePlate.Anchored = true
-    basePlate.BrickColor = BrickColor.new("Really black")
-    basePlate.Material = Enum.Material.SmoothPlastic
-    basePlate.Transparency = 0.2
-    
-    -- Tambahin efek neon biar keliatan
-    local selection = Instance.new("SelectionBox")
-    selection.Adornee = basePlate
-    selection.Color3 = Color3.fromRGB(130, 60, 240)
-    selection.LineThickness = 0.05
-    selection.Transparency = 0.7
-    selection.Parent = basePlate
-    
-    basePlate.Parent = workspace
-    
-    -- Tambahin grid marker biar keliatan batasnya (opsional)
-    local markerSize = 50
-    for x = -5, 5 do
-        for z = -5, 5 do
-            local marker = Instance.new("Part")
-            marker.Size = Vector3.new(1, 0.2, 1)
-            marker.Position = Vector3.new(playerPos.X + (x * markerSize), baseY + 0.5, playerPos.Z + (z * markerSize))
-            marker.Anchored = true
-            marker.BrickColor = BrickColor.new("Bright violet")
-            marker.Material = Enum.Material.Neon
-            marker.Parent = basePlate
-        end
-    end
-    
-    return basePlate
-end
-
-local function createBasePlateAroundCharacter()
     -- Hapus base plate lama
     if basePlate and basePlate.Parent then
         basePlate:Destroy()
@@ -145,13 +91,12 @@ local function createBasePlateAroundCharacter()
     end
     
     local playerPos = hrp.Position
-    local baseY = playerPos.Y - 5
+    local baseY = playerPos.Y - 7 -- 7 STUDS DI BAWAH
     
-    -- Buat base plate ukuran 500x500 (cukup besar tapi ga terlalu berat)
-    local size = 500
+    -- Buat base plate
     basePlate = Instance.new("Part")
     basePlate.Name = "FullyNV_BasePlate"
-    basePlate.Size = Vector3.new(size, 1, size)
+    basePlate.Size = Vector3.new(1000, 1, 1000)
     basePlate.Position = Vector3.new(playerPos.X, baseY, playerPos.Z)
     basePlate.Anchored = true
     basePlate.BrickColor = BrickColor.new("Really black")
@@ -163,6 +108,44 @@ local function createBasePlateAroundCharacter()
     selection.Color3 = Color3.fromRGB(130, 60, 240)
     selection.LineThickness = 0.1
     selection.Transparency = 0.5
+    selection.Parent = basePlate
+    
+    basePlate.Parent = workspace
+    
+    return basePlate
+end
+
+local function createBasePlateRaksasa()
+    -- Hapus base plate lama
+    if basePlate and basePlate.Parent then
+        basePlate:Destroy()
+    end
+    
+    -- Dapatkan posisi karakter
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        return nil
+    end
+    
+    local playerPos = hrp.Position
+    local baseY = playerPos.Y - 7 -- 7 STUDS DI BAWAH
+    
+    -- Buat base plate RAKSASA (10000x10000)
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate_Raksasa"
+    basePlate.Size = Vector3.new(10000, 1, 10000)
+    basePlate.Position = Vector3.new(playerPos.X, baseY, playerPos.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.2
+    
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.05
+    selection.Transparency = 0.7
     selection.Parent = basePlate
     
     basePlate.Parent = workspace
@@ -274,7 +257,7 @@ local function blinkNaik(studs)
 end
 
 -- ============================================================
--- KETARIK SUPER PELAN (SPEED 0.3)
+-- KETARIK SPEED 0.5 (FIX)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -284,13 +267,13 @@ local function ketarikKeTarget(targetPos)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
     
-    -- BLINK TURUN 4 STUDS DULU
+    -- BLINK TURUN 4 STUDS
     blinkTurun(4)
     
-    -- HITUNG DURASI (SPEED 0.3)
+    -- HITUNG DURASI (SPEED 0.5)
     local distance = (targetPos - hrp.Position).Magnitude
     local duration = distance / tarikSpeed
-    duration = math.clamp(duration, 1.5, 20)
+    duration = math.clamp(duration, 2, 15)
     
     -- TWEEN KE TARGET
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
@@ -384,7 +367,7 @@ local function jalankanFully(statusFunc)
 end
 
 -- ============================================================
--- GUI DENGAN TOMBOL BASE PLATE RAKSASA
+-- GUI
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -408,10 +391,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 0.3 + BASE PLATE"
+titleText.Text = "FULLY NV - SPEED 0.5 + BASE PLATE 7 STUD"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 12
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -429,7 +412,7 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 630)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 620)
 scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
@@ -446,14 +429,14 @@ local infoText = Instance.new("TextLabel", infoCard)
 infoText.Size = UDim2.new(1, -10, 1, 0)
 infoText.Position = UDim2.new(0, 5, 0, 0)
 infoText.BackgroundTransparency = 1
-infoText.Text = "⚡ KECEPATAN: 0.3 (SUPER PELAN)\n⬇️ BLINK TURUN 4 STUDS SEBELUM KETARIK"
+infoText.Text = "⚡ KECEPATAN: 0.5 (FIX)\n⬇️ BLINK TURUN 4 STUDS SEBELUM KETARIK"
 infoText.TextColor3 = Color3.new(1,1,1)
 infoText.Font = Enum.Font.GothamBold
 infoText.TextSize = 11
 infoText.TextWrapped = true
 infoText.TextXAlignment = Enum.TextXAlignment.Center
 
--- BASE PLATE RAKSASA
+-- BASE PLATE (7 STUDS DI BAWAH)
 local basePlateCard = Instance.new("Frame", scroll)
 basePlateCard.Size = UDim2.new(1, 0, 0, 100)
 basePlateCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
@@ -463,7 +446,7 @@ local basePlateLabel = Instance.new("TextLabel", basePlateCard)
 basePlateLabel.Size = UDim2.new(1, -10, 0, 20)
 basePlateLabel.Position = UDim2.new(0, 5, 0, 5)
 basePlateLabel.BackgroundTransparency = 1
-basePlateLabel.Text = "🏗️ BASE PLATE RAKSASA (DI BAWAH KARAKTER)"
+basePlateLabel.Text = "🏗️ BASE PLATE (7 STUDS DI BAWAH KARAKTER)"
 basePlateLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
 basePlateLabel.Font = Enum.Font.GothamBold
 basePlateLabel.TextSize = 11
@@ -472,7 +455,7 @@ local basePlateDesc = Instance.new("TextLabel", basePlateCard)
 basePlateDesc.Size = UDim2.new(1, -10, 0, 20)
 basePlateDesc.Position = UDim2.new(0, 5, 0, 22)
 basePlateDesc.BackgroundTransparency = 1
-basePlateDesc.Text = "Membuat base plate 5 studs DI BAWAH posisi karakter saat ini"
+basePlateDesc.Text = "Membuat base plate 7 studs DI BAWAH posisi karakter"
 basePlateDesc.TextColor3 = Color3.fromRGB(145, 138, 175)
 basePlateDesc.Font = Enum.Font.Gotham
 basePlateDesc.TextSize = 10
@@ -491,7 +474,7 @@ local createRaksasaBtn = Instance.new("TextButton", basePlateCard)
 createRaksasaBtn.Size = UDim2.new(0.3, -5, 0, 40)
 createRaksasaBtn.Position = UDim2.new(0.35, 0, 0.55, 0)
 createRaksasaBtn.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-createRaksasaBtn.Text = "🌍 CREATE RAKSASA"
+createRaksasaBtn.Text = "🌍 RAKSASA"
 createRaksasaBtn.TextColor3 = Color3.new(1,1,1)
 createRaksasaBtn.Font = Enum.Font.GothamBold
 createRaksasaBtn.TextSize = 11
@@ -508,7 +491,7 @@ removeBaseBtn.TextSize = 12
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 
 createBaseBtn.MouseButton1Click:Connect(function()
-    local plate = createBasePlateAroundCharacter()
+    local plate = createBasePlate()
     if plate then
         createBaseBtn.Text = "✅ DONE!"
         task.wait(1)
@@ -517,11 +500,11 @@ createBaseBtn.MouseButton1Click:Connect(function()
 end)
 
 createRaksasaBtn.MouseButton1Click:Connect(function()
-    local plate = createBasePlate()
+    local plate = createBasePlateRaksasa()
     if plate then
         createRaksasaBtn.Text = "✅ RAKSASA!"
         task.wait(1)
-        createRaksasaBtn.Text = "🌍 CREATE RAKSASA"
+        createRaksasaBtn.Text = "🌍 RAKSASA"
     end
 end)
 
@@ -718,7 +701,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed 0.3)...")
+    setStatus("🚀 Memulai Fully NV (speed 0.5)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -729,5 +712,5 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV SIAP! Speed 0.3")
-print("✅ Base Plate: CREATE (normal) / CREATE RAKSASA (super besar)")
+print("✅ FULLY NV SIAP! Speed 0.5 (FIX)")
+print("✅ Base Plate: 7 studs DI BAWAH karakter")

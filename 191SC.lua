@@ -1,151 +1,83 @@
 --[[ 
-    SCRIPT: Bring Back Brute Forcer v4 (With CFrame + Rotation)
-    Support: Posisi + sudut (CFrame.Angles)
+    VERSI BRUTAL: Zero Delay + Multi Method Spam
+    Gak peduli bring back, gue spam 1000x/detik
 ]]
 
 local player = game.Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
--- VARIABEL
-local attempting = false
-local success = false
+local targetCF = CFrame.new(1202.31, 3.71, -182.55) * CFrame.Angles(3.14, 0.11, 3.14)
+local attempting = true
 local attempts = 0
-local targetCFrame = nil
+local success = false
 
--- Bikin GUI
-local screenGui = Instance.new("ScreenGui")
-local mainFrame = Instance.new("Frame")
-local title = Instance.new("TextLabel")
-local presetBtn = Instance.new("TextButton")
-local startBtn = Instance.new("TextButton")
-local stopBtn = Instance.new("TextButton")
-local statusLabel = Instance.new("TextLabel")
-local attemptsLabel = Instance.new("TextLabel")
+-- Bikin GUI sederhana
+local gui = Instance.new("ScreenGui")
+local frame = Instance.new("Frame")
+local label = Instance.new("TextLabel")
 
-screenGui.Parent = game:GetService("CoreGui")
-screenGui.Name = "BringBackBruteGUI"
+gui.Parent = game:GetService("CoreGui")
+frame.Parent = gui
+frame.Size = UDim2.new(0, 250, 0, 100)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 
-mainFrame.Parent = screenGui
-mainFrame.Size = UDim2.new(0, 300, 0, 200)
-mainFrame.Position = UDim2.new(0, 10, 0, 10)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BackgroundTransparency = 0.1
-mainFrame.Active = true
-mainFrame.Draggable = true
+label.Parent = frame
+label.Size = UDim2.new(0, 240, 0, 80)
+label.Position = UDim2.new(0, 5, 0, 10)
+label.Text = "Attempts: 0\nStatus: Spamming..."
+label.TextColor3 = Color3.fromRGB(255,0,0)
+label.TextScaled = true
 
-title.Parent = mainFrame
-title.Size = UDim2.new(0, 280, 0, 30)
-title.Position = UDim2.new(0, 10, 0, 5)
-title.Text = "BRING BACK BRUTE FORCER v4"
-title.TextColor3 = Color3.fromRGB(255, 0, 0)
-title.TextScaled = true
-
-presetBtn.Parent = mainFrame
-presetBtn.Size = UDim2.new(0, 280, 0, 40)
-presetBtn.Position = UDim2.new(0, 10, 0, 45)
-presetBtn.Text = "SET TARGET (Koord dari lo)"
-presetBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-
-startBtn.Parent = mainFrame
-startBtn.Size = UDim2.new(0, 130, 0, 35)
-startBtn.Position = UDim2.new(0, 10, 0, 100)
-startBtn.Text = "START SPAM"
-startBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-
-stopBtn.Parent = mainFrame
-stopBtn.Size = UDim2.new(0, 130, 0, 35)
-stopBtn.Position = UDim2.new(0, 155, 0, 100)
-stopBtn.Text = "STOP"
-stopBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-stopBtn.Visible = false
-
-statusLabel.Parent = mainFrame
-statusLabel.Size = UDim2.new(0, 280, 0, 30)
-statusLabel.Position = UDim2.new(0, 10, 0, 145)
-statusLabel.Text = "Status: Target belum diset"
-statusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-
-attemptsLabel.Parent = mainFrame
-attemptsLabel.Size = UDim2.new(0, 280, 0, 30)
-attemptsLabel.Position = UDim2.new(0, 10, 0, 170)
-attemptsLabel.Text = "Attempts: 0"
-
--- FUNGSI SPAM TELEPORT (CFrame version)
-local function spamTeleport()
+-- FUNGSI SPAM PAKE TASK.WAIT (LEBIH CEPAT DARI WAIT)
+local function spamBrutal()
     while attempting and not success do
         attempts = attempts + 1
-        attemptsLabel.Text = "Attempts: " .. attempts
+        label.Text = "Attempts: " .. attempts .. "\nStatus: Spamming..."
         
-        -- Teleport paksa dengan CFrame (posisi + rotasi)
-        hrp.CFrame = targetCFrame
+        -- Method 1: Langsung ubah CFrame
+        hrp.CFrame = targetCF
         
-        wait(0.01)
+        -- Method 2: Ubah Position langsung
+        hrp.Position = targetCF.Position
         
-        -- Cek jarak (abaikan rotasi)
-        local distance = (hrp.Position - targetCFrame.Position).magnitude
-        if distance < 5 then
+        -- Method 3: Pake teleport via HumanoidRootPart assembly
+        hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+        
+        -- Cek berhasil
+        local dist = (hrp.Position - targetCF.Position).magnitude
+        if dist < 3 then
             success = true
-            statusLabel.Text = "STATUS: SUCCESS! TARGET TERCAPAI!"
-            statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-            startBtn.Visible = true
-            stopBtn.Visible = false
+            label.Text = "SUCCESS! Att: " .. attempts .. "\nTarget tercapai!"
+            label.TextColor3 = Color3.fromRGB(0,255,0)
+            attempting = false
             break
         end
         
-        if attempts % 10 == 0 then
-            statusLabel.Text = "Status: Spamming... (" .. attempts .. "x)"
-        end
-        
-        wait(0.005)
-    end
-    
-    if not success and not attempting then
-        statusLabel.Text = "Status: Stopped by user"
+        -- GAK PAKE JEDA! BIAR SPAM SEBRUTAL MUNGKIN
+        task.wait(0) -- Minimal possible delay
     end
 end
 
--- TOMBOL SET TARGET (pake koordinat lo)
-presetBtn.MouseButton1Click:Connect(function()
-    -- Koordinat dari lo persis
-    targetCFrame = CFrame.new(1202.31, 3.71, -182.55) * CFrame.Angles(3.14, 0.11, 3.14)
-    
-    statusLabel.Text = "Target set! Pos: 1202.31, 3.71, -182.55"
-    statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    print("[System] Target CFrame: " .. tostring(targetCFrame))
-end)
+-- Tombol Start/Stop pake hotkey (biar simpel)
+local UserInput = game:GetService("UserInputService")
 
--- TOMBOL START
-startBtn.MouseButton1Click:Connect(function()
-    if not targetCFrame then
-        statusLabel.Text = "ERROR: Klik 'SET TARGET' dulu!"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-        return
+UserInput.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    
+    if input.KeyCode == Enum.KeyCode.F1 then
+        if attempting then
+            attempting = false
+            label.Text = "Stopped at: " .. attempts .. " attempts"
+        else
+            attempting = true
+            success = false
+            spawn(spamBrutal)
+        end
     end
-    
-    attempting = true
-    success = false
-    attempts = 0
-    attemptsLabel.Text = "Attempts: 0"
-    statusLabel.Text = "Status: Spamming teleport..."
-    statusLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-    
-    startBtn.Visible = false
-    stopBtn.Visible = true
-    
-    spawn(spamTeleport)
 end)
 
--- TOMBOL STOP
-stopBtn.MouseButton1Click:Connect(function()
-    attempting = false
-    statusLabel.Text = "Status: Stopping..."
-    wait(0.1)
-    statusLabel.Text = "Status: Stopped"
-    statusLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-    startBtn.Visible = true
-    stopBtn.Visible = false
-end)
-
-print("[System] GUI siap. Klik 'SET TARGET' -> START SPAM")
-print("[System] Target koordinat: 1202.31, 3.71, -182.55 dengan rotasi tertentu")
+label.Text = "Tekan F1 START | F1 STOP\nTarget: 1202, 3.71, -182"
+print("[System] SUPER BRUTAL MODE AKTIF")
+print("[System] Tekan F1 buat start spam zero delay")

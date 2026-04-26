@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - FIX (KETARIK KE NPC BUY DULU, KE APART, JUAL)
+-- FULLY NV - TWEEN KETARIK (HALUS, PASTI GERAK)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -7,13 +7,12 @@ local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 repeat task.wait() until player.Character
 
 local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
-local npcPos = CFrame.new(510.762817, 3.58721066, 600.791504) -- POSISI NPC BUY & JUAL
+local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504) -- Posisi NPC
 
 -- ============================================================
 -- KORDINAT APART CASINO
@@ -22,45 +21,45 @@ local apartData = {
     [1] = {
         name = "Apart Casino 1",
         stages = {
-            { cf = CFrame.new(1196.51, 3.71, -241.13), isCook = false },
-            { cf = CFrame.new(1199.75, 3.71, -238.12), isCook = false },
-            { cf = CFrame.new(1199.74, 6.59, -233.05), isCook = false },
-            { cf = CFrame.new(1199.66, 6.59, -227.75), isCook = false },
-            { cf = CFrame.new(1199.66, 6.59, -227.75), isCook = false },
-            { kanan = CFrame.new(1199.91, 7.56, -219.75), kiri = CFrame.new(1199.75, 7.45, -217.66), isCook = true },
-            { kanan = CFrame.new(1199.87, 15.96, -215.33), kiri = CFrame.new(1199.38, 15.96, -220.53), isCook = false },
+            { pos = Vector3.new(1196.51, 3.71, -241.13), isCook = false },
+            { pos = Vector3.new(1199.75, 3.71, -238.12), isCook = false },
+            { pos = Vector3.new(1199.74, 6.59, -233.05), isCook = false },
+            { pos = Vector3.new(1199.66, 6.59, -227.75), isCook = false },
+            { pos = Vector3.new(1199.66, 6.59, -227.75), isCook = false },
+            { kanan = Vector3.new(1199.91, 7.56, -219.75), kiri = Vector3.new(1199.75, 7.45, -217.66), isCook = true },
+            { kanan = Vector3.new(1199.87, 15.96, -215.33), kiri = Vector3.new(1199.38, 15.96, -220.53), isCook = false },
         }
     },
     [2] = {
         name = "Apart Casino 2",
         stages = {
-            { cf = CFrame.new(1186.34, 3.71, -242.92), isCook = false },
-            { cf = CFrame.new(1183.00, 6.59, -233.78), isCook = false },
-            { cf = CFrame.new(1182.70, 7.32, -229.73), isCook = false },
-            { cf = CFrame.new(1182.75, 6.59, -224.78), isCook = false },
-            { kanan = CFrame.new(1183.43, 15.96, -229.66), kiri = CFrame.new(1183.22, 15.96, -225.63), isCook = false },
+            { pos = Vector3.new(1186.34, 3.71, -242.92), isCook = false },
+            { pos = Vector3.new(1183.00, 6.59, -233.78), isCook = false },
+            { pos = Vector3.new(1182.70, 7.32, -229.73), isCook = false },
+            { pos = Vector3.new(1182.75, 6.59, -224.78), isCook = false },
+            { kanan = Vector3.new(1183.43, 15.96, -229.66), kiri = Vector3.new(1183.22, 15.96, -225.63), isCook = false },
         }
     },
     [3] = {
         name = "Apart Casino 3",
         stages = {
-            { cf = CFrame.new(1196.17, 3.71, -205.72), isCook = false },
-            { cf = CFrame.new(1199.76, 3.71, -196.51), isCook = false },
-            { cf = CFrame.new(1199.69, 6.59, -191.16), isCook = false },
-            { cf = CFrame.new(1199.42, 6.59, -185.27), isCook = false },
-            { kanan = CFrame.new(1199.42, 6.59, -185.27), kiri = CFrame.new(1199.95, 7.07, -177.69), isCook = true },
-            { kanan = CFrame.new(1199.55, 15.96, -181.89), kiri = CFrame.new(1199.46, 15.96, -177.81), isCook = false },
+            { pos = Vector3.new(1196.17, 3.71, -205.72), isCook = false },
+            { pos = Vector3.new(1199.76, 3.71, -196.51), isCook = false },
+            { pos = Vector3.new(1199.69, 6.59, -191.16), isCook = false },
+            { pos = Vector3.new(1199.42, 6.59, -185.27), isCook = false },
+            { kanan = Vector3.new(1199.42, 6.59, -185.27), kiri = Vector3.new(1199.95, 7.07, -177.69), isCook = true },
+            { kanan = Vector3.new(1199.55, 15.96, -181.89), kiri = Vector3.new(1199.46, 15.96, -177.81), isCook = false },
         }
     },
     [4] = {
         name = "Apart Casino 4",
         stages = {
-            { cf = CFrame.new(1187.70, 3.71, -209.73), isCook = false },
-            { cf = CFrame.new(1182.27, 3.71, -204.65), isCook = false },
-            { cf = CFrame.new(1182.23, 3.71, -198.77), isCook = false },
-            { cf = CFrame.new(1183.06, 6.59, -193.92), isCook = false },
-            { kanan = CFrame.new(1182.60, 7.56, -191.29), kiri = CFrame.new(1183.36, 6.72, -187.25), isCook = false },
-            { kanan = CFrame.new(1183.24, 15.96, -191.25), kiri = CFrame.new(1183.08, 15.96, -187.36), isCook = false },
+            { pos = Vector3.new(1187.70, 3.71, -209.73), isCook = false },
+            { pos = Vector3.new(1182.27, 3.71, -204.65), isCook = false },
+            { pos = Vector3.new(1182.23, 3.71, -198.77), isCook = false },
+            { pos = Vector3.new(1183.06, 6.59, -193.92), isCook = false },
+            { kanan = Vector3.new(1182.60, 7.56, -191.29), kiri = Vector3.new(1183.36, 6.72, -187.25), isCook = false },
+            { kanan = Vector3.new(1183.24, 15.96, -191.25), kiri = Vector3.new(1183.08, 15.96, -187.36), isCook = false },
         }
     }
 }
@@ -72,7 +71,7 @@ local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
-local tarikSpeed = 8  -- speed pelan
+local tarikSpeed = 8  -- Speed (semakin kecil semakin lambat)
 
 -- ============================================================
 -- HELPER FUNCTIONS
@@ -152,9 +151,9 @@ local function jualSemua()
 end
 
 -- ============================================================
--- KETARIK SMOOTH - PAKAI YANG PELAN (BASED ON WALKSPEED)
+-- KETARIK PAKAI TWEEN (HALUS, PASTI GERAK)
 -- ============================================================
-local function ketarikKeTarget(targetCF)
+local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
@@ -162,37 +161,43 @@ local function ketarikKeTarget(targetCF)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum and hum.SeatPart then hum.Sit = false end
     
-    -- Simpan walkspeed asli
-    local originalSpeed = hum.WalkSpeed
-    hum.WalkSpeed = tarikSpeed
+    local startPos = hrp.Position
+    local distance = (targetPos - startPos).Magnitude
     
-    local targetPos = targetCF.Position
-    local distance = (targetPos - hrp.Position).Magnitude
-    
-    if distance < 3 then
-        hrp.CFrame = targetCF
-        hum.WalkSpeed = originalSpeed
+    if distance < 2 then
+        hrp.CFrame = CFrame.new(targetPos)
         return true
     end
     
-    -- Pake MoveTo biar geraknya natural pake walkspeed
-    hum:MoveTo(targetPos)
+    -- Hitung durasi berdasarkan jarak dan speed
+    local duration = distance / tarikSpeed
+    duration = math.clamp(duration, 0.5, 6) -- minimal 0.5 detik, maksimal 6 detik
     
+    -- Buat tween info
+    local tweenInfo = TweenInfo.new(
+        duration,
+        Enum.EasingStyle.Linear,
+        Enum.EasingDirection.Out
+    )
+    
+    local goal = { CFrame = CFrame.new(targetPos) }
+    local tween = TweenService:Create(hrp, tweenInfo, goal)
+    
+    tween:Play()
+    
+    -- Tunggu sambil cek apakah masih running
     local startTime = tick()
-    local timeout = math.min(distance / tarikSpeed + 2, 15)
-    
-    while tick() - startTime < timeout and fullyRunning do
-        local currentPos = hrp.Position
-        if (currentPos - targetPos).Magnitude < 3 then
-            hum:MoveTo(currentPos)
-            break
-        end
+    while tween.PlaybackState == Enum.PlaybackState.Playing and fullyRunning do
         task.wait(0.05)
     end
     
-    -- Force set posisi kalo masih jauh
-    hrp.CFrame = targetCF
-    hum.WalkSpeed = originalSpeed
+    -- Stop tween kalo kehentian
+    if tween.PlaybackState == Enum.PlaybackState.Playing then
+        tween:Cancel()
+    end
+    
+    -- Pastikan posisi persis di target
+    hrp.CFrame = CFrame.new(targetPos)
     task.wait(0.1)
     return true
 end
@@ -205,15 +210,15 @@ local function turunBlink(studs)
     end
 end
 
-local function getStageCF(stage, pot)
-    if stage.cf then return stage.cf
+local function getStagePos(stage, pot)
+    if stage.pos then return stage.pos
     elseif stage[pot] then return stage[pot]
     end
     return nil
 end
 
 -- ============================================================
--- MAIN LOOP (BENER: BUY DULU → APART → MASAK → JUAL)
+-- MAIN LOOP
 -- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
@@ -222,7 +227,7 @@ local function jalankanFully(statusFunc)
     local stages = apartData[apartId].stages
     local target = targetMS
     
-    local apartPos = getStageCF(stages[1], pot)
+    local apartPos = getStagePos(stages[1], pot)
     if not apartPos then
         statusFunc("❌ Gagal dapat posisi apart!")
         fullyRunning = false
@@ -230,33 +235,33 @@ local function jalankanFully(statusFunc)
     end
     
     while fullyRunning do
-        -- ========== 1. KETARIK KE NPC BUY ==========
+        -- 1. KETARIK KE NPC BUY
         statusFunc("🏃 Ketarik ke NPC Buy (speed " .. tarikSpeed .. ")")
         ketarikKeTarget(npcPos)
         
-        -- ========== 2. BELI BAHAN ==========
+        -- 2. BELI BAHAN
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
         
-        -- ========== 3. TURUN 4 STUDS ==========
+        -- 3. TURUN 4 STUDS
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
-        -- ========== 4. KETARIK KE APART ==========
+        -- 4. KETARIK KE APART
         statusFunc("🏃 Ketarik ke apart (speed " .. tarikSpeed .. ")")
         ketarikKeTarget(apartPos)
         
-        -- ========== 5. LOOP SEMUA STAGE ==========
+        -- 5. LOOP SEMUA STAGE
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
-            local targetCF = getStageCF(stage, pot)
-            if not targetCF then
+            local targetPos = getStagePos(stage, pot)
+            if not targetPos then
                 statusFunc("❌ Stage " .. i .. " tidak ditemukan")
                 break
             end
             
             statusFunc("📍 Stage " .. i .. " - Ketarik")
-            ketarikKeTarget(targetCF)
+            ketarikKeTarget(targetPos)
             
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
@@ -271,15 +276,15 @@ local function jalankanFully(statusFunc)
             end
         end
         
-        -- ========== 6. TURUN 4 STUDS ==========
+        -- 6. TURUN 4 STUDS
         statusFunc("⬇️ Turun 4 studs")
         turunBlink(4)
         
-        -- ========== 7. KETARIK KE NPC JUAL ==========
+        -- 7. KETARIK KE NPC BUY (JUAL)
         statusFunc("🏃 Ketarik ke NPC Jual (speed " .. tarikSpeed .. ")")
         ketarikKeTarget(npcPos)
         
-        -- ========== 8. JUAL SEMUA MS ==========
+        -- 8. JUAL SEMUA MS
         statusFunc("💰 Menjual MS")
         jualSemua()
         
@@ -307,6 +312,7 @@ mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
+-- Title Bar
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
@@ -316,7 +322,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
+titleText.Text = "FULLY NV - TWEEN KETARIK"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -393,13 +399,11 @@ speedMinus.MouseButton1Click:Connect(function()
     tarikSpeed = math.max(1, tarikSpeed - 1)
     speedValue.Text = tostring(tarikSpeed)
     speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
-    titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
 end)
 speedPlus.MouseButton1Click:Connect(function()
     tarikSpeed = math.min(15, tarikSpeed + 1)
     speedValue.Text = tostring(tarikSpeed)
     speedLabel.Text = "KECEPATAN KETARIK (1-15)  →  " .. tarikSpeed
-    titleText.Text = "FULLY NV - SPEED " .. tarikSpeed
 end)
 
 -- Target MS
@@ -599,4 +603,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV FIX SIAP! START → KE NPC BUY DULU → APART → JUAL")
+print("✅ FULLY NV TWEEN KETARIK SIAP! KE HALUS PASTI GERAK")

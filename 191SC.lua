@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TURUN CEPAT + TELEPORT BERTAHAP (GAS)
+-- FULLY NV - KETARIK (SPEED 1.0) + MIRING 10° + TURUN 6 CEPAT
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -64,84 +64,126 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
+local SPEED = 1.0
 
 -- ============================================================
--- TELEPORT BERTAHAP (BIAR KAYAK KETARIK)
+-- TURUN 6 STUDS CEPAT (0.2 DETIK)
 -- ============================================================
-local function teleportBertahap(targetPos, steps)
+local function turunCepat(studs)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local steps = 4
+    local perStep = studs / steps
+    for i = 1, steps do
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -perStep, 0)
+        task.wait(0.05)
+    end
+end
+
+local function naikCepat(studs)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local steps = 4
+    local perStep = studs / steps
+    for i = 1, steps do
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, perStep, 0)
+        task.wait(0.05)
+    end
+end
+
+-- ============================================================
+-- MIRING SEDIKIT (10°) SELAMA GERAK
+-- ============================================================
+local function miringkan(derajat)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hrp and hum then
+        hum.PlatformStand = true
+        hum.AutoRotate = false
+        local currentPos = hrp.Position
+        hrp.CFrame = CFrame.new(currentPos) * CFrame.Angles(math.rad(derajat), 0, 0)
+    end
+end
+
+local function normalisasi()
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hrp and hum then
+        local currentPos = hrp.Position
+        hrp.CFrame = CFrame.new(currentPos)
+        hum.PlatformStand = false
+        hum.AutoRotate = true
+    end
+end
+
+-- ============================================================
+-- KETARIK (LERP, SPEED 1.0) + MIRING
+-- ============================================================
+local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
 
     local hum = char:FindFirstChildOfClass("Humanoid")
     local oldPlatform = hum and hum.PlatformStand
-    if hum then
-        hum.PlatformStand = true
-        hum.AutoRotate = false
+    local oldRotate = hum and hum.AutoRotate
+
+    -- TURUN CEPAT 6 STUDS
+    turunCepat(6)
+    
+    -- MIRINGKAN 10°
+    miringkan(10)
+
+    local distance = (targetPos - hrp.Position).Magnitude
+    if distance < 2 then
+        hrp.CFrame = CFrame.new(targetPos)
+        normalisasi()
+        naikCepat(6)
+        if hum then
+            hum.PlatformStand = oldPlatform or false
+            hum.AutoRotate = oldRotate or true
+        end
+        return true
     end
 
+    -- LERP MANUAL DENGAN SPEED 1.0
+    local duration = distance / SPEED
+    local steps = math.max(math.floor(duration * 30), 15)
+    local delay = duration / steps
     local startPos = hrp.Position
-    local delay = 0.1
 
     for i = 1, steps do
         if not fullyRunning then
+            normalisasi()
             if hum then
                 hum.PlatformStand = oldPlatform or false
-                hum.AutoRotate = true
+                hum.AutoRotate = oldRotate or true
             end
             return false
         end
         local alpha = i / steps
         local newPos = startPos + (targetPos - startPos) * alpha
-        hrp.CFrame = CFrame.new(newPos)
+        hrp.CFrame = CFrame.new(newPos.X, newPos.Y, newPos.Z)
         task.wait(delay)
     end
 
     hrp.CFrame = CFrame.new(targetPos)
-    task.wait(0.1)
+
+    -- NORMALISASI & NAIK
+    normalisasi()
+    naikCepat(6)
 
     if hum then
         hum.PlatformStand = oldPlatform or false
-        hum.AutoRotate = true
+        hum.AutoRotate = oldRotate or true
     end
     return true
 end
 
 -- ============================================================
--- TURUN CEPAT 6 STUDS
--- ============================================================
-local function turunCepat()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    hrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
-    task.wait(0.05)
-end
-
-local function naikCepat()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    hrp.CFrame = hrp.CFrame * CFrame.new(0, 6, 0)
-    task.wait(0.05)
-end
-
--- ============================================================
--- KETARIK VIA TELEPORT BERTAHAP
--- ============================================================
-local function ketarikKeTarget(targetPos)
-    -- TURUN CEPAT 6 STUDS
-    turunCepat()
-    
-    -- TELEPORT BERTAHAP (3 langkah, biar kayak ketarik)
-    teleportBertahap(targetPos, 3)
-    
-    -- NAIK CEPAT
-    naikCepat()
-    
-    return true
-end
-
--- ============================================================
--- COOK DENGAN TIMING (TURUN/NAIK CEPAT)
+-- COOK TIMING (PAKAI TURUN/NAIK CEPAT + MIRING)
 -- ============================================================
 local function cookWithTiming()
     if not fullyRunning then return false end
@@ -154,7 +196,8 @@ local function cookWithTiming()
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                turunCepat()
+                turunCepat(6)
+                miringkan(10)
                 break
             end
             task.wait(0.1)
@@ -164,7 +207,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- SUGAR (DI BAWAH)
+    -- SUGAR (DI BAWAH, MIRING)
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -172,7 +215,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- GELATIN (DI BAWAH)
+    -- GELATIN (DI BAWAH, MIRING)
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -180,8 +223,9 @@ local function cookWithTiming()
         return false
     end
     
-    -- NAIK SETELAH GELATIN
-    naikCepat()
+    -- NORMALISASI & NAIK
+    normalisasi()
+    naikCepat(6)
     
     -- TUNGGU 45 DETIK
     local cookStart = tick()
@@ -189,14 +233,15 @@ local function cookWithTiming()
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            turunCepat()
+            turunCepat(6)
+            miringkan(10)
             break
         end
         task.wait(0.1)
     end
     task.wait(math.max(0, remaining))
     
-    -- EMPTY BAG (DI BAWAH)
+    -- EMPTY BAG (DI BAWAH, MIRING)
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -424,7 +469,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TELEPORT BERTAHAP"
+titleText.Text = "FULLY NV - KETARIK + MIRING"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -570,7 +615,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (teleport bertahap)")
+    setStatus("🚀 START (ketarik speed 1.0, miring 10°)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -614,4 +659,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV SIAP! Turun cepat → teleport 3 tahap → naik cepat")
+print("✅ FULLY NV KETARIK SIAP! Speed 1.0, miring 10°, turun 6 studs cepat")

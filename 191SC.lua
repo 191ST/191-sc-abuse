@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TWEEN BERTAHAP (SPEED 0.5, ANTI BRINGBACK)
+-- FULLY NV - FINAL WORKING (TANPA PLATFORMSTAND, TWEEN MURNI)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -68,79 +68,34 @@ local basePlate = nil
 local SPEED = 0.5
 
 -- ============================================================
--- TWEEN BERTAHAP (ANTI BRINGBACK)
+-- KETARIK TWEEN MURNI (TANPA PLATFORMSTAND)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
 
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    local oldPlatform = hum and hum.PlatformStand
-    if hum then
-        hum.PlatformStand = true
-        hum.AutoRotate = false
-    end
-
-    -- TURUN 6 STUDS (HALUS)
-    local downTween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
-        CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
-    })
-    downTween:Play()
-    downTween.Completed:Wait()
-    task.wait(0.05)
-
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
-        if hum then
-            hum.PlatformStand = oldPlatform or false
-            hum.AutoRotate = true
-        end
         return true
     end
 
-    -- BAGI PERJALANAN MENJADI CHUNK (MAKS 15 STUDS PER CHUNK)
-    local maxChunk = 15
-    local chunks = math.max(math.ceil(distance / maxChunk), 1)
-    local chunkDistance = distance / chunks
-    local chunkDuration = chunkDistance / SPEED
-    local startPos = hrp.Position
-
-    for i = 1, chunks do
-        local targetChunk = startPos + (targetPos - startPos) * (i / chunks)
-        local tween = TweenService:Create(hrp, TweenInfo.new(chunkDuration, Enum.EasingStyle.Linear), {
-            CFrame = CFrame.new(targetChunk)
-        })
-        tween:Play()
-        tween.Completed:Wait()
-        task.wait(0.05)
-        
-        if not fullyRunning then
-            if hum then
-                hum.PlatformStand = oldPlatform or false
-                hum.AutoRotate = true
-            end
-            return false
-        end
-    end
-
-    -- NAIK 6 STUDS (HALUS)
-    local upTween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+    -- HITUNG DURASI
+    local duration = distance / SPEED
+    
+    -- BUAT TWEEN
+    local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
         CFrame = CFrame.new(targetPos)
     })
-    upTween:Play()
-    upTween.Completed:Wait()
-
-    if hum then
-        hum.PlatformStand = oldPlatform or false
-        hum.AutoRotate = true
-    end
+    tween:Play()
+    tween.Completed:Wait()
+    
     return true
 end
 
 -- ============================================================
--- TURUN/NAIK CEPAT UNTUK COOK TIMING
+-- TURUN/NAIK UNTUK COOK TIMING
 -- ============================================================
 local function blinkTurun()
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -170,7 +125,7 @@ end
 local function cookWithTiming()
     if not fullyRunning then return false end
     
-    -- WATER
+    -- WATER (20 DETIK)
     if equip("Water") then
         blinkNaik()
         holdE(0.7)
@@ -446,10 +401,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN BERTAHAP"
+titleText.Text = "FULLY NV - TWEEN MURNI"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -592,7 +547,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (Tween bertahap, speed 0.5)")
+    setStatus("🚀 START (Tween murni, speed 0.5)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -636,4 +591,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV TWEEN BERTAHAP SIAP! Speed 0.5, chunk 15 studs, anti bringback")
+print("✅ FULLY NV TWEEN MURNI SIAP! Speed 0.5, tanpa PlatformStand")

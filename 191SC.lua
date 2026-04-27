@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - FINAL WORKING (TANPA PLATFORMSTAND, TWEEN MURNI)
+-- FULLY NV - TWEEN MURNI + TURUN/NAIK INSTAN
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -68,12 +68,17 @@ local basePlate = nil
 local SPEED = 0.5
 
 -- ============================================================
--- KETARIK TWEEN MURNI (TANPA PLATFORMSTAND)
+-- KETARIK: TURUN 6 → TWEEN → NAIK 6
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
+
+    -- TURUN 6 STUDS (INSTAN)
+    local startPos = hrp.Position
+    hrp.CFrame = CFrame.new(startPos.X, startPos.Y - 6, startPos.Z)
+    task.wait(0.05)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
@@ -81,16 +86,16 @@ local function ketarikKeTarget(targetPos)
         return true
     end
 
-    -- HITUNG DURASI
+    -- TWEEN KE TARGET (TURUN 1 DETIK = 0.5 STUD)
     local duration = distance / SPEED
-    
-    -- BUAT TWEEN
     local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
-        CFrame = CFrame.new(targetPos)
+        CFrame = CFrame.new(targetPos.X, targetPos.Y - 6, targetPos.Z)
     })
     tween:Play()
     tween.Completed:Wait()
-    
+
+    -- NAIK 6 STUDS (INSTAN)
+    hrp.CFrame = CFrame.new(targetPos)
     return true
 end
 
@@ -100,22 +105,16 @@ end
 local function blinkTurun()
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
-            CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
-        })
-        tween:Play()
-        tween.Completed:Wait()
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
+        task.wait(0.05)
     end
 end
 
 local function blinkNaik()
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
-            CFrame = hrp.CFrame * CFrame.new(0, 6, 0)
-        })
-        tween:Play()
-        tween.Completed:Wait()
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, 6, 0)
+        task.wait(0.05)
     end
 end
 
@@ -401,7 +400,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN MURNI"
+titleText.Text = "FULLY NV - TWEEN + TURUN"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -547,7 +546,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (Tween murni, speed 0.5)")
+    setStatus("🚀 START (turun 6 → tween → naik 6)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -591,4 +590,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV TWEEN MURNI SIAP! Speed 0.5, tanpa PlatformStand")
+print("✅ FULLY NV TWEEN + TURUN SIAP! Speed 0.5")

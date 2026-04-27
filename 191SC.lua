@@ -1,4 +1,4 @@
--- ELIXIR 3.5 -- REDESIGNED: DEEP PURPLE THEME + TEXT SIDEBAR
+-- ELIXIR 3.5 -- REDESIGNED: DEEP PURPLE THEME + TEXT SIDEBAR + FULLY NV
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
@@ -118,9 +118,7 @@ local C = {
 }
 
 -- ============================================================
--- SIMPLE LOADING OVERLAY
--- Hanya hitam + tulisan "ELIXIR STORE" yang keren
--- showLoading() / hideLoading() exposed ke luar
+-- LOADING OVERLAY
 -- ============================================================
 local showLoading, hideLoading
 do
@@ -134,7 +132,6 @@ do
 	pcall(function() loadGui.Parent = game:GetService("CoreGui") end)
 	if not loadGui.Parent then loadGui.Parent = playerGui end
 
-	-- Full-screen hitam
 	local bg = Instance.new("Frame", loadGui)
 	bg.Size = UDim2.new(1, 0, 1, 0)
 	bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -142,7 +139,6 @@ do
 	bg.BorderSizePixel = 0
 	bg.ZIndex = 10
 
-	-- Subtle purple center glow
 	local glow = Instance.new("Frame", bg)
 	glow.Size = UDim2.new(0, 400, 0, 180)
 	glow.Position = UDim2.new(0.5, -200, 0.5, -90)
@@ -152,7 +148,6 @@ do
 	glow.ZIndex = 11
 	Instance.new("UICorner", glow).CornerRadius = UDim.new(1, 0)
 
-	-- Tulisan utama "ELIXIR STORE"
 	local title = Instance.new("TextLabel", bg)
 	title.Size = UDim2.new(0, 500, 0, 56)
 	title.Position = UDim2.new(0.5, -250, 0.5, -50)
@@ -163,17 +158,13 @@ do
 	title.TextColor3 = Color3.fromRGB(220, 215, 245)
 	title.TextXAlignment = Enum.TextXAlignment.Center
 	title.ZIndex = 12
-	do
-		local g = Instance.new("UIGradient", title)
-		g.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(175, 120, 255)),
-			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 215, 245)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(130, 60, 240)),
-		})
-		g.Rotation = 0
-	end
+	local g = Instance.new("UIGradient", title)
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(175, 120, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 215, 245)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(130, 60, 240)),
+	})
 
-	-- Garis aksen tipis di bawah judul
 	local line = Instance.new("Frame", bg)
 	line.Size = UDim2.new(0, 200, 0, 1)
 	line.Position = UDim2.new(0.5, -100, 0.5, 14)
@@ -183,7 +174,6 @@ do
 	line.ZIndex = 12
 	Instance.new("UICorner", line).CornerRadius = UDim.new(1, 0)
 
-	-- Tulisan kecil bawah "Teleporting..."
 	local subLbl = Instance.new("TextLabel", bg)
 	subLbl.Size = UDim2.new(0, 400, 0, 22)
 	subLbl.Position = UDim2.new(0.5, -200, 0.5, 24)
@@ -195,19 +185,17 @@ do
 	subLbl.TextXAlignment = Enum.TextXAlignment.Center
 	subLbl.ZIndex = 12
 
-	-- Versi kecil pojok bawah
 	local ver = Instance.new("TextLabel", bg)
 	ver.Size = UDim2.new(1, 0, 0, 18)
 	ver.Position = UDim2.new(0, 0, 1, -22)
 	ver.BackgroundTransparency = 1
-	ver.Text = "ELIXIR v3.5  •  Deep Purple Edition"
+	ver.Text = "ELIXIR v3.5 • Deep Purple Edition + FULLY NV"
 	ver.Font = Enum.Font.Gotham
 	ver.TextSize = 11
 	ver.TextColor3 = Color3.fromRGB(45, 38, 70)
 	ver.TextXAlignment = Enum.TextXAlignment.Center
 	ver.ZIndex = 12
 
-	-- Animasi dots pada subLbl
 	task.spawn(function()
 		local pats = {"Teleporting", "Teleporting.", "Teleporting..", "Teleporting..."}
 		local idx = 1
@@ -407,6 +395,7 @@ Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 closeBtn.MouseButton1Click:Connect(function()
 	running = false
 	autoSellEnabled = false
+	fullyNVRunning = false
 	notify("Elixir", "Script dihentikan.", "error")
 	task.wait(0.4)
 	gui:Destroy()
@@ -424,7 +413,7 @@ minBtn.BorderSizePixel = 0
 Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 6)
 
 -- ============================================================
--- TEXT SIDEBAR
+-- SIDEBAR
 -- ============================================================
 local sidebar = Instance.new("Frame", main)
 sidebar.Size = UDim2.new(0, 80, 1, -46)
@@ -459,11 +448,6 @@ content.BackgroundColor3 = C.panel
 content.ClipsDescendants = true
 Instance.new("UICorner", content).CornerRadius = UDim.new(0, 0)
 
-local contentFix = Instance.new("Frame", content)
-contentFix.Size = UDim2.new(0, 12, 1, 0)
-contentFix.BackgroundColor3 = C.panel
-contentFix.BorderSizePixel = 0
-
 -- ============================================================
 -- TAB SYSTEM
 -- ============================================================
@@ -474,7 +458,7 @@ local currentTab = nil
 local tabDefs = {
 	{label = "FARM",     order = 1},
 	{label = "AUTO",     order = 2},
-	{label = "STATUS",   order = 3},
+	{label = "FULLY NV", order = 3},
 	{label = "TP",       order = 4},
 	{label = "ESP",      order = 5},
 	{label = "RESPAWN",  order = 6},
@@ -768,6 +752,111 @@ local function makeStatusRow(parent, label, order)
 	return val2, f
 end
 
+local function stepperRow(parent, y, lbl, minV, maxV, defV, unit)
+	local row = Instance.new("Frame", parent)
+	row.Size = UDim2.new(1, -24, 0, 44)
+	row.Position = UDim2.new(0, 12, 0, y)
+	row.BackgroundColor3 = C.card
+	row.BorderSizePixel = 0
+	Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+	local s = Instance.new("UIStroke", row)
+	s.Color = C.border
+	s.Thickness = 1
+
+	local nm = Instance.new("TextLabel", row)
+	nm.Size = UDim2.new(0.5, 0, 0, 20)
+	nm.Position = UDim2.new(0, 10, 0, 2)
+	nm.BackgroundTransparency = 1
+	nm.Text = lbl
+	nm.Font = Enum.Font.Gotham
+	nm.TextSize = 10
+	nm.TextColor3 = C.textMid
+	nm.TextXAlignment = Enum.TextXAlignment.Left
+
+	local curVal = defV
+
+	local valL = Instance.new("TextLabel", row)
+	valL.Size = UDim2.new(0, 50, 0, 24)
+	valL.Position = UDim2.new(0.5, -25, 0, 18)
+	valL.BackgroundTransparency = 1
+	valL.Text = tostring(curVal) .. (unit or "")
+	valL.Font = Enum.Font.GothamBold
+	valL.TextSize = 13
+	valL.TextColor3 = C.text
+	valL.TextXAlignment = Enum.TextXAlignment.Center
+
+	local minusW = Instance.new("Frame", row)
+	minusW.Size = UDim2.new(0, 28, 0, 24)
+	minusW.Position = UDim2.new(0.5, -25-34, 0, 18)
+	minusW.BackgroundColor3 = C.blueD
+	minusW.BorderSizePixel = 0
+	Instance.new("UICorner", minusW).CornerRadius = UDim.new(0, 6)
+	local minusB = Instance.new("TextButton", minusW)
+	minusB.Size = UDim2.new(1, 0, 1, 0)
+	minusB.BackgroundTransparency = 1
+	minusB.Text = "−"
+	minusB.Font = Enum.Font.GothamBold
+	minusB.TextSize = 14
+	minusB.TextColor3 = C.txt
+	minusB.TextScaled = false
+
+	local plusW = Instance.new("Frame", row)
+	plusW.Size = UDim2.new(0, 28, 0, 24)
+	plusW.Position = UDim2.new(0.5, 25+6, 0, 18)
+	plusW.BackgroundColor3 = C.blueD
+	plusW.BorderSizePixel = 0
+	Instance.new("UICorner", plusW).CornerRadius = UDim.new(0, 6)
+	local plusB = Instance.new("TextButton", plusW)
+	plusB.Size = UDim2.new(1, 0, 1, 0)
+	plusB.BackgroundTransparency = 1
+	plusB.Text = "+"
+	plusB.Font = Enum.Font.GothamBold
+	plusB.TextSize = 14
+	plusB.TextColor3 = C.txt
+	plusB.TextScaled = false
+
+	local function updateVal(v)
+		curVal = math.clamp(v, minV, maxV)
+		valL.Text = tostring(curVal) .. (unit or "")
+	end
+
+	minusB.MouseButton1Click:Connect(function()
+		updateVal(curVal - 1)
+		TweenService:Create(minusW, TweenInfo.new(0.05), {BackgroundColor3 = C.blue}):Play()
+		task.delay(0.1, function()
+			TweenService:Create(minusW, TweenInfo.new(0.1), {BackgroundColor3 = C.blueD}):Play()
+		end)
+	end)
+
+	plusB.MouseButton1Click:Connect(function()
+		updateVal(curVal + 1)
+		TweenService:Create(plusW, TweenInfo.new(0.05), {BackgroundColor3 = C.blue}):Play()
+		task.delay(0.1, function()
+			TweenService:Create(plusW, TweenInfo.new(0.1), {BackgroundColor3 = C.blueD}):Play()
+		end)
+	end)
+
+	local function holdRepeat(btn, delta)
+		local holding = false
+		btn.MouseButton1Down:Connect(function()
+			holding = true
+			task.delay(0.4, function()
+				while holding do
+					updateVal(curVal + delta)
+					task.wait(0.07)
+				end
+			end)
+		end)
+		btn.MouseButton1Up:Connect(function() holding = false end)
+		btn.MouseLeave:Connect(function() holding = false end)
+	end
+
+	holdRepeat(minusB, -1)
+	holdRepeat(plusB, 1)
+
+	return function() return curVal end
+end
+
 -- ============================================================
 -- FARM PAGE
 -- ============================================================
@@ -863,475 +952,6 @@ antiStatusLbl.Font = Enum.Font.Gotham
 antiStatusLbl.TextSize = 11
 antiStatusLbl.TextColor3 = C.textMid
 antiStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
-
--- ============================================================
--- FULLY NV PAGE (menggantikan halaman STATUS)
--- ============================================================
-local fullyNVPage = pages["STATUS"]  -- ganti nama page STATUS jadi FULLY NV
-fullyNVPage.Name = "FULLY NV"
-
--- bersihkan isi lama
-for _, v in pairs(fullyNVPage:GetChildren()) do
-    if v:IsA("Frame") or v:IsA("ScrollingFrame") or v:IsA("TextLabel") or v:IsA("TextButton") then
-        v:Destroy()
-    end
-end
-
--- ============================================================
--- VARIABLES FULLY NV
--- ============================================================
-local fullyNVRunning = false
-local fullyNVBusy = false
-local selectedApart = nil  -- "APART CASINO 1", "APART CASINO 2", dst
-local selectedPot = nil     -- "KANAN" or "KIRI"
-local buyAmountNV = 5
-local totalCookedNV = 0
-local totalSoldNV = 0
-
--- Koordinat lengkap (sudah disediakan)
-local apartCoords = {
-    ["APART CASINO 1"] = {
-        tahap1 = CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00),
-        tahap2 = CFrame.new(1199.75, 3.71, -238.12) * CFrame.Angles(-0.00, -0.05, -0.00),
-        tahap3 = CFrame.new(1199.74, 6.59, -233.05) * CFrame.Angles(-0.00, 0.00, -0.00),
-        tahap4 = CFrame.new(1199.66, 6.59, -227.75) * CFrame.Angles(0.00, -0.00, 0.00),
-        -- tahap5 punya pilihan kanan/kiri
-        tahap5_kanan = CFrame.new(1199.66, 6.59, -227.75) * CFrame.Angles(0.00, -0.00, 0.00),
-        tahap5_kiri = CFrame.new(1199.95, 7.07, -177.69) * CFrame.Angles(-0.00, 0.01, 0.00),
-        -- tahap6 punya pilihan
-        tahap6_kanan = CFrame.new(1199.55, 15.96, -181.89) * CFrame.Angles(0.00, -0.09, 0.00),
-        tahap6_kiri = CFrame.new(1199.46, 15.96, -177.81) * CFrame.Angles(-0.00, -0.05, -0.00),
-        tahap7 = CFrame.new(1199.87, 15.96, -215.33) * CFrame.Angles(0.00, 0.05, 0.00),
-    },
-    ["APART CASINO 2"] = {
-        tahap1 = CFrame.new(1186.34, 3.71, -242.92) * CFrame.Angles(0.00, -0.06, 0.00),
-        tahap2 = CFrame.new(1183.00, 6.59, -233.78) * CFrame.Angles(-0.00, 0.00, 0.00),
-        tahap3 = CFrame.new(1182.70, 7.32, -229.73) * CFrame.Angles(-0.00, -0.01, 0.00),
-        tahap4 = CFrame.new(1182.75, 6.59, -224.78) * CFrame.Angles(-0.00, -0.01, 0.00),
-        tahap5_kanan = CFrame.new(1183.43, 15.96, -229.66) * CFrame.Angles(0.00, 0.02, -0.00),
-        tahap5_kiri = CFrame.new(1183.22, 15.96, -225.63) * CFrame.Angles(0.00, -0.04, -0.00),
-    },
-    ["APART CASINO 3"] = {
-        tahap1 = CFrame.new(1196.17, 3.71, -205.72) * CFrame.Angles(0.00, -0.03, -0.00),
-        tahap2 = CFrame.new(1199.76, 3.71, -196.51) * CFrame.Angles(0.00, -0.04, 0.00),
-        tahap3 = CFrame.new(1199.69, 6.59, -191.16) * CFrame.Angles(-0.00, -0.06, -0.00),
-        tahap4 = CFrame.new(1199.42, 6.59, -185.27) * CFrame.Angles(-0.00, 0.01, 0.00),
-        tahap5_kanan = CFrame.new(1199.42, 6.59, -185.27) * CFrame.Angles(-0.00, 0.01, 0.00),
-        tahap5_kiri = CFrame.new(1199.95, 7.07, -177.69) * CFrame.Angles(-0.00, 0.01, 0.00),
-        tahap6_kanan = CFrame.new(1199.55, 15.96, -181.89) * CFrame.Angles(0.00, -0.09, 0.00),
-        tahap6_kiri = CFrame.new(1199.46, 15.96, -177.81) * CFrame.Angles(-0.00, -0.05, -0.00),
-    },
-    ["APART CASINO 4"] = {
-        tahap1 = CFrame.new(1187.70, 3.71, -209.73) * CFrame.Angles(0.00, -0.03, 0.00),
-        tahap2 = CFrame.new(1182.27, 3.71, -204.65) * CFrame.Angles(-0.00, 0.09, -0.00),
-        tahap3 = CFrame.new(1182.23, 3.71, -198.77) * CFrame.Angles(0.00, -0.04, -0.00),
-        tahap4 = CFrame.new(1183.06, 6.59, -193.92) * CFrame.Angles(0.00, 0.08, -0.00),
-        tahap5_kanan = CFrame.new(1182.60, 7.56, -191.29) * CFrame.Angles(-0.00, -0.02, -0.00),
-        tahap5_kiri = CFrame.new(1183.36, 6.72, -187.25) * CFrame.Angles(-0.00, -0.04, -0.00),
-        tahap6_kanan = CFrame.new(1183.24, 15.96, -191.25) * CFrame.Angles(-0.00, -0.01, 0.00),
-        tahap6_kiri = CFrame.new(1183.08, 15.96, -187.36) * CFrame.Angles(-0.00, -0.05, -0.00),
-    },
-}
-
-local NPC_BUY_POS = Vector3.new(510.061, 4.476, 600.548)
-local NPC_SELL_POS = Vector3.new(510.061, 4.476, 600.548)
-local APART_ENTRY_POS = {
-    ["APART CASINO 1"] = Vector3.new(1137.992, 9.932, 449.753),
-    ["APART CASINO 2"] = Vector3.new(1139.174, 9.932, 420.556),
-    ["APART CASINO 3"] = Vector3.new(984.856, 9.932, 247.280),
-    ["APART CASINO 4"] = Vector3.new(988.311, 9.932, 221.664),
-}
-
--- ============================================================
--- UTILITY RAGDOLL TP (darah 1% lalu TP)
--- ============================================================
-local function ragdollTeleport(targetPos)
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hum then return false end
-    
-    -- turunkan darah drastis ke 1%
-    hum.Health = 1
-    task.wait(0.2)
-    
-    -- pastikan ragdoll atau darah 1%
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
-    end
-    
-    -- tunggu 6 detik sebelum bisa interaksi
-    for i = 6, 1, -1 do
-        if not fullyNVRunning then return false end
-        setFullyNVStatus("Tunggu " .. i .. " detik sebelum interaksi...", C.orange)
-        task.wait(1)
-    end
-    return true
-end
-
--- ============================================================
--- TWEEN SLOW (untuk gerak di apart)
--- ============================================================
-local function tweenToPosition(targetCFrame, duration)
-    duration = duration or 2.0
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    
-    local tweenInfo = TweenInfo.new(
-        duration,
-        Enum.EasingStyle.Linear,
-        Enum.EasingDirection.Out
-    )
-    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
-    tween:Play()
-    tween.Completed:Wait()
-    return true
-end
-
--- ============================================================
--- BLINK JIKA NABRAK
--- ============================================================
-local function moveWithBlink(targetCFrame, maxAttempts)
-    maxAttempts = maxAttempts or 5
-    for attempt = 1, maxAttempts do
-        local success = tweenToPosition(targetCFrame, 2.0)
-        task.wait(0.3)
-        
-        -- cek apakah posisi sudah mendekati target
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local dist = (hrp.Position - targetCFrame.Position).Magnitude
-            if dist < 2 then
-                return true
-            else
-                -- nabrak tembok, blink langsung ke target
-                hrp.CFrame = targetCFrame
-                task.wait(0.2)
-                return true
-            end
-        end
-        task.wait(0.5)
-    end
-    return false
-end
-
--- ============================================================
--- INTERAKSI E SPAM
--- ============================================================
-local function spamE(times)
-    times = times or 3
-    for i = 1, times do
-        vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        task.wait(0.1)
-        vim:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-        task.wait(0.05)
-    end
-end
-
--- ============================================================
--- PROSES MASAK DI APART (TWEEN + BLINK + URUTAN KHUSUS)
--- ============================================================
-local function cookAtApartment()
-    local coords = apartCoords[selectedApart]
-    if not coords then return false end
-    
-    -- tentukan koordinat berdasarkan pilihan pot
-    local tahap5 = (selectedPot == "KANAN") and coords.tahap5_kanan or coords.tahap5_kiri
-    local tahap6 = (selectedPot == "KANAN") and coords.tahap6_kanan or coords.tahap6_kiri
-    
-    local stages = {
-        {name = "Tahap 1", cf = coords.tahap1, wait = 0, needSpam = true},
-        {name = "Tahap 2", cf = coords.tahap2, wait = 0, needSpam = true},
-        {name = "Tahap 3", cf = coords.tahap3, wait = 0, needSpam = true},
-        {name = "Tahap 4", cf = coords.tahap4, wait = 0, needSpam = true},
-        {name = "Tahap 5", cf = tahap5, wait = 0, needSpam = true},
-        {name = "Tahap 6", cf = tahap6, wait = 0, needSpam = true},
-    }
-    if coords.tahap7 then
-        table.insert(stages, {name = "Tahap 7", cf = coords.tahap7, wait = 0, needSpam = true})
-    end
-    
-    for _, stage in ipairs(stages) do
-        if not fullyNVRunning then return false end
-        setFullyNVStatus("→ " .. stage.name .. " (tween)", C.cyan)
-        moveWithBlink(stage.cf, 3)
-        if stage.needSpam then
-            spamE(3)
-        end
-        task.wait(0.5)
-    end
-    
-    -- proses masak: water, sugar, gelatin, empty bag dengan urutan khusus
-    setFullyNVStatus("💧 Masukkan Water...", C.blue)
-    spamE(3)
-    task.wait(20) -- waktu masak water
-    
-    if not fullyNVRunning then return false end
-    
-    setFullyNVStatus("🧂 Masukkan Sugar...", C.orange)
-    spamE(3)
-    task.wait(1)
-    
-    setFullyNVStatus("🟡 Masukkan Gelatin...", C.purple)
-    spamE(3)
-    task.wait(1)
-    
-    setFullyNVStatus("🔥 Memasak... 45 detik", C.red)
-    task.wait(45)
-    
-    if not fullyNVRunning then return false end
-    
-    setFullyNVStatus("🎒 Ambil Marshmallow...", C.green)
-    spamE(3)
-    task.wait(1.5)
-    
-    totalCookedNV = totalCookedNV + 1
-    return true
-end
-
--- ============================================================
--- BELI BAHAN (tunggu selesai)
--- ============================================================
-local function buyIngredients(amount)
-    setFullyNVStatus("🛒 Membeli " .. amount .. " set bahan...", C.blue)
-    for i = 1, amount do
-        if not fullyNVRunning then return false end
-        pcall(function()
-            storePurchaseRE:FireServer("Water", 1)
-            task.wait(0.4)
-            storePurchaseRE:FireServer("Sugar Block Bag", 1)
-            task.wait(0.4)
-            storePurchaseRE:FireServer("Gelatin", 1)
-            task.wait(0.4)
-            storePurchaseRE:FireServer("Empty Bag", 1)
-            task.wait(0.5)
-        end)
-    end
-    setFullyNVStatus("✅ Selesai beli " .. amount .. " set", C.green)
-    return true
-end
-
--- ============================================================
--- JUAL SEMUA MS (tunggu selesai)
--- ============================================================
-local function sellAllMS()
-    setFullyNVStatus("💰 Menjual semua Marshmallow...", C.green)
-    local sold = 0
-    for _ = 1, 50 do
-        if not fullyNVRunning then return false end
-        local ms = getEquippableMS()
-        if not ms then break end
-        equipTool(ms)
-        task.wait(0.3)
-        spamE(2)
-        task.wait(0.5)
-        sold = sold + 1
-        totalSoldNV = totalSoldNV + 1
-    end
-    setFullyNVStatus("✅ Terjual " .. sold .. " MS", C.green)
-    return true
-end
-
--- ============================================================
--- LOOP UTAMA FULLY NV
--- ============================================================
-local function fullyNVLoop()
-    while fullyNVRunning do
-        -- 1. TP ragdoll ke NPC beli
-        setFullyNVStatus("🚀 TP Ragdoll ke NPC Beli...", C.orange)
-        if not ragdollTeleport(NPC_BUY_POS) then break end
-        
-        -- 2. Beli bahan (tunggu selesai)
-        if not buyIngredients(buyAmountNV) then break end
-        
-        -- 3. TP ragdoll ke apart casino
-        local apartPos = APART_ENTRY_POS[selectedApart]
-        setFullyNVStatus("🚀 TP Ragdoll ke " .. selectedApart .. "...", C.orange)
-        if not ragdollTeleport(apartPos) then break end
-        
-        -- 4. Proses masak di apart (tween slow + blink)
-        for i = 1, buyAmountNV do
-            if not fullyNVRunning then break end
-            setFullyNVStatus("🔥 Memasak batch " .. i .. "/" .. buyAmountNV, C.cyan)
-            if not cookAtApartment() then break end
-        end
-        
-        -- 5. TP ragdoll ke NPC jual
-        setFullyNVStatus("🚀 TP Ragdoll ke NPC Jual...", C.orange)
-        if not ragdollTeleport(NPC_SELL_POS) then break end
-        
-        -- 6. Jual semua MS (tunggu selesai)
-        if not sellAllMS() then break end
-        
-        setFullyNVStatus("🔄 Loop selesai, ulangi...", C.green)
-        task.wait(1)
-    end
-    fullyNVRunning = false
-    setFullyNVStatus("⏹️ FULLY NV STOP", C.red)
-end
-
--- ============================================================
--- UI COMPONENT UNTUK PAGE FULLY NV
--- ============================================================
-local function setFullyNVStatus(msg, col)
-    if fullyNVStatusLabel then
-        fullyNVStatusLabel.Text = msg
-        fullyNVStatusLabel.TextColor3 = col or C.txtM
-    end
-    if lblStatus then
-        lblStatus.Text = msg
-        lblStatus.TextColor3 = col or C.txtM
-    end
-end
-
--- bersihkan dan buat ulang UI
-local scroll = Instance.new("ScrollingFrame", fullyNVPage)
-scroll.Size = UDim2.new(1, 0, 1, 0)
-scroll.CanvasSize = UDim2.new(0, 0, 0, 580)
-scroll.BackgroundTransparency = 1
-scroll.ScrollBarThickness = 3
-
-secHdr(scroll, 8, "FULLY NV — AUTO APART CASINO")
-
--- Pilih Apart
-local apartCard = mkFrame(scroll, C.card, 3)
-apartCard.Size = UDim2.new(1, -24, 0, 80)
-apartCard.Position = UDim2.new(0, 12, 0, 26)
-corner(apartCard, 8)
-
-local apartL = mkLabel(apartCard, "Pilih Apart Casino:", C.txt, Enum.Font.GothamBold, Enum.TextXAlignment.Left, 4, 11)
-apartL.Size = UDim2.new(1, 0, 0, 20)
-
-local apartDropdown = Instance.new("TextButton", apartCard)
-apartDropdown.Size = UDim2.new(0.8, 0, 0, 32)
-apartDropdown.Position = UDim2.new(0.1, 0, 0, 24)
-apartDropdown.BackgroundColor3 = C.blueD
-apartDropdown.Text = "Pilih Apart"
-apartDropdown.TextColor3 = C.txt
-apartDropdown.Font = Enum.Font.GothamBold
-corner(apartDropdown, 6)
-
-local apartList = {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}
-apartDropdown.MouseButton1Click:Connect(function()
-    local menu = Instance.new("Frame", scroll)
-    menu.Size = UDim2.new(0.8, 0, 0, 120)
-    menu.Position = apartDropdown.AbsolutePosition
-    menu.BackgroundColor3 = C.surface
-    corner(menu, 8)
-    stroke(menu, C.blue, 1)
-    for i, name in ipairs(apartList) do
-        local btn = mkBtn(menu, name, C.txt, Enum.Font.Gotham, 5, 10)
-        btn.Size = UDim2.new(1, 0, 0, 28)
-        btn.Position = UDim2.new(0, 0, 0, (i-1)*30)
-        btn.MouseButton1Click:Connect(function()
-            selectedApart = name
-            apartDropdown.Text = name
-            menu:Destroy()
-        end)
-    end
-    task.delay(5, function() pcall(function() menu:Destroy() end) end)
-end)
-
--- Pilih Pot Kanan/Kiri
-local potCard = mkFrame(scroll, C.card, 3)
-potCard.Size = UDim2.new(1, -24, 0, 80)
-potCard.Position = UDim2.new(0, 12, 0, 112)
-corner(potCard, 8)
-
-local potL = mkLabel(potCard, "Pilih Pot (Kanan/Kiri):", C.txt, Enum.Font.GothamBold, Enum.TextXAlignment.Left, 4, 11)
-potL.Size = UDim2.new(1, 0, 0, 20)
-
-local kananBtn = mkBtn(potCard, "POT KANAN", C.blueD, Enum.Font.GothamBold, 4, 10)
-kananBtn.Size = UDim2.new(0.4, -10, 0, 32)
-kananBtn.Position = UDim2.new(0.05, 0, 0, 24)
-kananBtn.BackgroundTransparency = 0
-corner(kananBtn, 6)
-
-local kiriBtn = mkBtn(potCard, "POT KIRI", C.card, Enum.Font.GothamBold, 4, 10)
-kiriBtn.Size = UDim2.new(0.4, -10, 0, 32)
-kiriBtn.Position = UDim2.new(0.55, 0, 0, 24)
-kiriBtn.BackgroundTransparency = 0
-corner(kiriBtn, 6)
-
-kananBtn.MouseButton1Click:Connect(function()
-    selectedPot = "KANAN"
-    TweenService:Create(kananBtn, TweenInfo.new(0.1), {BackgroundColor3=C.blueD}):Play()
-    TweenService:Create(kiriBtn, TweenInfo.new(0.1), {BackgroundColor3=C.card}):Play()
-end)
-kiriBtn.MouseButton1Click:Connect(function()
-    selectedPot = "KIRI"
-    TweenService:Create(kiriBtn, TweenInfo.new(0.1), {BackgroundColor3=C.blueD}):Play()
-    TweenService:Create(kananBtn, TweenInfo.new(0.1), {BackgroundColor3=C.card}):Play()
-end)
-
--- Slider jumlah beli
-line(scroll, 198)
-secHdr(scroll, 204, "JUMLAH BELI PER LOOP")
-local getBuyAmount = stepperRow(scroll, 220, "Jumlah Set Bahan", 1, 50, 5, "x")
-
--- Status
-line(scroll, 270)
-secHdr(scroll, 276, "STATUS")
-local statusCardNV = mkFrame(scroll, C.bg, 3)
-statusCardNV.Size = UDim2.new(1, -24, 0, 40)
-statusCardNV.Position = UDim2.new(0, 12, 0, 294)
-corner(statusCardNV, 8)
-stroke(statusCardNV, C.line, 1)
-
-local fullyNVStatusLabel = mkLabel(statusCardNV, "Belum dimulai", C.txtM, Enum.Font.Gotham, Enum.TextXAlignment.Center, 4, 10)
-fullyNVStatusLabel.Size = UDim2.new(1, -8, 1, 0)
-
--- Statistik
-local statCooked = statRow(scroll, 342, "🍬", "Total MS Dimasak", C.cyan)
-local statSold = statRow(scroll, 382, "💰", "Total MS Terjual", C.green)
-
--- Tombol START / STOP
-line(scroll, 422)
-local startNVW, startNVB = actionBtn(scroll, 430, "▶ START FULLY NV", C.blueD, C.txt)
-local stopNVW, stopNVB = actionBtn(scroll, 430, "■ STOP FULLY NV", C.red, C.txt)
-stopNVW.Visible = false
-
-local function setFullyNVUI(run)
-    startNVW.Visible = not run
-    stopNVW.Visible = run
-end
-
-startNVB.MouseButton1Click:Connect(function()
-    if fullyNVRunning then return end
-    if not selectedApart then
-        setFullyNVStatus("❌ Pilih apart casino dulu!", C.red)
-        return
-    end
-    if not selectedPot then
-        setFullyNVStatus("❌ Pilih pot kanan/kiri dulu!", C.red)
-        return
-    end
-    buyAmountNV = getBuyAmount()
-    fullyNVRunning = true
-    setFullyNVUI(true)
-    setFullyNVStatus("✅ FULLY NV START", C.green)
-    task.spawn(fullyNVLoop)
-end)
-
-stopNVB.MouseButton1Click:Connect(function()
-    fullyNVRunning = false
-    setFullyNVUI(false)
-    setFullyNVStatus("⏹️ FULLY NV STOP", C.orange)
-end)
-
-hoverBtn(startNVW, startNVB, C.blueD, Color3.fromRGB(62, 110, 230))
-hoverBtn(stopNVW, stopNVB, C.red, Color3.fromRGB(240, 65, 65))
-
--- Update statistik
-RunService.Heartbeat:Connect(function()
-    pcall(function()
-        if statCooked then statCooked.Text = tostring(totalCookedNV) end
-        if statSold then statSold.Text = tostring(totalSoldNV) end
-    end)
-end)
-
 
 -- ============================================================
 -- TELEPORT PAGE
@@ -1503,7 +1123,6 @@ end)
 -- ============================================================
 local up = pages["UNDERPOT"]
 
--- Variables
 local deletedStack = {}
 local originalPositions = {}
 local currentRoadOffset = 0
@@ -1520,7 +1139,6 @@ local ROAD_KEYWORDS = {
 	"jalan","trotoar","jalanan"
 }
 
--- Status card
 local upStatusCard = card(up, 36, 1)
 local upStatusLbl = Instance.new("TextLabel", upStatusCard)
 upStatusLbl.Size = UDim2.new(1,-20,1,0)
@@ -1543,18 +1161,15 @@ upUndoLbl.TextSize = 11
 upUndoLbl.TextColor3 = C.textDim
 upUndoLbl.TextXAlignment = Enum.TextXAlignment.Left
 
--- Section: Lower
 sectionLabel(up, "Lower Road (depth: 6)", 3)
 
 local lowerRoadBtn = makeActionBtn(up, "LOWER : OFF", Color3.fromRGB(60, 20, 140), 4)
 
--- Section: Delete Floor
 sectionLabel(up, "Delete Floor", 5)
 
 local deleteFloorBtn = makeActionBtn(up, "DELETE FLOOR DI BAWAH", Color3.fromRGB(120, 20, 50), 6)
 local undoFloorBtn   = makeActionBtn(up, "UNDO", C.card, 7)
 
--- Section: Prompt Scanner
 sectionLabel(up, "Prompt Scanner (radius: 50)", 8)
 
 local upPromptCountCard = card(up, 30, 9)
@@ -1571,9 +1186,7 @@ upPromptCountLbl.TextXAlignment = Enum.TextXAlignment.Left
 local findCookBtn    = makeActionBtn(up, "FIND COOK", Color3.fromRGB(0, 100, 80), 10)
 local restoreCookBtn = makeActionBtn(up, "RESTORE COOK", C.card, 11)
 
--- ============================================================
 -- UNDERPOT LOGIC
--- ============================================================
 local function isRoadPart(part)
 	if not part:IsA("BasePart") and not part:IsA("UnionOperation") then return false end
 	local nameLower = part.Name:lower()
@@ -1702,7 +1315,6 @@ deleteFloorBtn.MouseButton1Click:Connect(function()
 	TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
 end)
 
--- Prompt Scanner Logic
 local function getPromptPosition(prompt)
 	local p = prompt.Parent
 	if not p then return nil end
@@ -2153,14 +1765,6 @@ task.spawn(function()
 		if sugarVal    then sugarVal.Text    = tostring(sg) end
 		if gelatinVal  then gelatinVal.Text  = tostring(ge) end
 		if bagVal      then bagVal.Text      = tostring(bg) end
-		if statWaterVal   then statWaterVal.Text   = tostring(w)  end
-		if statSugarVal   then statSugarVal.Text   = tostring(sg) end
-		if statGelatinVal then statGelatinVal.Text = tostring(ge) end
-		if statBagVal     then statBagVal.Text     = tostring(bg) end
-		if statSmallVal   then statSmallVal.Text   = tostring(sm) end
-		if statMedVal     then statMedVal.Text     = tostring(md) end
-		if statLargeVal   then statLargeVal.Text   = tostring(lg) end
-		if totalVal       then totalVal.Text        = tostring(sm+md+lg) end
 
 		task.wait(0.5)
 	end
@@ -2183,7 +1787,7 @@ minBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- HIDE BUTTON (MOBILE) + KEYBIND Z
+-- HIDE BUTTON + KEYBIND Z
 -- ============================================================
 local hideBtn2 = Instance.new("TextButton", gui)
 hideBtn2.Size = UDim2.new(0, 42, 0, 42)
@@ -2202,7 +1806,6 @@ hideBtn2.MouseButton1Click:Connect(function()
 	main.Visible = not main.Visible
 end)
 
--- Keybind Z untuk hide/show GUI
 ContextActionService:BindAction("toggleUI_ELIXIR", function(_, state)
 	if state == Enum.UserInputState.Begin then
 		main.Visible = not main.Visible
@@ -2319,8 +1922,436 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ============================================================
+-- FULLY NV PAGE (HALAMAN BARU)
+-- ============================================================
+local fullyNVPage = pages["FULLY NV"]
+fullyNVPage.Name = "FULLY NV"
+
+-- Koordinat NPC
+local NPC_BUY_POS = Vector3.new(510.061, 4.476, 600.548)
+local NPC_SELL_POS = Vector3.new(510.061, 4.476, 600.548)
+
+local APART_ENTRY_POS = {
+    ["APART CASINO 1"] = Vector3.new(1137.992, 9.932, 449.753),
+    ["APART CASINO 2"] = Vector3.new(1139.174, 9.932, 420.556),
+    ["APART CASINO 3"] = Vector3.new(984.856, 9.932, 247.280),
+    ["APART CASINO 4"] = Vector3.new(988.311, 9.932, 221.664),
+}
+
+local apartCoords = {
+    ["APART CASINO 1"] = {
+        tahap1 = CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00),
+        tahap2 = CFrame.new(1199.75, 3.71, -238.12) * CFrame.Angles(-0.00, -0.05, -0.00),
+        tahap3 = CFrame.new(1199.74, 6.59, -233.05) * CFrame.Angles(-0.00, 0.00, -0.00),
+        tahap4 = CFrame.new(1199.66, 6.59, -227.75) * CFrame.Angles(0.00, -0.00, 0.00),
+        tahap5_kanan = CFrame.new(1199.66, 6.59, -227.75) * CFrame.Angles(0.00, -0.00, 0.00),
+        tahap5_kiri = CFrame.new(1199.95, 7.07, -177.69) * CFrame.Angles(-0.00, 0.01, 0.00),
+        tahap6_kanan = CFrame.new(1199.55, 15.96, -181.89) * CFrame.Angles(0.00, -0.09, 0.00),
+        tahap6_kiri = CFrame.new(1199.46, 15.96, -177.81) * CFrame.Angles(-0.00, -0.05, -0.00),
+        tahap7 = CFrame.new(1199.87, 15.96, -215.33) * CFrame.Angles(0.00, 0.05, 0.00),
+    },
+    ["APART CASINO 2"] = {
+        tahap1 = CFrame.new(1186.34, 3.71, -242.92) * CFrame.Angles(0.00, -0.06, 0.00),
+        tahap2 = CFrame.new(1183.00, 6.59, -233.78) * CFrame.Angles(-0.00, 0.00, 0.00),
+        tahap3 = CFrame.new(1182.70, 7.32, -229.73) * CFrame.Angles(-0.00, -0.01, 0.00),
+        tahap4 = CFrame.new(1182.75, 6.59, -224.78) * CFrame.Angles(-0.00, -0.01, 0.00),
+        tahap5_kanan = CFrame.new(1183.43, 15.96, -229.66) * CFrame.Angles(0.00, 0.02, -0.00),
+        tahap5_kiri = CFrame.new(1183.22, 15.96, -225.63) * CFrame.Angles(0.00, -0.04, -0.00),
+    },
+    ["APART CASINO 3"] = {
+        tahap1 = CFrame.new(1196.17, 3.71, -205.72) * CFrame.Angles(0.00, -0.03, -0.00),
+        tahap2 = CFrame.new(1199.76, 3.71, -196.51) * CFrame.Angles(0.00, -0.04, 0.00),
+        tahap3 = CFrame.new(1199.69, 6.59, -191.16) * CFrame.Angles(-0.00, -0.06, -0.00),
+        tahap4 = CFrame.new(1199.42, 6.59, -185.27) * CFrame.Angles(-0.00, 0.01, 0.00),
+        tahap5_kanan = CFrame.new(1199.42, 6.59, -185.27) * CFrame.Angles(-0.00, 0.01, 0.00),
+        tahap5_kiri = CFrame.new(1199.95, 7.07, -177.69) * CFrame.Angles(-0.00, 0.01, 0.00),
+        tahap6_kanan = CFrame.new(1199.55, 15.96, -181.89) * CFrame.Angles(0.00, -0.09, 0.00),
+        tahap6_kiri = CFrame.new(1199.46, 15.96, -177.81) * CFrame.Angles(-0.00, -0.05, -0.00),
+    },
+    ["APART CASINO 4"] = {
+        tahap1 = CFrame.new(1187.70, 3.71, -209.73) * CFrame.Angles(0.00, -0.03, 0.00),
+        tahap2 = CFrame.new(1182.27, 3.71, -204.65) * CFrame.Angles(-0.00, 0.09, -0.00),
+        tahap3 = CFrame.new(1182.23, 3.71, -198.77) * CFrame.Angles(0.00, -0.04, -0.00),
+        tahap4 = CFrame.new(1183.06, 6.59, -193.92) * CFrame.Angles(0.00, 0.08, -0.00),
+        tahap5_kanan = CFrame.new(1182.60, 7.56, -191.29) * CFrame.Angles(-0.00, -0.02, -0.00),
+        tahap5_kiri = CFrame.new(1183.36, 6.72, -187.25) * CFrame.Angles(-0.00, -0.04, -0.00),
+        tahap6_kanan = CFrame.new(1183.24, 15.96, -191.25) * CFrame.Angles(-0.00, -0.01, 0.00),
+        tahap6_kiri = CFrame.new(1183.08, 15.96, -187.36) * CFrame.Angles(-0.00, -0.05, -0.00),
+    },
+}
+
+local fullyNVRunning = false
+local fullySelectedApart = nil
+local fullySelectedPot = nil
+local fullyBuyAmount = 5
+local fullyTotalCooked = 0
+local fullyTotalSold = 0
+local fullyNVStatusLabel = nil
+
+local function setFullyNVStatus(msg, col)
+    if fullyNVStatusLabel then
+        fullyNVStatusLabel.Text = msg
+        fullyNVStatusLabel.TextColor3 = col or C.textMid
+    end
+    if statusLabel then
+        statusLabel.Text = msg
+        statusLabel.TextColor3 = col or C.textMid
+    end
+end
+
+local function ragdollTeleport(targetPos)
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    
+    hum.Health = 1
+    task.wait(0.2)
+    
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
+    end
+    
+    for i = 6, 1, -1 do
+        if not fullyNVRunning then return false end
+        setFullyNVStatus("Tunggu " .. i .. " detik...", C.orange)
+        task.wait(1)
+    end
+    return true
+end
+
+local function tweenToPosition(targetCFrame, duration)
+    duration = duration or 2.0
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+    tween:Play()
+    tween.Completed:Wait()
+    return true
+end
+
+local function moveWithBlink(targetCFrame)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    
+    tweenToPosition(targetCFrame, 2.0)
+    task.wait(0.3)
+    
+    if hrp and (hrp.Position - targetCFrame.Position).Magnitude > 3 then
+        hrp.CFrame = targetCFrame
+        task.wait(0.2)
+    end
+    return true
+end
+
+local function spamE(times)
+    times = times or 3
+    for i = 1, times do
+        vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.1)
+        vim:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        task.wait(0.05)
+    end
+end
+
+local function fullyCookAtApartment()
+    local coords = apartCoords[fullySelectedApart]
+    if not coords then return false end
+    
+    local tahap5 = (fullySelectedPot == "KANAN") and coords.tahap5_kanan or coords.tahap5_kiri
+    local tahap6 = (fullySelectedPot == "KANAN") and coords.tahap6_kanan or coords.tahap6_kiri
+    
+    local stages = {
+        {name = "Tahap 1", cf = coords.tahap1},
+        {name = "Tahap 2", cf = coords.tahap2},
+        {name = "Tahap 3", cf = coords.tahap3},
+        {name = "Tahap 4", cf = coords.tahap4},
+        {name = "Tahap 5", cf = tahap5},
+        {name = "Tahap 6", cf = tahap6},
+    }
+    if coords.tahap7 then
+        table.insert(stages, {name = "Tahap 7", cf = coords.tahap7})
+    end
+    
+    for _, stage in ipairs(stages) do
+        if not fullyNVRunning then return false end
+        setFullyNVStatus("→ " .. stage.name, C.cyan)
+        moveWithBlink(stage.cf)
+        spamE(3)
+        task.wait(0.5)
+    end
+    
+    setFullyNVStatus("💧 Masak Water...", C.blue)
+    spamE(3)
+    task.wait(20)
+    
+    if not fullyNVRunning then return false end
+    
+    setFullyNVStatus("🧂 Masak Sugar...", C.orange)
+    spamE(3)
+    task.wait(1)
+    
+    setFullyNVStatus("🟡 Masak Gelatin...", C.purple)
+    spamE(3)
+    task.wait(1)
+    
+    setFullyNVStatus("🔥 Memasak 45 detik...", C.red)
+    task.wait(45)
+    
+    if not fullyNVRunning then return false end
+    
+    setFullyNVStatus("🎒 Ambil Marshmallow...", C.green)
+    spamE(3)
+    task.wait(1.5)
+    
+    fullyTotalCooked = fullyTotalCooked + 1
+    return true
+end
+
+local function fullyBuyIngredients(amount)
+    setFullyNVStatus("🛒 Membeli " .. amount .. " set...", C.blue)
+    for i = 1, amount do
+        if not fullyNVRunning then return false end
+        pcall(function()
+            buyRemote:FireServer("Water", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Sugar Block Bag", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Gelatin", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Empty Bag", 1)
+            task.wait(0.5)
+        end)
+    end
+    setFullyNVStatus("✅ Selesai beli " .. amount .. " set", C.green)
+    return true
+end
+
+local function fullySellAllMS()
+    setFullyNVStatus("💰 Menjual Marshmallow...", C.green)
+    local sold = 0
+    local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
+    for _, bag in pairs(bags) do
+        while fullyNVRunning and countItem(bag) > 0 do
+            if equip(bag) then
+                spamE(2)
+                task.wait(0.8)
+                sold = sold + 1
+                fullyTotalSold = fullyTotalSold + 1
+            else
+                break
+            end
+        end
+    end
+    setFullyNVStatus("✅ Terjual " .. sold .. " MS", C.green)
+    return true
+end
+
+local function fullyNVLoop()
+    while fullyNVRunning do
+        setFullyNVStatus("🚀 TP Ragdoll ke NPC Beli...", C.orange)
+        if not ragdollTeleport(NPC_BUY_POS) then break end
+        
+        if not fullyBuyIngredients(fullyBuyAmount) then break end
+        
+        local apartPos = APART_ENTRY_POS[fullySelectedApart]
+        setFullyNVStatus("🚀 TP Ragdoll ke " .. fullySelectedApart .. "...", C.orange)
+        if not ragdollTeleport(apartPos) then break end
+        
+        for i = 1, fullyBuyAmount do
+            if not fullyNVRunning then break end
+            setFullyNVStatus("🔥 Masak batch " .. i .. "/" .. fullyBuyAmount, C.cyan)
+            if not fullyCookAtApartment() then break end
+        end
+        
+        setFullyNVStatus("🚀 TP Ragdoll ke NPC Jual...", C.orange)
+        if not ragdollTeleport(NPC_SELL_POS) then break end
+        
+        if not fullySellAllMS() then break end
+        
+        setFullyNVStatus("🔄 Loop selesai, ulangi...", C.green)
+        task.wait(1)
+    end
+    fullyNVRunning = false
+    setFullyNVStatus("⏹️ FULLY NV STOP", C.red)
+end
+
+-- UI FULLY NV
+local fullyScroll = Instance.new("ScrollingFrame", fullyNVPage)
+fullyScroll.Size = UDim2.new(1, 0, 1, 0)
+fullyScroll.CanvasSize = UDim2.new(0, 0, 0, 580)
+fullyScroll.BackgroundTransparency = 1
+fullyScroll.ScrollBarThickness = 3
+
+sectionLabel(fullyScroll, "FULLY NV - AUTO APART CASINO", 1)
+
+-- Pilih Apart
+local apartCard = card(fullyScroll, 80, 2)
+local apartL = Instance.new("TextLabel", apartCard)
+apartL.Size = UDim2.new(1, 0, 0, 20)
+apartL.Position = UDim2.new(0, 10, 0, 5)
+apartL.BackgroundTransparency = 1
+apartL.Text = "Pilih Apart Casino:"
+apartL.Font = Enum.Font.GothamBold
+apartL.TextSize = 11
+apartL.TextColor3 = C.text
+
+local apartDropdown = Instance.new("TextButton", apartCard)
+apartDropdown.Size = UDim2.new(0.8, 0, 0, 32)
+apartDropdown.Position = UDim2.new(0.1, 0, 0, 30)
+apartDropdown.BackgroundColor3 = C.blueD
+apartDropdown.Text = "Pilih Apart"
+apartDropdown.TextColor3 = C.text
+apartDropdown.Font = Enum.Font.GothamBold
+Instance.new("UICorner", apartDropdown).CornerRadius = UDim.new(0, 6)
+
+local apartList = {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}
+apartDropdown.MouseButton1Click:Connect(function()
+    local menu = Instance.new("Frame", fullyScroll)
+    menu.Size = UDim2.new(0.8, 0, 0, 120)
+    menu.Position = UDim2.new(0.1, 0, 0, 110)
+    menu.BackgroundColor3 = C.surface
+    Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 8)
+    for i, name in ipairs(apartList) do
+        local btn = Instance.new("TextButton", menu)
+        btn.Size = UDim2.new(1, 0, 0, 28)
+        btn.Position = UDim2.new(0, 0, 0, (i-1)*30)
+        btn.BackgroundTransparency = 1
+        btn.Text = name
+        btn.TextColor3 = C.text
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 11
+        btn.MouseButton1Click:Connect(function()
+            fullySelectedApart = name
+            apartDropdown.Text = name
+            menu:Destroy()
+        end)
+    end
+    task.delay(5, function() pcall(function() menu:Destroy() end) end)
+end)
+
+-- Pilih Pot
+local potCard = card(fullyScroll, 80, 3)
+local potL = Instance.new("TextLabel", potCard)
+potL.Size = UDim2.new(1, 0, 0, 20)
+potL.Position = UDim2.new(0, 10, 0, 5)
+potL.BackgroundTransparency = 1
+potL.Text = "Pilih Pot (Kanan/Kiri):"
+potL.Font = Enum.Font.GothamBold
+potL.TextSize = 11
+potL.TextColor3 = C.text
+
+local kananBtn = Instance.new("TextButton", potCard)
+kananBtn.Size = UDim2.new(0.4, -10, 0, 32)
+kananBtn.Position = UDim2.new(0.05, 0, 0, 30)
+kananBtn.BackgroundColor3 = C.blueD
+kananBtn.Text = "POT KANAN"
+kananBtn.TextColor3 = C.text
+kananBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", kananBtn).CornerRadius = UDim.new(0, 6)
+
+local kiriBtn = Instance.new("TextButton", potCard)
+kiriBtn.Size = UDim2.new(0.4, -10, 0, 32)
+kiriBtn.Position = UDim2.new(0.55, 0, 0, 30)
+kiriBtn.BackgroundColor3 = C.card
+kiriBtn.Text = "POT KIRI"
+kiriBtn.TextColor3 = C.text
+kiriBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", kiriBtn).CornerRadius = UDim.new(0, 6)
+
+kananBtn.MouseButton1Click:Connect(function()
+    fullySelectedPot = "KANAN"
+    TweenService:Create(kananBtn, TweenInfo.new(0.1), {BackgroundColor3 = C.blueD}):Play()
+    TweenService:Create(kiriBtn, TweenInfo.new(0.1), {BackgroundColor3 = C.card}):Play()
+end)
+kiriBtn.MouseButton1Click:Connect(function()
+    fullySelectedPot = "KIRI"
+    TweenService:Create(kiriBtn, TweenInfo.new(0.1), {BackgroundColor3 = C.blueD}):Play()
+    TweenService:Create(kananBtn, TweenInfo.new(0.1), {BackgroundColor3 = C.card}):Play()
+end)
+
+-- Slider jumlah beli
+local getBuyAmount = stepperRow(fullyScroll, 280, "Jumlah Set Bahan per Loop", 1, 50, 5, "x")
+
+-- Status
+local statusCardNV = card(fullyScroll, 50, 5)
+fullyNVStatusLabel = Instance.new("TextLabel", statusCardNV)
+fullyNVStatusLabel.Size = UDim2.new(1, -16, 1, 0)
+fullyNVStatusLabel.Position = UDim2.new(0, 8, 0, 0)
+fullyNVStatusLabel.BackgroundTransparency = 1
+fullyNVStatusLabel.Text = "Belum dimulai"
+fullyNVStatusLabel.Font = Enum.Font.Gotham
+fullyNVStatusLabel.TextSize = 11
+fullyNVStatusLabel.TextColor3 = C.textMid
+fullyNVStatusLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Tombol Start/Stop
+local startBtn = makeActionBtn(fullyScroll, "▶ START FULLY NV", C.blueD, 6)
+local stopBtn = makeActionBtn(fullyScroll, "■ STOP FULLY NV", C.red, 7)
+stopBtn.Visible = false
+
+startBtn.MouseButton1Click:Connect(function()
+    if fullyNVRunning then return end
+    if not fullySelectedApart then
+        setFullyNVStatus("❌ Pilih apart casino dulu!", C.red)
+        return
+    end
+    if not fullySelectedPot then
+        setFullyNVStatus("❌ Pilih pot kanan/kiri dulu!", C.red)
+        return
+    end
+    fullyBuyAmount = getBuyAmount()
+    fullyNVRunning = true
+    startBtn.Visible = false
+    stopBtn.Visible = true
+    setFullyNVStatus("✅ FULLY NV START", C.green)
+    task.spawn(fullyNVLoop)
+end)
+
+stopBtn.MouseButton1Click:Connect(function()
+    fullyNVRunning = false
+    startBtn.Visible = true
+    stopBtn.Visible = false
+    setFullyNVStatus("⏹️ FULLY NV STOP", C.orange)
+end)
+
+-- ============================================================
+-- DRAG SYSTEM
+-- ============================================================
+do
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
+    topBar.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = i.Position
+            startPos = main.Position
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - dragStart
+            main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+end
+
+-- ============================================================
 -- STARTUP
 -- ============================================================
 switchTab("FARM")
 task.wait(0.3)
-notify("ELIXIR 3.5", "Script berhasil diload!", "success")
+notify("ELIXIR 3.5", "Script berhasil diload! + FULLY NV", "success")

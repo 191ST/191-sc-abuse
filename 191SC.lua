@@ -1,10 +1,11 @@
 -- ============================================================
--- FULLY NV - LERP MOVEMENT (HALUS, STABIL, TANPA BUG)
+-- FULLY NV - VEHICLE BASED (STABIL, PAKAI KENDARAAN)
 -- ============================================================
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 repeat task.wait() until player.Character
@@ -68,60 +69,94 @@ local targetMS = 5
 local basePlate = nil
 
 -- ============================================================
--- LERP MOVEMENT (GERAKAN BERTAHAP)
+-- FUNGSI VEHICLE TELEPORT (DARI ELIXIR 3.5)
 -- ============================================================
-local function lerpMove(targetPos, steps, delay)
+local function vehicleTeleport(cf)
     local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-
-    local startPos = hrp.Position
-    local diff = targetPos - startPos
-
-    for i = 1, steps do
-        if not fullyRunning then return false end
-        local alpha = i / steps
-        local newPos = startPos + diff * alpha
-        hrp.CFrame = CFrame.new(newPos)
-        task.wait(delay)
-    end
-    hrp.CFrame = CFrame.new(targetPos)
-    return true
+    if not char then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    local seat = humanoid.SeatPart
+    if not seat then return end
+    local vehicle = seat:FindFirstAncestorOfClass("Model")
+    if not vehicle then return end
+    if not vehicle.PrimaryPart then vehicle.PrimaryPart = seat end
+    vehicle:SetPrimaryPartCFrame(cf)
+    task.wait(0.3)
+    seat.Throttle = 1
+    task.wait(0.3)
+    seat.Throttle = 0
 end
 
 -- ============================================================
--- KETARIK DENGAN LERP (TURUN 7, GERAK, NAIK 7)
+-- BASE PLATE 
 -- ============================================================
-local function ketarikKeTarget(targetPos)
+local function getGroundLevel(pos)
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {player.Character}
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
+    local rayDir = Vector3.new(0, -50, 0)
+    local result = workspace:Raycast(rayOrigin, rayDir, params)
+    if result then return result.Position.Y end
+    return pos.Y - 5
+end
+
+local function createBasePlate()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return false end
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate"
+    basePlate.Size = Vector3.new(1000, 1, 1000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.3
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.1
+    selection.Transparency = 0.5
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
 
-    -- 1. TURUN 7 STUDS (langsung, dengan CFrame)
-    local currentPos = hrp.Position
-    hrp.CFrame = CFrame.new(currentPos.X, currentPos.Y - 7, currentPos.Z)
-    task.wait(0.05)
+local function createBasePlateRaksasa()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate_Raksasa"
+    basePlate.Size = Vector3.new(5000, 1, 5000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.2
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.05
+    selection.Transparency = 0.7
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
 
-    -- 2. GERAKAN BERTAHAP KE TARGET (dengan posisi Y tetap bawah)
-    local targetBelow = Vector3.new(targetPos.X, hrp.Position.Y, targetPos.Z)
-    local distance = (targetBelow - hrp.Position).Magnitude
-    local steps = math.max(math.floor(distance / 3), 5) -- minimal 5 langkah
-    local delay = 0.1 -- jeda antar langkah (bisa diatur, semakin kecil semakin cepat)
-
-    for i = 1, steps do
-        if not fullyRunning then return false end
-        local alpha = i / steps
-        local newPos = hrp.Position + (targetBelow - hrp.Position) * alpha
-        hrp.CFrame = CFrame.new(newPos)
-        task.wait(delay)
+local function removeBasePlate()
+    if basePlate and basePlate.Parent then
+        basePlate:Destroy()
+        basePlate = nil
     end
-    hrp.CFrame = CFrame.new(targetBelow)
-    task.wait(0.05)
-
-    -- 3. NAIK 7 STUDS
-    hrp.CFrame = CFrame.new(targetPos)
-    return true
 end
 
 -- ============================================================
@@ -201,6 +236,9 @@ local function jualSemua()
     end
 end
 
+-- ============================================================
+-- MAIN LOOP (PAKAI VEHICLE TELEPORT)
+-- ============================================================
 local function getStagePos(stage, pot)
     if stage.pos then return stage.pos
     elseif stage[pot] then return stage[pot]
@@ -208,7 +246,6 @@ local function getStagePos(stage, pot)
     return nil
 end
 
--- MAIN LOOP
 local function jalankanFully(statusFunc)
     fullyRunning = true
     local apartId = selectedApart
@@ -224,14 +261,16 @@ local function jalankanFully(statusFunc)
     end
 
     while fullyRunning do
-        statusFunc("🏃 Ketarik ke NPC Buy...")
-        ketarikKeTarget(npcPos)
+        statusFunc("🏃 Teleport ke NPC Buy...")
+        vehicleTeleport(CFrame.new(npcPos))
+        task.wait(0.5)
 
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
 
-        statusFunc("🏃 Ketarik ke apart...")
-        ketarikKeTarget(apartPos)
+        statusFunc("🏃 Teleport ke apart...")
+        vehicleTeleport(CFrame.new(apartPos))
+        task.wait(0.5)
 
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
@@ -241,8 +280,9 @@ local function jalankanFully(statusFunc)
                 break
             end
 
-            statusFunc("📍 Stage " .. i .. " - Ketarik...")
-            ketarikKeTarget(targetPos)
+            statusFunc("📍 Stage " .. i .. " - Teleport...")
+            vehicleTeleport(CFrame.new(targetPos))
+            task.wait(0.5)
 
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
@@ -257,8 +297,9 @@ local function jalankanFully(statusFunc)
             end
         end
 
-        statusFunc("🏃 Ketarik ke NPC Jual...")
-        ketarikKeTarget(npcPos)
+        statusFunc("🏃 Teleport ke NPC Jual...")
+        vehicleTeleport(CFrame.new(npcPos))
+        task.wait(0.5)
 
         statusFunc("💰 Menjual MS")
         jualSemua()
@@ -269,77 +310,6 @@ local function jalankanFully(statusFunc)
 
     fullyRunning = false
     statusFunc("⏹ Dihentikan")
-end
-
--- ============================================================
--- BASE PLATE (OPSIONAL)
--- ============================================================
-local function getGroundLevel(pos)
-    local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {player.Character}
-    params.FilterType = Enum.RaycastFilterType.Blacklist
-    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
-    local rayDir = Vector3.new(0, -50, 0)
-    local result = workspace:Raycast(rayOrigin, rayDir, params)
-    if result then return result.Position.Y end
-    return pos.Y - 5
-end
-
-local function createBasePlate()
-    if basePlate and basePlate.Parent then basePlate:Destroy() end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local groundY = getGroundLevel(hrp.Position)
-    local baseY = groundY - 5
-    basePlate = Instance.new("Part")
-    basePlate.Name = "FullyNV_BasePlate"
-    basePlate.Size = Vector3.new(1000, 1, 1000)
-    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
-    basePlate.Anchored = true
-    basePlate.BrickColor = BrickColor.new("Really black")
-    basePlate.Material = Enum.Material.SmoothPlastic
-    basePlate.Transparency = 0.3
-    local selection = Instance.new("SelectionBox")
-    selection.Adornee = basePlate
-    selection.Color3 = Color3.fromRGB(130, 60, 240)
-    selection.LineThickness = 0.1
-    selection.Transparency = 0.5
-    selection.Parent = basePlate
-    basePlate.Parent = workspace
-    return basePlate
-end
-
-local function createBasePlateRaksasa()
-    if basePlate and basePlate.Parent then basePlate:Destroy() end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-    local groundY = getGroundLevel(hrp.Position)
-    local baseY = groundY - 5
-    basePlate = Instance.new("Part")
-    basePlate.Name = "FullyNV_BasePlate_Raksasa"
-    basePlate.Size = Vector3.new(5000, 1, 5000)
-    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
-    basePlate.Anchored = true
-    basePlate.BrickColor = BrickColor.new("Really black")
-    basePlate.Material = Enum.Material.SmoothPlastic
-    basePlate.Transparency = 0.2
-    local selection = Instance.new("SelectionBox")
-    selection.Adornee = basePlate
-    selection.Color3 = Color3.fromRGB(130, 60, 240)
-    selection.LineThickness = 0.05
-    selection.Transparency = 0.7
-    selection.Parent = basePlate
-    basePlate.Parent = workspace
-    return basePlate
-end
-
-local function removeBasePlate()
-    if basePlate and basePlate.Parent then
-        basePlate:Destroy()
-        basePlate = nil
-    end
 end
 
 -- ============================================================
@@ -367,7 +337,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - LERP MOVE"
+titleText.Text = "FULLY NV - VEHICLE TP"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -404,10 +374,10 @@ local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "LERP MOVEMENT (GERAK BERTAHAP)\nTURUN 7 → GERAK HALUS → NAIK 7"
+infoLbl.Text = "VEHICLE TELEPORT (PASTI WORK)"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
-infoLbl.TextSize = 11
+infoLbl.TextSize = 12
 infoLbl.TextWrapped = true
 infoLbl.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -627,7 +597,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (LERP Move)...")
+    setStatus("🚀 Memulai Fully NV (Vehicle TP)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -638,4 +608,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV LERP MOVEMENT SIAP! Gerak halus, tidak ada bug kedut.")
+print("✅ FULLY NV VEHICLE TP SIAP (PASTI WORK!)")

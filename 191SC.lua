@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TWEEN SMOOTH + GUI DRAGABLE (SPEED 1.5)
+-- FULLY NV - TWEEN BERTAHAP (SPEED 0.5, ANTI BRINGBACK)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -65,33 +65,12 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local SPEED = 1.5
+local SPEED = 0.5
 
 -- ============================================================
--- TURUN/NAIK HALUS (4 LANGKAH)
+-- TWEEN BERTAHAP (ANTI BRINGBACK)
 -- ============================================================
-local function turunHalus(studs)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    for i = 1, 4 do
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs/4, 0)
-        task.wait(0.05)
-    end
-end
-
-local function naikHalus(studs)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    for i = 1, 4 do
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, studs/4, 0)
-        task.wait(0.05)
-    end
-end
-
--- ============================================================
--- TWEEN KE TARGET
--- ============================================================
-local function tweenKeTarget(targetPos)
+local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
@@ -103,12 +82,17 @@ local function tweenKeTarget(targetPos)
         hum.AutoRotate = false
     end
 
-    turunHalus(6)
+    -- TURUN 6 STUDS (HALUS)
+    local downTween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+        CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
+    })
+    downTween:Play()
+    downTween.Completed:Wait()
+    task.wait(0.05)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
-        naikHalus(6)
         if hum then
             hum.PlatformStand = oldPlatform or false
             hum.AutoRotate = true
@@ -116,13 +100,37 @@ local function tweenKeTarget(targetPos)
         return true
     end
 
-    local duration = distance / SPEED
-    duration = math.max(duration, 1)
-    local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = CFrame.new(targetPos) })
-    tween:Play()
-    tween.Completed:Wait()
+    -- BAGI PERJALANAN MENJADI CHUNK (MAKS 15 STUDS PER CHUNK)
+    local maxChunk = 15
+    local chunks = math.max(math.ceil(distance / maxChunk), 1)
+    local chunkDistance = distance / chunks
+    local chunkDuration = chunkDistance / SPEED
+    local startPos = hrp.Position
 
-    naikHalus(6)
+    for i = 1, chunks do
+        local targetChunk = startPos + (targetPos - startPos) * (i / chunks)
+        local tween = TweenService:Create(hrp, TweenInfo.new(chunkDuration, Enum.EasingStyle.Linear), {
+            CFrame = CFrame.new(targetChunk)
+        })
+        tween:Play()
+        tween.Completed:Wait()
+        task.wait(0.05)
+        
+        if not fullyRunning then
+            if hum then
+                hum.PlatformStand = oldPlatform or false
+                hum.AutoRotate = true
+            end
+            return false
+        end
+    end
+
+    -- NAIK 6 STUDS (HALUS)
+    local upTween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(targetPos)
+    })
+    upTween:Play()
+    upTween.Completed:Wait()
 
     if hum then
         hum.PlatformStand = oldPlatform or false
@@ -132,20 +140,46 @@ local function tweenKeTarget(targetPos)
 end
 
 -- ============================================================
+-- TURUN/NAIK CEPAT UNTUK COOK TIMING
+-- ============================================================
+local function blinkTurun()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local tween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+            CFrame = hrp.CFrame * CFrame.new(0, -6, 0)
+        })
+        tween:Play()
+        tween.Completed:Wait()
+    end
+end
+
+local function blinkNaik()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local tween = TweenService:Create(hrp, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {
+            CFrame = hrp.CFrame * CFrame.new(0, 6, 0)
+        })
+        tween:Play()
+        tween.Completed:Wait()
+    end
+end
+
+-- ============================================================
 -- COOK TIMING
 -- ============================================================
 local function cookWithTiming()
     if not fullyRunning then return false end
     
+    -- WATER
     if equip("Water") then
-        naikHalus(6)
+        blinkNaik()
         holdE(0.7)
         local startTime = tick()
         local remaining = 20
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                turunHalus(6)
+                blinkTurun()
                 break
             end
             task.wait(0.1)
@@ -155,6 +189,7 @@ local function cookWithTiming()
         return false
     end
     
+    -- SUGAR
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -162,6 +197,7 @@ local function cookWithTiming()
         return false
     end
     
+    -- GELATIN
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -169,20 +205,23 @@ local function cookWithTiming()
         return false
     end
     
-    naikHalus(6)
+    -- NAIK SETELAH GELATIN
+    blinkNaik()
     
+    -- TUNGGU 45 DETIK
     local cookStart = tick()
     local remaining = 45
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            turunHalus(6)
+            blinkTurun()
             break
         end
         task.wait(0.1)
     end
     task.wait(math.max(0, remaining))
     
+    -- EMPTY BAG
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -345,18 +384,18 @@ local function jalankanFully(statusFunc)
     
     while fullyRunning do
         statusFunc("🏃 Beli bahan...")
-        tweenKeTarget(npcPos)
+        ketarikKeTarget(npcPos)
         
         if not beliBahan(targetMS) then break end
         
         statusFunc("🏃 Ke apart...")
-        tweenKeTarget(apartPos)
+        ketarikKeTarget(apartPos)
         
         for i, stagePos in ipairs(stages) do
             if not fullyRunning then break end
             
             statusFunc("📍 Stage " .. i)
-            tweenKeTarget(stagePos)
+            ketarikKeTarget(stagePos)
             spamE(3)
             task.wait(0.3)
             
@@ -369,7 +408,7 @@ local function jalankanFully(statusFunc)
         end
         
         statusFunc("💰 Jual MS...")
-        tweenKeTarget(npcPos)
+        ketarikKeTarget(npcPos)
         jualSemua()
         
         statusFunc("🔄 Ulang loop...")
@@ -381,7 +420,7 @@ local function jalankanFully(statusFunc)
 end
 
 -- ============================================================
--- GUI (DRAGABLE)
+-- GUI
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -389,8 +428,8 @@ screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 500)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
+mainFrame.Size = UDim2.new(0, 400, 0, 550)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -275)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -407,10 +446,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN SMOOTH"
+titleText.Text = "FULLY NV - TWEEN BERTAHAP"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 14
+titleText.TextSize = 13
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -428,7 +467,7 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 400)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
 scroll.ScrollBarThickness = 4
 
 local layout = Instance.new("UIListLayout", scroll)
@@ -553,7 +592,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (smooth tween)")
+    setStatus("🚀 START (Tween bertahap, speed 0.5)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -597,4 +636,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV GUI SIAP! Speed 1.5, turun/naik halus")
+print("✅ FULLY NV TWEEN BERTAHAP SIAP! Speed 0.5, chunk 15 studs, anti bringback")

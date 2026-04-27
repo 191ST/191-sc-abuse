@@ -1,12 +1,10 @@
--- ============================================================
--- FULLY NV - VEHICLE BASED (STABIL, PAKAI KENDARAAN)
--- ============================================================
+-- FULLY NV - BODYVELOCITY (STABIL, PELAN, TANPA KENDARAAN)
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 repeat task.wait() until player.Character
 
@@ -14,7 +12,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
--- KORDINAT APART CASINO
 local apartData = {
     [1] = {
         name = "Apart Casino 1",
@@ -68,29 +65,16 @@ local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
 
--- ============================================================
--- FUNGSI VEHICLE TELEPORT (DARI ELIXIR 3.5)
--- ============================================================
-local function vehicleTeleport(cf)
+local function setCharacterCollide(state)
     local char = player.Character
     if not char then return end
-    local humanoid = char:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    local seat = humanoid.SeatPart
-    if not seat then return end
-    local vehicle = seat:FindFirstAncestorOfClass("Model")
-    if not vehicle then return end
-    if not vehicle.PrimaryPart then vehicle.PrimaryPart = seat end
-    vehicle:SetPrimaryPartCFrame(cf)
-    task.wait(0.3)
-    seat.Throttle = 1
-    task.wait(0.3)
-    seat.Throttle = 0
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = state
+        end
+    end
 end
 
--- ============================================================
--- BASE PLATE 
--- ============================================================
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
@@ -159,9 +143,7 @@ local function removeBasePlate()
     end
 end
 
--- ============================================================
--- HELPER (COUNT, EQUIP, COOK, SELL)
--- ============================================================
+-- Helper
 local function countItem(name)
     local total = 0
     for _, v in pairs(player.Backpack:GetChildren()) do
@@ -237,8 +219,57 @@ local function jualSemua()
 end
 
 -- ============================================================
--- MAIN LOOP (PAKAI VEHICLE TELEPORT)
+-- BODY VELOCITY MOVEMENT (SUPER STABIL)
 -- ============================================================
+local function moveToTarget(targetPos, speed)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return false end
+
+    -- Matikan gravitasi dan collision sementara
+    local oldPlatform = hum.PlatformStand
+    hum.PlatformStand = true
+    setCharacterCollide(false)
+
+    -- Posisi bawah (Y - 7)
+    local bawahY = hrp.Position.Y - 7
+    hrp.CFrame = CFrame.new(hrp.Position.X, bawahY, hrp.Position.Z)
+    task.wait(0.1)
+
+    -- Buat BodyVelocity
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(100000, 0, 100000)
+    bv.Parent = hrp
+
+    local direction = (targetPos - hrp.Position).Unit
+    local distance = (targetPos - hrp.Position).Magnitude
+    bv.Velocity = direction * speed
+
+    -- Tunggu sampai jarak < 3
+    repeat
+        task.wait(0.05)
+        if not fullyRunning then
+            bv:Destroy()
+            hum.PlatformStand = oldPlatform
+            setCharacterCollide(true)
+            return false
+        end
+    until (hrp.Position - targetPos).Magnitude < 3
+
+    bv:Destroy()
+    hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y, targetPos.Z)
+    task.wait(0.1)
+
+    hum.PlatformStand = oldPlatform
+    setCharacterCollide(true)
+    return true
+end
+
+local function ketarikKeTarget(targetPos)
+    return moveToTarget(targetPos, 3) -- Speed 3 studs/detik (sangat pelan)
+end
+
 local function getStagePos(stage, pot)
     if stage.pos then return stage.pos
     elseif stage[pot] then return stage[pot]
@@ -246,6 +277,7 @@ local function getStagePos(stage, pot)
     return nil
 end
 
+-- MAIN LOOP
 local function jalankanFully(statusFunc)
     fullyRunning = true
     local apartId = selectedApart
@@ -261,16 +293,14 @@ local function jalankanFully(statusFunc)
     end
 
     while fullyRunning do
-        statusFunc("🏃 Teleport ke NPC Buy...")
-        vehicleTeleport(CFrame.new(npcPos))
-        task.wait(0.5)
+        statusFunc("🏃 Ketarik ke NPC Buy...")
+        ketarikKeTarget(npcPos)
 
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
 
-        statusFunc("🏃 Teleport ke apart...")
-        vehicleTeleport(CFrame.new(apartPos))
-        task.wait(0.5)
+        statusFunc("🏃 Ketarik ke apart...")
+        ketarikKeTarget(apartPos)
 
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
@@ -280,9 +310,8 @@ local function jalankanFully(statusFunc)
                 break
             end
 
-            statusFunc("📍 Stage " .. i .. " - Teleport...")
-            vehicleTeleport(CFrame.new(targetPos))
-            task.wait(0.5)
+            statusFunc("📍 Stage " .. i .. " - Ketarik...")
+            ketarikKeTarget(targetPos)
 
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
@@ -297,9 +326,8 @@ local function jalankanFully(statusFunc)
             end
         end
 
-        statusFunc("🏃 Teleport ke NPC Jual...")
-        vehicleTeleport(CFrame.new(npcPos))
-        task.wait(0.5)
+        statusFunc("🏃 Ketarik ke NPC Jual...")
+        ketarikKeTarget(npcPos)
 
         statusFunc("💰 Menjual MS")
         jualSemua()
@@ -312,9 +340,7 @@ local function jalankanFully(statusFunc)
     statusFunc("⏹ Dihentikan")
 end
 
--- ============================================================
 -- GUI
--- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
 screenGui.Parent = playerGui
@@ -337,7 +363,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - VEHICLE TP"
+titleText.Text = "FULLY NV - BODY VELOCITY"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -374,10 +400,10 @@ local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "VEHICLE TELEPORT (PASTI WORK)"
+infoLbl.Text = "BODY VELOCITY (SPEED 3)\nTURUN 7 → GERAK STABIL → NAIK 7"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
-infoLbl.TextSize = 12
+infoLbl.TextSize = 11
 infoLbl.TextWrapped = true
 infoLbl.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -597,7 +623,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (Vehicle TP)...")
+    setStatus("🚀 Memulai Fully NV (BodyVelocity, speed 3)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -608,4 +634,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV VEHICLE TP SIAP (PASTI WORK!)")
+print("✅ FULLY NV BODY VELOCITY SIAP! Gerakan stabil, speed 3 studs/detik, tanpa kendaraan.")

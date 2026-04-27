@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - FORCE TWEEN (TARIK) + COOK TIMING PRESISI
+-- FULLY NV - STABIL 0.4 (TANPA PERUBAHAN KECEPATAN)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -13,7 +13,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
--- KORDINAT APART CASINO (SEMUA TAHAP)
 local apartData = {
     [1] = {
         name = "Apart Casino 1",
@@ -65,23 +64,23 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local TWEEN_SPEED = 0.4
+local TWEEN_SPEED = 0.4  -- STABIL, JANGAN DIUBAH
 
 -- ============================================================
--- FUNGSI BLINK TURUN / NAIK
+-- BLINK TURUN / NAIK
 -- ============================================================
-local function blinkTurun()
+local function blinkTurun(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0) end
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0) end
 end
 
-local function blinkNaik()
+local function blinkNaik(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, 6, 0) end
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0) end
 end
 
 -- ============================================================
--- FORCE TWEEN MANUAL (TARIK) + TURUN 6 STUDS
+-- KETARIK STABIL 0.4 (PAKE LOOP DENGAN DELAY KONSTAN)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -109,8 +108,13 @@ local function ketarikKeTarget(targetPos)
         return true
     end
 
-    local steps = math.max(math.floor(distance / TWEEN_SPEED) * 60, 15)
-    steps = math.min(steps, 300)
+    -- HITUNG STEPS BERDASARKAN SPEED 0.4
+    -- Speed 0.4 = 0.4 stud per detik
+    -- Butuh waktu = distance / 0.4
+    -- Steps = waktu * 20 (agar halus)
+    local duration = distance / TWEEN_SPEED
+    local steps = math.max(math.floor(duration * 20), 10)
+    local delay = duration / steps
     local startPos = hrp.Position
 
     for i = 1, steps do
@@ -124,7 +128,7 @@ local function ketarikKeTarget(targetPos)
         local alpha = i / steps
         local newPos = startPos + (targetPos - startPos) * alpha
         hrp.CFrame = CFrame.new(newPos.X, newPos.Y, newPos.Z)
-        task.wait()
+        task.wait(delay)
     end
 
     hrp.CFrame = CFrame.new(targetPos)
@@ -137,7 +141,7 @@ local function ketarikKeTarget(targetPos)
 end
 
 -- ============================================================
--- HELPER FUNCTIONS (EQUIP, HOLD, SPAM, COUNT)
+-- HELPER (EQUIP, HOLD, SPAM, COUNT)
 -- ============================================================
 local function countItem(name)
     local total = 0
@@ -177,24 +181,21 @@ local function spamE(times)
 end
 
 -- ============================================================
--- COOK DENGAN TIMING PRESISI (FINAL)
+-- COOK DENGAN TIMING (SESUAI PERMINTAAN LO)
 -- ============================================================
 local function cookWithTiming()
     if not fullyRunning then return false end
     
-    print("[Cook] Memulai proses memasak...")
-    
     -- WATER
     if equip("Water") then
-        blinkNaik()  -- NAIK 6 STUDS
+        blinkNaik(6)
         holdE(0.7)
         local startTime = tick()
         local remaining = 20
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                blinkTurun()  -- TURUN 6 STUDS 2 DETIK SEBELUM HABIS
-                print("[Cook] Water: turun 2 detik sebelum habis")
+                blinkTurun(6)
                 break
             end
             task.wait(0.1)
@@ -221,8 +222,7 @@ local function cookWithTiming()
     end
     
     -- NAIK SETELAH GELATIN
-    blinkNaik()
-    print("[Cook] Naik setelah Gelatin")
+    blinkNaik(6)
     
     -- TUNGGU 45 DETIK COOK TIME
     local cookStart = tick()
@@ -230,8 +230,7 @@ local function cookWithTiming()
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            blinkTurun()  -- TURUN 6 STUDS 2 DETIK SEBELUM HABIS
-            print("[Cook] Turun 2 detik sebelum cook time habis")
+            blinkTurun(6)
             break
         end
         task.wait(0.1)
@@ -246,7 +245,6 @@ local function cookWithTiming()
         return false
     end
     
-    print("[Cook] Selesai memasak")
     return true
 end
 
@@ -276,6 +274,58 @@ local function jualSemua()
             end
         end
     end
+end
+
+-- ============================================================
+-- MAIN LOOP
+-- ============================================================
+local function jalankanFully(statusFunc)
+    fullyRunning = true
+    local stages = apartData[selectedApart]
+    if not stages then
+        statusFunc("❌ Apart tidak ditemukan!")
+        fullyRunning = false
+        return
+    end
+    
+    local apartPos = stages[1]
+    
+    while fullyRunning do
+        statusFunc("🏃 Beli bahan...")
+        ketarikKeTarget(npcPos)
+        
+        if not beliBahan(targetMS) then break end
+        
+        statusFunc("🏃 Ke apart...")
+        ketarikKeTarget(apartPos)
+        
+        for i, stagePos in ipairs(stages) do
+            if not fullyRunning then break end
+            
+            statusFunc("📍 Stage " .. i)
+            ketarikKeTarget(stagePos)
+            spamE(3)
+            task.wait(0.3)
+            
+            -- Cook di stage 5 & 6
+            if i == 5 or i == 6 then
+                statusFunc("🍳 Memasak...")
+                if not cookWithTiming() then break end
+                statusFunc("✅ Selesai masak")
+                task.wait(1)
+            end
+        end
+        
+        statusFunc("💰 Jual MS...")
+        ketarikKeTarget(npcPos)
+        jualSemua()
+        
+        statusFunc("🔄 Ulang loop...")
+        task.wait(1)
+    end
+    
+    fullyRunning = false
+    statusFunc("⏹ Dihentikan")
 end
 
 -- ============================================================
@@ -350,69 +400,6 @@ local function removeBasePlate()
 end
 
 -- ============================================================
--- MAIN LOOP FULLY NV
--- ============================================================
-local function jalankanFully(statusFunc)
-    fullyRunning = true
-    local stages = apartData[selectedApart]
-    if not stages then
-        statusFunc("❌ Apart tidak ditemukan!")
-        fullyRunning = false
-        return
-    end
-    
-    local apartPos = stages[1]
-    
-    while fullyRunning do
-        -- 1. BELI BAHAN
-        statusFunc("🏃 Ketarik ke NPC Buy...")
-        ketarikKeTarget(npcPos)
-        
-        statusFunc("🛒 Beli bahan x" .. targetMS)
-        if not beliBahan(targetMS) then break end
-        
-        -- 2. KETARIK KE APART
-        statusFunc("🏃 Ketarik ke apart...")
-        ketarikKeTarget(apartPos)
-        
-        -- 3. LOOP SEMUA TAHAP
-        for i, stagePos in ipairs(stages) do
-            if not fullyRunning then break end
-            
-            statusFunc("📍 Stage " .. i .. " - Ketarik...")
-            ketarikKeTarget(stagePos)
-            
-            statusFunc("🎯 Stage " .. i .. " - Spam E")
-            spamE(3)
-            task.wait(0.3)
-            
-            -- COOK DI TAHAP YANG DITENTUKAN (misal tahap 5 atau 6)
-            if i == 5 or i == 6 then
-                statusFunc("🍳 Memasak di stage " .. i)
-                local success = cookWithTiming()
-                if not success then break end
-                statusFunc("✅ Masak selesai")
-                task.wait(1)
-            end
-        end
-        
-        -- 4. KETARIK KE NPC JUAL
-        statusFunc("🏃 Ketarik ke NPC Jual...")
-        ketarikKeTarget(npcPos)
-        
-        -- 5. JUAL SEMUA MS
-        statusFunc("💰 Menjual MS")
-        jualSemua()
-        
-        statusFunc("🔄 Loop selesai, ulang...")
-        task.wait(1)
-    end
-    
-    fullyRunning = false
-    statusFunc("⏹ Dihentikan")
-end
-
--- ============================================================
 -- GUI
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
@@ -439,10 +426,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TARIK & TIMING"
+titleText.Text = "FULLY NV - STABIL 0.4"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -557,8 +544,8 @@ local statusTextUI = addLabel(statusCardUI, "Belum dimulai", Color3.fromRGB(145,
 statusTextUI.TextXAlignment = Enum.TextXAlignment.Center
 
 -- Start/Stop
-local btnCardUI = addCard(scroll, 60)
-local startBtn = Instance.new("TextButton", btnCardUI)
+local btnCard = addCard(scroll, 60)
+local startBtn = Instance.new("TextButton", btnCard)
 startBtn.Size = UDim2.new(0.45, -5, 0, 40)
 startBtn.Position = UDim2.new(0.03, 0, 0.5, -20)
 startBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
@@ -568,7 +555,7 @@ startBtn.Font = Enum.Font.GothamBold
 startBtn.TextSize = 14
 Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
-local stopBtn = Instance.new("TextButton", btnCardUI)
+local stopBtn = Instance.new("TextButton", btnCard)
 stopBtn.Size = UDim2.new(0.45, -5, 0, 40)
 stopBtn.Position = UDim2.new(0.52, 0, 0.5, -20)
 stopBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
@@ -580,55 +567,53 @@ Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 
 local function setStatus(msg)
     statusTextUI.Text = msg
-    print("[FullyNV] " .. msg)
+    print(msg)
 end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV...")
-    task.spawn(function()
-        jalankanFully(setStatus)
-    end)
+    setStatus("🚀 START")
+    task.spawn(function() jalankanFully(setStatus) end)
 end)
 
 stopBtn.MouseButton1Click:Connect(function()
     fullyRunning = false
-    setStatus("⏹ Dihentikan")
+    setStatus("⏹ STOP")
 end)
 
--- Base Plate (Opsional)
-local baseCardUI = addCard(scroll, 60)
-local createBase = Instance.new("TextButton", baseCardUI)
-createBase.Size = UDim2.new(0.3, -5, 0, 35)
-createBase.Position = UDim2.new(0.02, 0, 0.5, -17.5)
-createBase.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
-createBase.Text = "CREATE BASE"
-createBase.TextColor3 = Color3.new(1,1,1)
-createBase.Font = Enum.Font.GothamBold
-createBase.TextSize = 11
-Instance.new("UICorner", createBase).CornerRadius = UDim.new(0, 6)
-createBase.MouseButton1Click:Connect(createBasePlate)
+-- Base Plate (opsional)
+local baseCard = addCard(scroll, 60)
+local createBaseBtn = Instance.new("TextButton", baseCard)
+createBaseBtn.Size = UDim2.new(0.3, -5, 0, 35)
+createBaseBtn.Position = UDim2.new(0.02, 0, 0.5, -17.5)
+createBaseBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+createBaseBtn.Text = "CREATE BASE"
+createBaseBtn.TextColor3 = Color3.new(1,1,1)
+createBaseBtn.Font = Enum.Font.GothamBold
+createBaseBtn.TextSize = 11
+Instance.new("UICorner", createBaseBtn).CornerRadius = UDim.new(0, 6)
+createBaseBtn.MouseButton1Click:Connect(createBasePlate)
 
-local createRaksasa = Instance.new("TextButton", baseCardUI)
-createRaksasa.Size = UDim2.new(0.3, -5, 0, 35)
-createRaksasa.Position = UDim2.new(0.35, 0, 0.5, -17.5)
-createRaksasa.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-createRaksasa.Text = "RAKSASA"
-createRaksasa.TextColor3 = Color3.new(1,1,1)
-createRaksasa.Font = Enum.Font.GothamBold
-createRaksasa.TextSize = 11
-Instance.new("UICorner", createRaksasa).CornerRadius = UDim.new(0, 6)
-createRaksasa.MouseButton1Click:Connect(createBasePlateRaksasa)
+local raksasaBtn = Instance.new("TextButton", baseCard)
+raksasaBtn.Size = UDim2.new(0.3, -5, 0, 35)
+raksasaBtn.Position = UDim2.new(0.35, 0, 0.5, -17.5)
+raksasaBtn.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+raksasaBtn.Text = "RAKSASA"
+raksasaBtn.TextColor3 = Color3.new(1,1,1)
+raksasaBtn.Font = Enum.Font.GothamBold
+raksasaBtn.TextSize = 11
+Instance.new("UICorner", raksasaBtn).CornerRadius = UDim.new(0, 6)
+raksasaBtn.MouseButton1Click:Connect(createBasePlateRaksasa)
 
-local removeBase = Instance.new("TextButton", baseCardUI)
-removeBase.Size = UDim2.new(0.3, -5, 0, 35)
-removeBase.Position = UDim2.new(0.68, 0, 0.5, -17.5)
-removeBase.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
-removeBase.Text = "REMOVE"
-removeBase.TextColor3 = Color3.new(1,1,1)
-removeBase.Font = Enum.Font.GothamBold
-removeBase.TextSize = 11
-Instance.new("UICorner", removeBase).CornerRadius = UDim.new(0, 6)
-removeBase.MouseButton1Click:Connect(removeBasePlate)
+local removeBaseBtn = Instance.new("TextButton", baseCard)
+removeBaseBtn.Size = UDim2.new(0.3, -5, 0, 35)
+removeBaseBtn.Position = UDim2.new(0.68, 0, 0.5, -17.5)
+removeBaseBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
+removeBaseBtn.Text = "REMOVE"
+removeBaseBtn.TextColor3 = Color3.new(1,1,1)
+removeBaseBtn.Font = Enum.Font.GothamBold
+removeBaseBtn.TextSize = 11
+Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
+removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV FINAL SIAP! TWEEN SPEED " .. TWEEN_SPEED)
+print("✅ FULLY NV STABIL 0.4 SIAP")

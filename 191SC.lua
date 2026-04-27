@@ -1,28 +1,308 @@
--- ============================================================
--- TELEPORT RECORDER + GUI DRAGABLE
--- ============================================================
+-- FULLY NV - TWEEN SIMPEL (cuma gerak, tanpa turun/naik)
 
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
-local replicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Variabel rekaman
-local recordedPrompts = {}
-local recordedRemotes = {}
-local teleportHistory = {}
+repeat task.wait() until player.Character
+
+local playerGui = player:WaitForChild("PlayerGui")
+local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
+local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
+
+local apartData = {
+    [1] = { name = "Apart Casino 1", stages = {
+            { pos = Vector3.new(1196.51, 3.71, -241.13), isCook = false },
+            { pos = Vector3.new(1199.75, 3.71, -238.12), isCook = false },
+            { pos = Vector3.new(1199.74, 6.59, -233.05), isCook = false },
+            { pos = Vector3.new(1199.66, 6.59, -227.75), isCook = false },
+            { pos = Vector3.new(1199.66, 6.59, -227.75), isCook = false },
+            { kanan = Vector3.new(1199.91, 7.56, -219.75), kiri = Vector3.new(1199.75, 7.45, -217.66), isCook = true },
+            { kanan = Vector3.new(1199.87, 15.96, -215.33), kiri = Vector3.new(1199.38, 15.96, -220.53), isCook = false },
+        }
+    },
+    [2] = { name = "Apart Casino 2", stages = {
+            { pos = Vector3.new(1186.34, 3.71, -242.92), isCook = false },
+            { pos = Vector3.new(1183.00, 6.59, -233.78), isCook = false },
+            { pos = Vector3.new(1182.70, 7.32, -229.73), isCook = false },
+            { pos = Vector3.new(1182.75, 6.59, -224.78), isCook = false },
+            { kanan = Vector3.new(1183.43, 15.96, -229.66), kiri = Vector3.new(1183.22, 15.96, -225.63), isCook = false },
+        }
+    },
+    [3] = { name = "Apart Casino 3", stages = {
+            { pos = Vector3.new(1196.17, 3.71, -205.72), isCook = false },
+            { pos = Vector3.new(1199.76, 3.71, -196.51), isCook = false },
+            { pos = Vector3.new(1199.69, 6.59, -191.16), isCook = false },
+            { pos = Vector3.new(1199.42, 6.59, -185.27), isCook = false },
+            { kanan = Vector3.new(1199.42, 6.59, -185.27), kiri = Vector3.new(1199.95, 7.07, -177.69), isCook = true },
+            { kanan = Vector3.new(1199.55, 15.96, -181.89), kiri = Vector3.new(1199.46, 15.96, -177.81), isCook = false },
+        }
+    },
+    [4] = { name = "Apart Casino 4", stages = {
+            { pos = Vector3.new(1187.70, 3.71, -209.73), isCook = false },
+            { pos = Vector3.new(1182.27, 3.71, -204.65), isCook = false },
+            { pos = Vector3.new(1182.23, 3.71, -198.77), isCook = false },
+            { pos = Vector3.new(1183.06, 6.59, -193.92), isCook = false },
+            { kanan = Vector3.new(1182.60, 7.56, -191.29), kiri = Vector3.new(1183.36, 6.72, -187.25), isCook = false },
+            { kanan = Vector3.new(1183.24, 15.96, -191.25), kiri = Vector3.new(1183.08, 15.96, -187.36), isCook = false },
+        }
+    }
+}
+
+local fullyRunning = false
+local selectedApart = 1
+local selectedPot = "kanan"
+local targetMS = 5
+local basePlate = nil
+
+-- SPEED (GANTI INI JADI 0.5 KALO KEPENCENGAN)
+local TWEEN_SPEED = 1.0  
+
+local function getGroundLevel(pos)
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {player.Character}
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    local rayOrigin = Vector3.new(pos.X, pos.Y + 20, pos.Z)
+    local rayDir = Vector3.new(0, -50, 0)
+    local result = workspace:Raycast(rayOrigin, rayDir, params)
+    if result then return result.Position.Y end
+    return pos.Y - 5
+end
+
+local function createBasePlate()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate"
+    basePlate.Size = Vector3.new(1000, 1, 1000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.3
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.1
+    selection.Transparency = 0.5
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
+
+local function createBasePlateRaksasa()
+    if basePlate and basePlate.Parent then basePlate:Destroy() end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local groundY = getGroundLevel(hrp.Position)
+    local baseY = groundY - 5
+    basePlate = Instance.new("Part")
+    basePlate.Name = "FullyNV_BasePlate_Raksasa"
+    basePlate.Size = Vector3.new(5000, 1, 5000)
+    basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
+    basePlate.Anchored = true
+    basePlate.BrickColor = BrickColor.new("Really black")
+    basePlate.Material = Enum.Material.SmoothPlastic
+    basePlate.Transparency = 0.2
+    local selection = Instance.new("SelectionBox")
+    selection.Adornee = basePlate
+    selection.Color3 = Color3.fromRGB(130, 60, 240)
+    selection.LineThickness = 0.05
+    selection.Transparency = 0.7
+    selection.Parent = basePlate
+    basePlate.Parent = workspace
+    return basePlate
+end
+
+local function removeBasePlate()
+    if basePlate and basePlate.Parent then
+        basePlate:Destroy()
+        basePlate = nil
+    end
+end
+
+-- HELPER
+local function countItem(name)
+    local total = 0
+    for _, v in pairs(player.Backpack:GetChildren()) do
+        if v.Name == name then total = total + 1 end
+    end
+    for _, v in pairs(player.Character:GetChildren()) do
+        if v:IsA("Tool") and v.Name == name then total = total + 1 end
+    end
+    return total
+end
+
+local function equip(name)
+    local char = player.Character
+    local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
+    if tool then
+        char.Humanoid:EquipTool(tool)
+        task.wait(0.3)
+        return true
+    end
+    return false
+end
+
+local function holdE(duration)
+    vim:SendKeyEvent(true, "E", false, game)
+    task.wait(duration or 0.7)
+    vim:SendKeyEvent(false, "E", false, game)
+end
+
+local function spamE(times)
+    for i = 1, times do
+        vim:SendKeyEvent(true, "E", false, game)
+        task.wait(0.1)
+        vim:SendKeyEvent(false, "E", false, game)
+        task.wait(0.05)
+    end
+end
+
+local function cook()
+    local steps = {
+        { name = "Water", time = 20 },
+        { name = "Sugar Block Bag", time = 1 },
+        { name = "Gelatin", time = 1 },
+        { name = "Empty Bag", time = 45 }
+    }
+    for _, step in ipairs(steps) do
+        if not fullyRunning then return false end
+        if equip(step.name) then
+            holdE(0.7)
+            if step.time then task.wait(step.time) end
+        end
+    end
+    return true
+end
+
+local function beliBahan(jumlah)
+    for i = 1, jumlah do
+        if not fullyRunning then return false end
+        buyRemote:FireServer("Water") task.wait(0.35)
+        buyRemote:FireServer("Sugar Block Bag") task.wait(0.35)
+        buyRemote:FireServer("Gelatin") task.wait(0.35)
+        buyRemote:FireServer("Empty Bag") task.wait(0.45)
+    end
+    return true
+end
+
+local function jualSemua()
+    local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
+    for _, bag in pairs(bags) do
+        while countItem(bag) > 0 and fullyRunning do
+            if equip(bag) then holdE(0.7) task.wait(0.5) else break end
+        end
+    end
+end
 
 -- ============================================================
--- GUI DRAGABLE
+-- TWEEN KETARIK (HANYA GERAK, TANPA TURUN/NAIK)
+-- ============================================================
+local function ketarikKeTarget(targetPos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+
+    local distance = (targetPos - hrp.Position).Magnitude
+    if distance < 2 then return true end
+
+    local duration = distance / TWEEN_SPEED
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
+    tween:Play()
+    tween.Completed:Wait()
+    return true
+end
+
+local function getStagePos(stage, pot)
+    if stage.pos then return stage.pos
+    elseif stage[pot] then return stage[pot]
+    end
+    return nil
+end
+
+-- MAIN LOOP
+local function jalankanFully(statusFunc)
+    fullyRunning = true
+    local apartId = selectedApart
+    local pot = selectedPot
+    local stages = apartData[apartId].stages
+    local target = targetMS
+
+    local apartPos = getStagePos(stages[1], pot)
+    if not apartPos then
+        statusFunc("❌ Gagal dapat posisi apart!")
+        fullyRunning = false
+        return
+    end
+
+    while fullyRunning do
+        statusFunc("🏃 Ketarik ke NPC Buy...")
+        ketarikKeTarget(npcPos)
+
+        statusFunc("🛒 Beli bahan x" .. target)
+        if not beliBahan(target) then break end
+
+        statusFunc("🏃 Ketarik ke apart...")
+        ketarikKeTarget(apartPos)
+
+        for i, stage in ipairs(stages) do
+            if not fullyRunning then break end
+            local targetPos = getStagePos(stage, pot)
+            if not targetPos then
+                statusFunc("❌ Stage " .. i .. " tidak ditemukan")
+                break
+            end
+
+            statusFunc("📍 Stage " .. i .. " - Ketarik...")
+            ketarikKeTarget(targetPos)
+
+            statusFunc("🎯 Stage " .. i .. " - Spam E")
+            spamE(3)
+            task.wait(0.3)
+
+            if stage.isCook then
+                statusFunc("🍳 Memasak di stage " .. i)
+                local success = cook()
+                if not success then break end
+                statusFunc("✅ Masak selesai")
+                task.wait(1)
+            end
+        end
+
+        statusFunc("🏃 Ketarik ke NPC Jual...")
+        ketarikKeTarget(npcPos)
+
+        statusFunc("💰 Menjual MS")
+        jualSemua()
+
+        statusFunc("🔄 Loop selesai, ulang...")
+        task.wait(1)
+    end
+
+    fullyRunning = false
+    statusFunc("⏹ Dihentikan")
+end
+
+-- ============================================================
+-- GUI (DISEDERHANAKAN, PASTI MUNCUL)
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "TeleportRecorder"
+screenGui.Name = "FullyNV_GUI"
 screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 500, 0, 600)
-mainFrame.Position = UDim2.new(0.5, -250, 0.5, -300)
+mainFrame.Size = UDim2.new(0, 400, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -30,17 +310,17 @@ mainFrame.Active = true
 mainFrame.Draggable = true
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
--- Title bar (buat drag)
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
 titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
 Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "🎯 TELEPORT RECORDER (Drag me)"
+titleText.Text = "FULLY NV - TWEEN SIMPEL"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -55,241 +335,230 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 14
 closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
-closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() fullyRunning = false end)
 
--- Scroll area
 local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
 scroll.ScrollBarThickness = 4
 
-local layout = Instance.new("UIListLayout", scroll)
-layout.Padding = UDim.new(0, 10)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
+local layoutList = Instance.new("UIListLayout", scroll)
+layoutList.Padding = UDim.new(0, 10)
+layoutList.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ============================================================
--- STATUS
--- ============================================================
-local statusCard = Instance.new("Frame", scroll)
-statusCard.Size = UDim2.new(1, 0, 0, 50)
-statusCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-Instance.new("UICorner", statusCard).CornerRadius = UDim.new(0, 8)
+local function addCard(parent, h)
+    local c = Instance.new("Frame", parent)
+    c.Size = UDim2.new(1, 0, 0, h or 40)
+    c.BackgroundColor3 = Color3.fromRGB(30, 28, 45)
+    Instance.new("UICorner", c).CornerRadius = UDim.new(0, 8)
+    return c
+end
 
-local statusText = Instance.new("TextLabel", statusCard)
-statusText.Size = UDim2.new(1, -10, 1, 0)
-statusText.Position = UDim2.new(0, 5, 0, 0)
-statusText.BackgroundTransparency = 1
-statusText.Text = "Belum ada aktivitas. Pergi ke stasiun dan interact (E)."
-statusText.TextColor3 = Color3.fromRGB(145, 138, 175)
-statusText.Font = Enum.Font.Gotham
-statusText.TextSize = 11
-statusText.TextWrapped = true
+local function addLabel(parent, text, color, size)
+    local l = Instance.new("TextLabel", parent)
+    l.Size = UDim2.new(1, -10, 1, 0)
+    l.Position = UDim2.new(0, 5, 0, 0)
+    l.BackgroundTransparency = 1
+    l.Text = text
+    l.TextColor3 = color or Color3.fromRGB(220, 215, 245)
+    l.Font = Enum.Font.Gotham
+    l.TextSize = size or 11
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.TextWrapped = true
+    return l
+end
 
--- ============================================================
--- LIST PROMPT TEREKAM
--- ============================================================
-local promptListCard = Instance.new("Frame", scroll)
-promptListCard.Size = UDim2.new(1, 0, 0, 200)
-promptListCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-Instance.new("UICorner", promptListCard).CornerRadius = UDim.new(0, 8)
+local function addButton(parent, text, color, callback)
+    local b = Instance.new("TextButton", parent)
+    b.Size = UDim2.new(0.9, 0, 0, 36)
+    b.Position = UDim2.new(0.05, 0, 0.5, -18)
+    b.BackgroundColor3 = color or Color3.fromRGB(55, 200, 110)
+    b.Text = text
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    b.MouseButton1Click:Connect(callback)
+    return b
+end
 
-local promptListTitle = Instance.new("TextLabel", promptListCard)
-promptListTitle.Size = UDim2.new(1, -10, 0, 20)
-promptListTitle.Position = UDim2.new(0, 5, 0, 5)
-promptListTitle.BackgroundTransparency = 1
-promptListTitle.Text = "📌 PROMPT YANG DI-INTERACT"
-promptListTitle.TextColor3 = Color3.fromRGB(220, 215, 245)
-promptListTitle.Font = Enum.Font.GothamBold
-promptListTitle.TextSize = 12
+-- Target MS
+local targetCard = addCard(scroll, 70)
+addLabel(targetCard, "Target MS per loop")
+local targetVal = Instance.new("TextLabel", targetCard)
+targetVal.Size = UDim2.new(0, 50, 0, 35)
+targetVal.Position = UDim2.new(0.5, -25, 0, 30)
+targetVal.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+targetVal.Text = "5"
+targetVal.TextColor3 = Color3.new(1,1,1)
+targetVal.Font = Enum.Font.GothamBold
+targetVal.TextSize = 14
+Instance.new("UICorner", targetVal).CornerRadius = UDim.new(0, 6)
 
-local promptScroll = Instance.new("ScrollingFrame", promptListCard)
-promptScroll.Size = UDim2.new(1, -10, 1, -25)
-promptScroll.Position = UDim2.new(0, 5, 0, 25)
-promptScroll.BackgroundTransparency = 1
-promptScroll.CanvasSize = UDim2.new(0, 0, 0, 400)
-promptScroll.ScrollBarThickness = 3
+local minusBtn = Instance.new("TextButton", targetCard)
+minusBtn.Size = UDim2.new(0, 35, 0, 35)
+minusBtn.Position = UDim2.new(0, 10, 0, 30)
+minusBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+minusBtn.Text = "-"
+minusBtn.TextColor3 = Color3.new(1,1,1)
+minusBtn.Font = Enum.Font.GothamBold
+minusBtn.TextSize = 18
+Instance.new("UICorner", minusBtn).CornerRadius = UDim.new(0, 6)
+minusBtn.MouseButton1Click:Connect(function()
+    targetMS = math.max(1, targetMS - 1)
+    targetVal.Text = tostring(targetMS)
+end)
 
-local promptLayout = Instance.new("UIListLayout", promptScroll)
-promptLayout.Padding = UDim.new(0, 4)
-promptLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local plusBtn = Instance.new("TextButton", targetCard)
+plusBtn.Size = UDim2.new(0, 35, 0, 35)
+plusBtn.Position = UDim2.new(1, -45, 0, 30)
+plusBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+plusBtn.Text = "+"
+plusBtn.TextColor3 = Color3.new(1,1,1)
+plusBtn.Font = Enum.Font.GothamBold
+plusBtn.TextSize = 18
+Instance.new("UICorner", plusBtn).CornerRadius = UDim.new(0, 6)
+plusBtn.MouseButton1Click:Connect(function()
+    targetMS = math.min(50, targetMS + 1)
+    targetVal.Text = tostring(targetMS)
+end)
 
--- ============================================================
--- LIST REMOTE YANG TERPANGGIL
--- ============================================================
-local remoteListCard = Instance.new("Frame", scroll)
-remoteListCard.Size = UDim2.new(1, 0, 0, 200)
-remoteListCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-Instance.new("UICorner", remoteListCard).CornerRadius = UDim.new(0, 8)
-
-local remoteListTitle = Instance.new("TextLabel", remoteListCard)
-remoteListTitle.Size = UDim2.new(1, -10, 0, 20)
-remoteListTitle.Position = UDim2.new(0, 5, 0, 5)
-remoteListTitle.BackgroundTransparency = 1
-remoteListTitle.Text = "🔁 REMOTE EVENT YANG TERPANGGIL"
-remoteListTitle.TextColor3 = Color3.fromRGB(220, 215, 245)
-remoteListTitle.Font = Enum.Font.GothamBold
-remoteListTitle.TextSize = 12
-
-local remoteScroll = Instance.new("ScrollingFrame", remoteListCard)
-remoteScroll.Size = UDim2.new(1, -10, 1, -25)
-remoteScroll.Position = UDim2.new(0, 5, 0, 25)
-remoteScroll.BackgroundTransparency = 1
-remoteScroll.CanvasSize = UDim2.new(0, 0, 0, 400)
-remoteScroll.ScrollBarThickness = 3
-
-local remoteLayout = Instance.new("UIListLayout", remoteScroll)
-remoteLayout.Padding = UDim.new(0, 4)
-remoteLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- ============================================================
--- LIST PERUBAHAN POSISI (TELEPORT)
--- ============================================================
-local tpListCard = Instance.new("Frame", scroll)
-tpListCard.Size = UDim2.new(1, 0, 0, 200)
-tpListCard.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-Instance.new("UICorner", tpListCard).CornerRadius = UDim.new(0, 8)
-
-local tpListTitle = Instance.new("TextLabel", tpListCard)
-tpListTitle.Size = UDim2.new(1, -10, 0, 20)
-tpListTitle.Position = UDim2.new(0, 5, 0, 5)
-tpListTitle.BackgroundTransparency = 1
-tpListTitle.Text = "📍 TELEPORT YANG TERJADI"
-tpListTitle.TextColor3 = Color3.fromRGB(220, 215, 245)
-tpListTitle.Font = Enum.Font.GothamBold
-tpListTitle.TextSize = 12
-
-local tpScroll = Instance.new("ScrollingFrame", tpListCard)
-tpScroll.Size = UDim2.new(1, -10, 1, -25)
-tpScroll.Position = UDim2.new(0, 5, 0, 25)
-tpScroll.BackgroundTransparency = 1
-tpScroll.CanvasSize = UDim2.new(0, 0, 0, 400)
-tpScroll.ScrollBarThickness = 3
-
-local tpLayout = Instance.new("UIListLayout", tpScroll)
-tpLayout.Padding = UDim.new(0, 4)
-tpLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
--- ============================================================
--- FUNGSI TAMBAHKAN LOG
--- ============================================================
-local function addLog(container, text, color)
-    local btn = Instance.new("TextButton", container)
-    btn.Size = UDim2.new(1, -10, 0, 24)
-    btn.BackgroundColor3 = color or Color3.fromRGB(30, 28, 45)
-    btn.Text = text
+-- Apart
+local apartCard = addCard(scroll, 60)
+addLabel(apartCard, "Pilih Apart")
+local apartBtns = {}
+for i = 1, 4 do
+    local btn = Instance.new("TextButton", apartCard)
+    btn.Size = UDim2.new(0.22, -5, 0, 35)
+    btn.Position = UDim2.new(0.01 + (i-1)*0.245, 0, 0.5, -17.5)
+    btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(130, 60, 240) or Color3.fromRGB(24, 21, 40)
+    btn.Text = "Apart " .. i
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 10
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.TextWrapped = true
-    btn.AutoButtonColor = false
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-    return btn
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 11
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(function()
+        selectedApart = i
+        for _, b in pairs(apartBtns) do b.BackgroundColor3 = Color3.fromRGB(24, 21, 40) end
+        btn.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+    end)
+    apartBtns[i] = btn
 end
 
--- ============================================================
--- HOOK PROXIMITY PROMPT
--- ============================================================
-local oldTrigger = nil
-if fireproximityprompt then
-    oldTrigger = fireproximityprompt
-    fireproximityprompt = function(prompt)
-        -- Catat prompt yang di-fire
-        local path = prompt.Parent:GetFullName()
-        if not recordedPrompts[path] then
-            recordedPrompts[path] = true
-            addLog(promptScroll, "🔘 " .. path .. " (di-fire)", Color3.fromRGB(75, 45, 100))
-            statusText.Text = "📌 Prompt di-fire: " .. path
-            task.wait(0.05)
-            promptScroll.CanvasSize = UDim2.new(0, 0, 0, promptLayout.AbsoluteContentSize.Y + 10)
-        end
-        return oldTrigger(prompt)
-    end
-end
+-- Pot
+local potCard = addCard(scroll, 60)
+addLabel(potCard, "Pilih Pot")
+local potKanan = Instance.new("TextButton", potCard)
+potKanan.Size = UDim2.new(0.45, -5, 0, 35)
+potKanan.Position = UDim2.new(0.03, 0, 0.5, -17.5)
+potKanan.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+potKanan.Text = "POT KANAN"
+potKanan.TextColor3 = Color3.new(1,1,1)
+potKanan.Font = Enum.Font.GothamBold
+potKanan.TextSize = 12
+Instance.new("UICorner", potKanan).CornerRadius = UDim.new(0, 6)
 
--- Hooking RemoteEvent/FireServer
-local oldFireServer = nil
-if game:GetService("ReplicatedStorage") then
-    local metatable = debug.getmetatable(game:GetService("ReplicatedStorage"))
-    if metatable then
-        oldFireServer = metatable.__index and metatable.__index.fireServer
-        metatable.__index.fireServer = function(remote, ...)
-            local path = remote:GetFullName()
-            if not recordedRemotes[path] then
-                recordedRemotes[path] = true
-                addLog(remoteScroll, "🔁 " .. path, Color3.fromRGB(55, 80, 55))
-                statusText.Text = "🔁 Remote event terpanggil: " .. path
-                task.wait(0.05)
-                remoteScroll.CanvasSize = UDim2.new(0, 0, 0, remoteLayout.AbsoluteContentSize.Y + 10)
-            end
-            return oldFireServer(remote, ...)
-        end
-    end
-end
+local potKiri = Instance.new("TextButton", potCard)
+potKiri.Size = UDim2.new(0.45, -5, 0, 35)
+potKiri.Position = UDim2.new(0.52, 0, 0.5, -17.5)
+potKiri.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
+potKiri.Text = "POT KIRI"
+potKiri.TextColor3 = Color3.new(1,1,1)
+potKiri.Font = Enum.Font.GothamBold
+potKiri.TextSize = 12
+Instance.new("UICorner", potKiri).CornerRadius = UDim.new(0, 6)
 
--- Monitor teleport (perubahan CFrame mendadak)
-local lastPos = nil
-local lastTime = tick()
-game:GetService("RunService").Heartbeat:Connect(function()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local currentPos = hrp.Position
-        if lastPos then
-            local distance = (currentPos - lastPos).Magnitude
-            if distance > 50 and tick() - lastTime > 1 then
-                lastTime = tick()
-                addLog(tpScroll, "📍 Teleport: " .. tostring(currentPos), Color3.fromRGB(75, 55, 100))
-                statusText.Text = "📍 Teleport terdeteksi! Jarak: " .. math.floor(distance) .. " studs"
-                task.wait(0.05)
-                tpScroll.CanvasSize = UDim2.new(0, 0, 0, tpLayout.AbsoluteContentSize.Y + 10)
-            end
-        end
-        lastPos = currentPos
-    end
+potKanan.MouseButton1Click:Connect(function()
+    selectedPot = "kanan"
+    potKanan.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+    potKiri.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
+end)
+potKiri.MouseButton1Click:Connect(function()
+    selectedPot = "kiri"
+    potKiri.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+    potKanan.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
 end)
 
--- ============================================================
--- TOMBOL RESET
--- ============================================================
-local resetCard = Instance.new("Frame", scroll)
-resetCard.Size = UDim2.new(1, 0, 0, 50)
-resetCard.BackgroundColor3 = Color3.fromRGB(30, 28, 45)
-Instance.new("UICorner", resetCard).CornerRadius = UDim.new(0, 8)
+-- Status
+local statusCardUI = addCard(scroll, 50)
+local statusTextUI = addLabel(statusCardUI, "Belum dimulai", Color3.fromRGB(145, 138, 175), 11)
+statusTextUI.TextXAlignment = Enum.TextXAlignment.Center
 
-local resetBtn = Instance.new("TextButton", resetCard)
-resetBtn.Size = UDim2.new(0.5, -10, 0, 36)
-resetBtn.Position = UDim2.new(0.25, 0, 0.5, -18)
-resetBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
-resetBtn.Text = "🗑️ RESET SEMUA REKAMAN"
-resetBtn.TextColor3 = Color3.new(1,1,1)
-resetBtn.Font = Enum.Font.GothamBold
-resetBtn.TextSize = 12
-Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0, 6)
+-- Start/Stop
+local btnCardUI = addCard(scroll, 60)
+local startBtn = Instance.new("TextButton", btnCardUI)
+startBtn.Size = UDim2.new(0.45, -5, 0, 40)
+startBtn.Position = UDim2.new(0.03, 0, 0.5, -20)
+startBtn.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+startBtn.Text = "▶ START"
+startBtn.TextColor3 = Color3.new(1,1,1)
+startBtn.Font = Enum.Font.GothamBold
+startBtn.TextSize = 14
+Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
-resetBtn.MouseButton1Click:Connect(function()
-    -- Clear semua list
-    for _, child in pairs(promptScroll:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    for _, child in pairs(remoteScroll:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    for _, child in pairs(tpScroll:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    recordedPrompts = {}
-    recordedRemotes = {}
-    teleportHistory = {}
-    statusText.Text = "🗑️ Rekaman direset. Sekarang coba interact dengan prompt."
-    promptScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    remoteScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    tpScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+local stopBtn = Instance.new("TextButton", btnCardUI)
+stopBtn.Size = UDim2.new(0.45, -5, 0, 40)
+stopBtn.Position = UDim2.new(0.52, 0, 0.5, -20)
+stopBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
+stopBtn.Text = "■ STOP"
+stopBtn.TextColor3 = Color3.new(1,1,1)
+stopBtn.Font = Enum.Font.GothamBold
+stopBtn.TextSize = 14
+Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
+
+local function setStatus(msg)
+    statusTextUI.Text = msg
+    print(msg)
+end
+
+startBtn.MouseButton1Click:Connect(function()
+    if fullyRunning then return end
+    setStatus("🚀 Memulai Fully NV (speed " .. TWEEN_SPEED .. ")...")
+    task.spawn(function()
+        jalankanFully(setStatus)
+    end)
 end)
 
-print("✅ TELEPORT RECORDER SIAP!")
-print("📌 GUI bisa di-drag dari title bar")
-print("🔍 Pergi ke stasiun, tekan E pada prompt teleport")
-print("📝 Semua aktivitas akan terekam di GUI")
+stopBtn.MouseButton1Click:Connect(function()
+    fullyRunning = false
+    setStatus("⏹ Dihentikan")
+end)
+
+-- Base Plate (opsional)
+local baseCardUI = addCard(scroll, 60)
+local createBase = Instance.new("TextButton", baseCardUI)
+createBase.Size = UDim2.new(0.3, -5, 0, 35)
+createBase.Position = UDim2.new(0.02, 0, 0.5, -17.5)
+createBase.BackgroundColor3 = Color3.fromRGB(55, 200, 110)
+createBase.Text = "CREATE BASE"
+createBase.TextColor3 = Color3.new(1,1,1)
+createBase.Font = Enum.Font.GothamBold
+createBase.TextSize = 11
+Instance.new("UICorner", createBase).CornerRadius = UDim.new(0, 6)
+createBase.MouseButton1Click:Connect(createBasePlate)
+
+local createRaksasa = Instance.new("TextButton", baseCardUI)
+createRaksasa.Size = UDim2.new(0.3, -5, 0, 35)
+createRaksasa.Position = UDim2.new(0.35, 0, 0.5, -17.5)
+createRaksasa.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
+createRaksasa.Text = "RAKSASA"
+createRaksasa.TextColor3 = Color3.new(1,1,1)
+createRaksasa.Font = Enum.Font.GothamBold
+createRaksasa.TextSize = 11
+Instance.new("UICorner", createRaksasa).CornerRadius = UDim.new(0, 6)
+createRaksasa.MouseButton1Click:Connect(createBasePlateRaksasa)
+
+local removeBase = Instance.new("TextButton", baseCardUI)
+removeBase.Size = UDim2.new(0.3, -5, 0, 35)
+removeBase.Position = UDim2.new(0.68, 0, 0.5, -17.5)
+removeBase.BackgroundColor3 = Color3.fromRGB(220, 60, 75)
+removeBase.Text = "REMOVE"
+removeBase.TextColor3 = Color3.new(1,1,1)
+removeBase.Font = Enum.Font.GothamBold
+removeBase.TextSize = 11
+Instance.new("UICorner", removeBase).CornerRadius = UDim.new(0, 6)
+removeBase.MouseButton1Click:Connect(removeBasePlate)
+
+print("✅ FULLY NV TWEEN SIMPEL SIAP! Speed = " .. TWEEN_SPEED)

@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - BODY VELOCITY + PIJAKAN BUATAN (ANTI JATUH)
+-- FULLY NV - TWEEN 2 TAHAP (TURUN → GERAK → NAIK)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -14,9 +14,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
--- ============================================================
--- KORDINAT APART CASINO
--- ============================================================
+-- KORDINAT APART CASINO (sama seperti sebelumnya)
 local apartData = {
     [1] = {
         name = "Apart Casino 1",
@@ -64,46 +62,55 @@ local apartData = {
     }
 }
 
--- ============================================================
--- VARIABEL
--- ============================================================
 local fullyRunning = false
 local selectedApart = 1
 local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
-local artificialFloor = nil
 
 -- ============================================================
--- PIJAKAN BUATAN
+-- TWEEN 2 TAHAP (TURUN → GERAK → NAIK)
 -- ============================================================
-local function createArtificialFloor()
-    if artificialFloor and artificialFloor.Parent then
-        artificialFloor:Destroy()
-    end
+local function ketarikKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    artificialFloor = Instance.new("Part")
-    artificialFloor.Name = "ArtificialFloor"
-    artificialFloor.Size = Vector3.new(5, 1, 5)
-    artificialFloor.Position = hrp.Position - Vector3.new(0, 7, 0)
-    artificialFloor.Anchored = false
-    artificialFloor.CanCollide = true
-    artificialFloor.Transparency = 1
-    artificialFloor.Parent = workspace
-    return artificialFloor
-end
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return false end
 
-local function destroyArtificialFloor()
-    if artificialFloor and artificialFloor.Parent then
-        artificialFloor:Destroy()
-        artificialFloor = nil
-    end
+    -- Matikan kontrol karakter sementara
+    hum.AutoRotate = false
+    hum.PlatformStand = true
+
+    -- 1. TURUN 7 STUDS (0.2 detik)
+    local downPos = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
+    local downTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = downPos })
+    downTween:Play()
+    downTween.Completed:Wait()
+    task.wait(0.05)
+
+    -- 2. GERAK HORIZONTAL KE TARGET (DENGAN SPEED 0.3)
+    local distance = (targetPos - hrp.Position).Magnitude
+    local duration = math.max(distance / 0.3, 2) -- minimal 2 detik
+    local targetCF = CFrame.new(targetPos.X, hrp.Position.Y, targetPos.Z)
+    local moveTween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF })
+    moveTween:Play()
+    moveTween.Completed:Wait()
+    task.wait(0.05)
+
+    -- 3. NAIK 7 STUDS (0.2 detik)
+    local upPos = CFrame.new(targetPos)
+    local upTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = upPos })
+    upTween:Play()
+    upTween.Completed:Wait()
+
+    -- Kembalikan kontrol
+    hum.AutoRotate = true
+    hum.PlatformStand = false
+    return true
 end
 
 -- ============================================================
--- BASE PLATE
+-- BASE PLATE (OPSIONAL)
 -- ============================================================
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
@@ -174,7 +181,7 @@ local function removeBasePlate()
 end
 
 -- ============================================================
--- HELPER FUNCTIONS
+-- HELPER (COUNT, EQUIP, COOK, SELL)
 -- ============================================================
 local function countItem(name)
     local total = 0
@@ -250,87 +257,6 @@ local function jualSemua()
     end
 end
 
--- ============================================================
--- BODY VELOCITY + PIJAKAN BUATAN (STABIL, ANTI JATUH)
--- ============================================================
-local function ketarikKeTarget(targetPos, speed)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return false end
-
-    -- Matikan gravitasi dan collision karakter
-    local oldPlatform = hum.PlatformStand
-    hum.PlatformStand = true
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
-        end
-    end
-
-    -- Buat pijakan buatan di bawah karakter
-    createArtificialFloor()
-    if artificialFloor then
-        artificialFloor.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
-    end
-
-    -- Paksa posisi karakter di atas pijakan
-    hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
-    task.wait(0.05)
-
-    -- BodyVelocity untuk karakter
-    local bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3.new(100000, 0, 100000)
-    bv.Parent = hrp
-
-    local direction = (targetPos - hrp.Position).Unit
-    bv.Velocity = direction * speed
-
-    -- BodyVelocity untuk pijakan buatan (ikut bergerak)
-    local floorBv = nil
-    if artificialFloor then
-        floorBv = Instance.new("BodyVelocity")
-        floorBv.MaxForce = Vector3.new(100000, 0, 100000)
-        floorBv.Parent = artificialFloor
-        floorBv.Velocity = direction * speed
-    end
-
-    -- Tunggu sampai jarak < 3
-    repeat
-        task.wait(0.05)
-        if artificialFloor and hrp then
-            artificialFloor.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
-        end
-        if not fullyRunning then
-            bv:Destroy()
-            if floorBv then floorBv:Destroy() end
-            destroyArtificialFloor()
-            hum.PlatformStand = oldPlatform
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-            return false
-        end
-    until (hrp.Position - targetPos).Magnitude < 3
-
-    bv:Destroy()
-    if floorBv then floorBv:Destroy() end
-    destroyArtificialFloor()
-
-    hrp.CFrame = CFrame.new(targetPos)
-    task.wait(0.05)
-
-    hum.PlatformStand = oldPlatform
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = true
-        end
-    end
-    return true
-end
-
 local function getStagePos(stage, pot)
     if stage.pos then return stage.pos
     elseif stage[pot] then return stage[pot]
@@ -357,13 +283,13 @@ local function jalankanFully(statusFunc)
 
     while fullyRunning do
         statusFunc("🏃 Ketarik ke NPC Buy...")
-        ketarikKeTarget(npcPos, 3)
+        ketarikKeTarget(npcPos)
 
         statusFunc("🛒 Beli bahan x" .. target)
         if not beliBahan(target) then break end
 
         statusFunc("🏃 Ketarik ke apart...")
-        ketarikKeTarget(apartPos, 3)
+        ketarikKeTarget(apartPos)
 
         for i, stage in ipairs(stages) do
             if not fullyRunning then break end
@@ -374,7 +300,7 @@ local function jalankanFully(statusFunc)
             end
 
             statusFunc("📍 Stage " .. i .. " - Ketarik...")
-            ketarikKeTarget(targetPos, 3)
+            ketarikKeTarget(targetPos)
 
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
@@ -390,7 +316,7 @@ local function jalankanFully(statusFunc)
         end
 
         statusFunc("🏃 Ketarik ke NPC Jual...")
-        ketarikKeTarget(npcPos, 3)
+        ketarikKeTarget(npcPos)
 
         statusFunc("💰 Menjual MS")
         jualSemua()
@@ -428,10 +354,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - PIJAKAN BUATAN"
+titleText.Text = "FULLY NV - TWEEN 2 TAHAP"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -465,7 +391,7 @@ local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "PIJAKAN BUATAN DI BAWAH (7 STUDS)\nSPEED 3 STUDS/DETIK (PELAN)"
+infoLbl.Text = "TWEEN 2 TAHAP: TURUN (0.2s) → GERAK (SPEED 0.3) → NAIK (0.2s)"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
 infoLbl.TextSize = 11
@@ -688,7 +614,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (Pijakan buatan, speed 3)...")
+    setStatus("🚀 Memulai Fully NV (Tween 2 tahap, speed 0.3)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -699,4 +625,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV PIJAKAN BUATAN SIAP! Karakter tidak akan jatuh.")
+print("✅ FULLY NV TWEEN 2 TAHAP SIAP! Gerak: Turun → Horizontal (pelan) → Naik")

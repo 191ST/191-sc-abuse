@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - SPEED 0.5 STABIL (TANPA BLINK, TANPA STUCK)
+-- FULLY NV - TURUN BERTAHAP + STABIL 0.5
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -64,29 +64,33 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local SPEED = 0.5  -- STABIL, TIDAK BERUBAH
+local SPEED = 0.5
 
 -- ============================================================
--- FUNGSI BLINK (HATI-HATI, PASTIKAN TIDAK STUCK)
+-- TURUN/NAIK BERTAHAP (HALUS, ANTI BLINK)
 -- ============================================================
-local function blinkTurun(studs)
+local function turunBertahap(studs, steps)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0)
+    if not hrp then return end
+    local perStep = studs / steps
+    for i = 1, steps do
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -perStep, 0)
         task.wait(0.05)
     end
 end
 
-local function blinkNaik(studs)
+local function naikBertahap(studs, steps)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0)
+    if not hrp then return end
+    local perStep = studs / steps
+    for i = 1, steps do
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, perStep, 0)
         task.wait(0.05)
     end
 end
 
 -- ============================================================
--- KETARIK DENGAN SPEED 0.5 STABIL (TANPA PERUBAHAN)
+-- KETARIK STABIL 0.5 (TANPA BLINK)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -100,12 +104,13 @@ local function ketarikKeTarget(targetPos)
         hum.AutoRotate = false
     end
 
-    -- TURUN 6 STUDS
-    blinkTurun(6)
+    -- TURUN BERTAHAP (6 studs dalam 6 langkah)
+    turunBertahap(6, 6)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
+        naikBertahap(6, 6)
         if hum then
             hum.PlatformStand = oldPlatform or false
             hum.AutoRotate = true
@@ -113,9 +118,9 @@ local function ketarikKeTarget(targetPos)
         return true
     end
 
-    -- SPEED KONSTAN: waktu = jarak / 0.5
+    -- SPEED KONSTAN 0.5
     local duration = distance / SPEED
-    local steps = math.max(math.floor(duration * 30), 20)  -- 30 langkah per detik, minimal 20 langkah
+    local steps = math.max(math.floor(duration * 30), 20)
     local delay = duration / steps
     local startPos = hrp.Position
 
@@ -134,6 +139,9 @@ local function ketarikKeTarget(targetPos)
     end
 
     hrp.CFrame = CFrame.new(targetPos)
+
+    -- NAIK BERTAHAP (6 studs dalam 6 langkah)
+    naikBertahap(6, 6)
 
     if hum then
         hum.PlatformStand = oldPlatform or false
@@ -183,21 +191,21 @@ local function spamE(times)
 end
 
 -- ============================================================
--- COOK DENGAN TIMING (TURUN/NAIK SESUAI PERMINTAAN)
+-- COOK DENGAN TIMING (TURUN/NAIK BERTAHAP)
 -- ============================================================
 local function cookWithTiming()
     if not fullyRunning then return false end
     
     -- WATER
     if equip("Water") then
-        blinkNaik(6)
+        naikBertahap(6, 6)  -- NAIK PELAN
         holdE(0.7)
         local startTime = tick()
         local remaining = 20
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                blinkTurun(6)
+                turunBertahap(6, 6)  -- TURUN PELAN
                 break
             end
             task.wait(0.1)
@@ -207,7 +215,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- SUGAR
+    -- SUGAR (TETAP DI BAWAH)
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -215,7 +223,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- GELATIN
+    -- GELATIN (TETAP DI BAWAH)
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -223,23 +231,23 @@ local function cookWithTiming()
         return false
     end
     
-    -- NAIK SETELAH GELATIN
-    blinkNaik(6)
+    -- NAIK PELAN SETELAH GELATIN
+    naikBertahap(6, 6)
     
-    -- TUNGGU 45 DETIK
+    -- TUNGGU 45 DETIK COOK TIME
     local cookStart = tick()
     local remaining = 45
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            blinkTurun(6)
+            turunBertahap(6, 6)  -- TURUN PELAN
             break
         end
         task.wait(0.1)
     end
     task.wait(math.max(0, remaining))
     
-    -- EMPTY BAG
+    -- EMPTY BAG (TETAP DI BAWAH)
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -251,7 +259,7 @@ local function cookWithTiming()
 end
 
 -- ============================================================
--- BELI BAHAN
+-- BELI & JUAL
 -- ============================================================
 local function beliBahan(jumlah)
     for i = 1, jumlah do
@@ -264,9 +272,6 @@ local function beliBahan(jumlah)
     return true
 end
 
--- ============================================================
--- JUAL SEMUA MS
--- ============================================================
 local function jualSemua()
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
@@ -282,7 +287,7 @@ local function jualSemua()
 end
 
 -- ============================================================
--- BASE PLATE (OPSIONAL)
+-- BASE PLATE
 -- ============================================================
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
@@ -353,7 +358,7 @@ local function removeBasePlate()
 end
 
 -- ============================================================
--- MAIN LOOP FULLY NV
+-- MAIN LOOP
 -- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
@@ -430,10 +435,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 0.5 STABIL"
+titleText.Text = "FULLY NV - TURUN BERTAHAP"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 14
+titleText.TextSize = 13
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -576,7 +581,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (speed 0.5)")
+    setStatus("🚀 START (turunan bertahap, speed 0.5)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -585,7 +590,7 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ STOP")
 end)
 
--- Base Plate (opsional)
+-- Base Plate
 local baseCard = addCard(scroll, 60)
 local createBaseBtn = Instance.new("TextButton", baseCard)
 createBaseBtn.Size = UDim2.new(0.3, -5, 0, 35)
@@ -620,4 +625,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV SPEED 0.5 STABIL SIAP!")
+print("✅ FULLY NV SIAP! Turun bertahap, speed 0.5 stabil")

@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TURUN 8 + TIDUR + NAIK NORMAL (SMOOTH)
+-- FULLY NV - SPEED 2.0 + TURUN CEPAT + TIDUR JELAS
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -64,15 +64,15 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local SPEED = 1.0
+local SPEED = 2.0
 
 -- ============================================================
--- TURUN/NAIK SMOOTH (16 LANGKAH = 0.8 DETIK UNTUK 8 STUDS)
+-- TURUN/NAIK CEPAT (8 LANGKAH, 0.05 DETIK = 0.4 DETIK)
 -- ============================================================
-local function turunSmooth(studs)
+local function turunCepat(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    local steps = 16
+    local steps = 8
     local perStep = studs / steps
     for i = 1, steps do
         hrp.CFrame = hrp.CFrame * CFrame.new(0, -perStep, 0)
@@ -80,10 +80,10 @@ local function turunSmooth(studs)
     end
 end
 
-local function naikSmooth(studs)
+local function naikCepat(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    local steps = 16
+    local steps = 8
     local perStep = studs / steps
     for i = 1, steps do
         hrp.CFrame = hrp.CFrame * CFrame.new(0, perStep, 0)
@@ -92,7 +92,7 @@ local function naikSmooth(studs)
 end
 
 -- ============================================================
--- TIDURIN KARAKTER (BIAR GA STUCK)
+-- TIDURIN KARAKTER (ROTASI 90 DERAJAT)
 -- ============================================================
 local function tidurinKarakter()
     local char = player.Character
@@ -101,9 +101,9 @@ local function tidurinKarakter()
     if hrp and hum then
         hum.PlatformStand = true
         hum.AutoRotate = false
-        -- Miringin karakter sekitar 90 derajat biar kayak tidur
-        local currentCF = hrp.CFrame
-        hrp.CFrame = currentCF * CFrame.Angles(math.rad(90), 0, 0)
+        -- Rotasi 90 derajat biar kayak tidur
+        local currentPos = hrp.Position
+        hrp.CFrame = CFrame.new(currentPos) * CFrame.Angles(math.rad(90), 0, 0)
     end
 end
 
@@ -112,7 +112,6 @@ local function bangunkanKarakter()
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hrp and hum then
-        -- Kembalikan rotasi normal
         local currentPos = hrp.Position
         hrp.CFrame = CFrame.new(currentPos)
         hum.PlatformStand = false
@@ -121,7 +120,7 @@ local function bangunkanKarakter()
 end
 
 -- ============================================================
--- KETARIK SPEED 1.0 + TURUN 8 + TIDUR + NAIK
+-- KETARIK SPEED 2.0 + TURUN CEPAT + TIDUR + NAIK CEPAT
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -136,8 +135,8 @@ local function ketarikKeTarget(targetPos)
         hum.AutoRotate = false
     end
 
-    -- TURUN SMOOTH 8 STUDS
-    turunSmooth(8)
+    -- TURUN CEPAT 8 STUDS (0.4 detik)
+    turunCepat(8)
     
     -- TIDURIN KARAKTER BIAR GA STUCK
     tidurinKarakter()
@@ -146,7 +145,7 @@ local function ketarikKeTarget(targetPos)
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
         bangunkanKarakter()
-        naikSmooth(8)
+        naikCepat(8)
         if hum then
             hum.PlatformStand = oldPlatform or false
             hum.AutoRotate = oldRotate or true
@@ -154,7 +153,7 @@ local function ketarikKeTarget(targetPos)
         return true
     end
 
-    -- SPEED KONSTAN 1.0
+    -- SPEED KONSTAN 2.0
     local duration = distance / SPEED
     local steps = math.max(math.floor(duration * 30), 15)
     local delay = duration / steps
@@ -180,8 +179,8 @@ local function ketarikKeTarget(targetPos)
     -- BANGUNKAN KARAKTER
     bangunkanKarakter()
     
-    -- NAIK SMOOTH 8 STUDS
-    naikSmooth(8)
+    -- NAIK CEPAT 8 STUDS
+    naikCepat(8)
 
     if hum then
         hum.PlatformStand = oldPlatform or false
@@ -191,21 +190,21 @@ local function ketarikKeTarget(targetPos)
 end
 
 -- ============================================================
--- COOK DENGAN TIMING (TURUN/NAIK 8 STUDS, TIDUR SAAT DI BAWAH)
+-- COOK TIMING (TURUN CEPAT, TIDUR, NAIK CEPAT)
 -- ============================================================
 local function cookWithTiming()
     if not fullyRunning then return false end
     
     -- WATER
     if equip("Water") then
-        naikSmooth(8)
+        naikCepat(8)
         holdE(0.7)
         local startTime = tick()
         local remaining = 20
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                turunSmooth(8)
+                turunCepat(8)
                 tidurinKarakter()
                 break
             end
@@ -216,7 +215,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- SUGAR (TETAP DI BAWAH, TIDUR)
+    -- SUGAR (DI BAWAH, TIDUR)
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -224,7 +223,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- GELATIN (TETAP DI BAWAH, TIDUR)
+    -- GELATIN (DI BAWAH, TIDUR)
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -232,9 +231,9 @@ local function cookWithTiming()
         return false
     end
     
-    -- BANGUNKAN DAN NAIK SETELAH GELATIN
+    -- BANGUNKAN & NAIK
     bangunkanKarakter()
-    naikSmooth(8)
+    naikCepat(8)
     
     -- TUNGGU 45 DETIK
     local cookStart = tick()
@@ -242,7 +241,7 @@ local function cookWithTiming()
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            turunSmooth(8)
+            turunCepat(8)
             tidurinKarakter()
             break
         end
@@ -250,7 +249,7 @@ local function cookWithTiming()
     end
     task.wait(math.max(0, remaining))
     
-    -- EMPTY BAG (TETAP DI BAWAH, TIDUR)
+    -- EMPTY BAG (DI BAWAH, TIDUR)
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -478,7 +477,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TURUN 8 + TIDUR"
+titleText.Text = "FULLY NV - SPEED 2.0 + TIDUR"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -624,7 +623,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (turun 8, tidur, speed 1.0)")
+    setStatus("🚀 START (speed 2.0, turun cepat, tidur)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -668,4 +667,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV SIAP! Turun 8 studs smooth, karakter tidur biar ga stuck, speed 1.0")
+print("✅ FULLY NV SIAP! Speed 2.0, turun 8 studs dalam 0.4 detik, karakter tidur jelas")

@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - FORCE TWEEN (TURUN 5, SPEED 0.5, NAIK 5)
+-- FULLY NV - FORCE TWEEN (TARIK) + COOK TIMING PRESISI
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -13,62 +13,75 @@ local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
+-- KORDINAT APART CASINO (SEMUA TAHAP)
 local apartData = {
     [1] = {
         name = "Apart Casino 1",
         stages = {
-            { pos = Vector3.new(1196.51, 3.71, -241.13), isCook = false },
-            { pos = Vector3.new(1199.75, 3.71, -238.12), isCook = false },
-            { pos = Vector3.new(1199.74, 6.59, -233.05), isCook = false },
-            { pos = Vector3.new(1199.66, 6.59, -227.75), isCook = false },
-            { pos = Vector3.new(1199.66, 6.59, -227.75), isCook = false },
-            { kanan = Vector3.new(1199.91, 7.56, -219.75), kiri = Vector3.new(1199.75, 7.45, -217.66), isCook = true },
-            { kanan = Vector3.new(1199.87, 15.96, -215.33), kiri = Vector3.new(1199.38, 15.96, -220.53), isCook = false },
+            Vector3.new(1196.51, 3.71, -241.13),
+            Vector3.new(1199.75, 3.71, -238.12),
+            Vector3.new(1199.74, 6.59, -233.05),
+            Vector3.new(1199.66, 6.59, -227.75),
+            Vector3.new(1199.66, 6.59, -227.75),
+            Vector3.new(1199.91, 7.56, -219.75),
+            Vector3.new(1199.87, 15.96, -215.33),
         }
     },
     [2] = {
         name = "Apart Casino 2",
         stages = {
-            { pos = Vector3.new(1186.34, 3.71, -242.92), isCook = false },
-            { pos = Vector3.new(1183.00, 6.59, -233.78), isCook = false },
-            { pos = Vector3.new(1182.70, 7.32, -229.73), isCook = false },
-            { pos = Vector3.new(1182.75, 6.59, -224.78), isCook = false },
-            { kanan = Vector3.new(1183.43, 15.96, -229.66), kiri = Vector3.new(1183.22, 15.96, -225.63), isCook = false },
+            Vector3.new(1186.34, 3.71, -242.92),
+            Vector3.new(1183.00, 6.59, -233.78),
+            Vector3.new(1182.70, 7.32, -229.73),
+            Vector3.new(1182.75, 6.59, -224.78),
+            Vector3.new(1183.43, 15.96, -229.66),
         }
     },
     [3] = {
         name = "Apart Casino 3",
         stages = {
-            { pos = Vector3.new(1196.17, 3.71, -205.72), isCook = false },
-            { pos = Vector3.new(1199.76, 3.71, -196.51), isCook = false },
-            { pos = Vector3.new(1199.69, 6.59, -191.16), isCook = false },
-            { pos = Vector3.new(1199.42, 6.59, -185.27), isCook = false },
-            { kanan = Vector3.new(1199.42, 6.59, -185.27), kiri = Vector3.new(1199.95, 7.07, -177.69), isCook = true },
-            { kanan = Vector3.new(1199.55, 15.96, -181.89), kiri = Vector3.new(1199.46, 15.96, -177.81), isCook = false },
+            Vector3.new(1196.17, 3.71, -205.72),
+            Vector3.new(1199.76, 3.71, -196.51),
+            Vector3.new(1199.69, 6.59, -191.16),
+            Vector3.new(1199.42, 6.59, -185.27),
+            Vector3.new(1199.42, 6.59, -185.27),
+            Vector3.new(1199.55, 15.96, -181.89),
         }
     },
     [4] = {
         name = "Apart Casino 4",
         stages = {
-            { pos = Vector3.new(1187.70, 3.71, -209.73), isCook = false },
-            { pos = Vector3.new(1182.27, 3.71, -204.65), isCook = false },
-            { pos = Vector3.new(1182.23, 3.71, -198.77), isCook = false },
-            { pos = Vector3.new(1183.06, 6.59, -193.92), isCook = false },
-            { kanan = Vector3.new(1182.60, 7.56, -191.29), kiri = Vector3.new(1183.36, 6.72, -187.25), isCook = false },
-            { kanan = Vector3.new(1183.24, 15.96, -191.25), kiri = Vector3.new(1183.08, 15.96, -187.36), isCook = false },
+            Vector3.new(1187.70, 3.71, -209.73),
+            Vector3.new(1182.27, 3.71, -204.65),
+            Vector3.new(1182.23, 3.71, -198.77),
+            Vector3.new(1183.06, 6.59, -193.92),
+            Vector3.new(1182.60, 7.56, -191.29),
+            Vector3.new(1183.24, 15.96, -191.25),
         }
     }
 }
 
 local fullyRunning = false
 local selectedApart = 1
-local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
-local TWEEN_SPEED = 0.5  -- PELAN
+local TWEEN_SPEED = 0.4
 
 -- ============================================================
--- FORCE TWEEN MANUAL (PASTI JALAN)
+-- FUNGSI BLINK TURUN / NAIK
+-- ============================================================
+local function blinkTurun()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0) end
+end
+
+local function blinkNaik()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, 6, 0) end
+end
+
+-- ============================================================
+-- FORCE TWEEN MANUAL (TARIK) + TURUN 6 STUDS
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -82,16 +95,12 @@ local function ketarikKeTarget(targetPos)
         hum.AutoRotate = false
     end
 
-    -- TURUN 5 STUDS
-    local startPos = hrp.Position
-    hrp.CFrame = CFrame.new(startPos.X, startPos.Y - 5, startPos.Z)
+    -- TURUN 6 STUDS
+    hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 6, hrp.Position.Z)
     task.wait(0.05)
 
-    -- HITUNG JARAK & STEPS
-    local currentPos = hrp.Position
-    local distance = (targetPos - currentPos).Magnitude
+    local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
-        hrp.CFrame = CFrame.new(targetPos.X, targetPos.Y - 5, targetPos.Z)
         hrp.CFrame = CFrame.new(targetPos)
         if hum then
             hum.PlatformStand = oldPlatform or false
@@ -102,9 +111,8 @@ local function ketarikKeTarget(targetPos)
 
     local steps = math.max(math.floor(distance / TWEEN_SPEED) * 60, 15)
     steps = math.min(steps, 300)
-    local startPosHorizontal = hrp.Position
+    local startPos = hrp.Position
 
-    -- LOOP GERAK HORIZONTAL (Y TETAP -5)
     for i = 1, steps do
         if not fullyRunning then
             if hum then
@@ -114,12 +122,11 @@ local function ketarikKeTarget(targetPos)
             return false
         end
         local alpha = i / steps
-        local newPos = startPosHorizontal + (targetPos - startPosHorizontal) * alpha
+        local newPos = startPos + (targetPos - startPos) * alpha
         hrp.CFrame = CFrame.new(newPos.X, newPos.Y, newPos.Z)
         task.wait()
     end
 
-    -- NAIK 5 STUDS
     hrp.CFrame = CFrame.new(targetPos)
 
     if hum then
@@ -130,7 +137,7 @@ local function ketarikKeTarget(targetPos)
 end
 
 -- ============================================================
--- HELPER FUNCTION (COUNT, EQUIP, COOK, DLL)
+-- HELPER FUNCTIONS (EQUIP, HOLD, SPAM, COUNT)
 -- ============================================================
 local function countItem(name)
     local total = 0
@@ -169,23 +176,83 @@ local function spamE(times)
     end
 end
 
-local function cook()
-    local steps = {
-        { name = "Water", time = 20 },
-        { name = "Sugar Block Bag", time = 1 },
-        { name = "Gelatin", time = 1 },
-        { name = "Empty Bag", time = 45 }
-    }
-    for _, step in ipairs(steps) do
-        if not fullyRunning then return false end
-        if equip(step.name) then
-            holdE(0.7)
-            if step.time then task.wait(step.time) end
+-- ============================================================
+-- COOK DENGAN TIMING PRESISI (FINAL)
+-- ============================================================
+local function cookWithTiming()
+    if not fullyRunning then return false end
+    
+    print("[Cook] Memulai proses memasak...")
+    
+    -- WATER
+    if equip("Water") then
+        blinkNaik()  -- NAIK 6 STUDS
+        holdE(0.7)
+        local startTime = tick()
+        local remaining = 20
+        while remaining > 0 and fullyRunning do
+            remaining = 20 - (tick() - startTime)
+            if remaining <= 2 and remaining > 0 then
+                blinkTurun()  -- TURUN 6 STUDS 2 DETIK SEBELUM HABIS
+                print("[Cook] Water: turun 2 detik sebelum habis")
+                break
+            end
+            task.wait(0.1)
         end
+        task.wait(math.max(0, remaining))
+    else
+        return false
     end
+    
+    -- SUGAR (TETAP DI BAWAH)
+    if equip("Sugar Block Bag") then
+        holdE(0.7)
+        task.wait(0.5)
+    else
+        return false
+    end
+    
+    -- GELATIN (TETAP DI BAWAH)
+    if equip("Gelatin") then
+        holdE(0.7)
+        task.wait(0.5)
+    else
+        return false
+    end
+    
+    -- NAIK SETELAH GELATIN
+    blinkNaik()
+    print("[Cook] Naik setelah Gelatin")
+    
+    -- TUNGGU 45 DETIK COOK TIME
+    local cookStart = tick()
+    local remaining = 45
+    while remaining > 0 and fullyRunning do
+        remaining = 45 - (tick() - cookStart)
+        if remaining <= 2 and remaining > 0 then
+            blinkTurun()  -- TURUN 6 STUDS 2 DETIK SEBELUM HABIS
+            print("[Cook] Turun 2 detik sebelum cook time habis")
+            break
+        end
+        task.wait(0.1)
+    end
+    task.wait(math.max(0, remaining))
+    
+    -- EMPTY BAG (TETAP DI BAWAH)
+    if equip("Empty Bag") then
+        holdE(0.7)
+        task.wait(1)
+    else
+        return false
+    end
+    
+    print("[Cook] Selesai memasak")
     return true
 end
 
+-- ============================================================
+-- BELI & JUAL
+-- ============================================================
 local function beliBahan(jumlah)
     for i = 1, jumlah do
         if not fullyRunning then return false end
@@ -200,17 +267,15 @@ end
 local function jualSemua()
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
-        while countItem(bag) > 0 and fullyRunning do
-            if equip(bag) then holdE(0.7) task.wait(0.5) else break end
+        while fullyRunning and countItem(bag) > 0 do
+            if equip(bag) then
+                holdE(0.7)
+                task.wait(0.5)
+            else
+                break
+            end
         end
     end
-end
-
-local function getStagePos(stage, pot)
-    if stage.pos then return stage.pos
-    elseif stage[pot] then return stage[pot]
-    end
-    return nil
 end
 
 -- ============================================================
@@ -261,7 +326,7 @@ local function createBasePlateRaksasa()
     local baseY = groundY - 5
     basePlate = Instance.new("Part")
     basePlate.Name = "FullyNV_BasePlate_Raksasa"
-    basePlate.Size = Vector3.new(5000, 1, 50000)
+    basePlate.Size = Vector3.new(5000, 1, 5000)
     basePlate.Position = Vector3.new(hrp.Position.X, baseY, hrp.Position.Z)
     basePlate.Anchored = true
     basePlate.BrickColor = BrickColor.new("Really black")
@@ -285,66 +350,64 @@ local function removeBasePlate()
 end
 
 -- ============================================================
--- MAIN LOOP
+-- MAIN LOOP FULLY NV
 -- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
-    local apartId = selectedApart
-    local pot = selectedPot
-    local stages = apartData[apartId].stages
-    local target = targetMS
-
-    local apartPos = getStagePos(stages[1], pot)
-    if not apartPos then
-        statusFunc("❌ Gagal dapat posisi apart!")
+    local stages = apartData[selectedApart]
+    if not stages then
+        statusFunc("❌ Apart tidak ditemukan!")
         fullyRunning = false
         return
     end
-
+    
+    local apartPos = stages[1]
+    
     while fullyRunning do
+        -- 1. BELI BAHAN
         statusFunc("🏃 Ketarik ke NPC Buy...")
         ketarikKeTarget(npcPos)
-
-        statusFunc("🛒 Beli bahan x" .. target)
-        if not beliBahan(target) then break end
-
+        
+        statusFunc("🛒 Beli bahan x" .. targetMS)
+        if not beliBahan(targetMS) then break end
+        
+        -- 2. KETARIK KE APART
         statusFunc("🏃 Ketarik ke apart...")
         ketarikKeTarget(apartPos)
-
-        for i, stage in ipairs(stages) do
+        
+        -- 3. LOOP SEMUA TAHAP
+        for i, stagePos in ipairs(stages) do
             if not fullyRunning then break end
-            local targetPos = getStagePos(stage, pot)
-            if not targetPos then
-                statusFunc("❌ Stage " .. i .. " tidak ditemukan")
-                break
-            end
-
+            
             statusFunc("📍 Stage " .. i .. " - Ketarik...")
-            ketarikKeTarget(targetPos)
-
+            ketarikKeTarget(stagePos)
+            
             statusFunc("🎯 Stage " .. i .. " - Spam E")
             spamE(3)
             task.wait(0.3)
-
-            if stage.isCook then
+            
+            -- COOK DI TAHAP YANG DITENTUKAN (misal tahap 5 atau 6)
+            if i == 5 or i == 6 then
                 statusFunc("🍳 Memasak di stage " .. i)
-                local success = cook()
+                local success = cookWithTiming()
                 if not success then break end
                 statusFunc("✅ Masak selesai")
                 task.wait(1)
             end
         end
-
+        
+        -- 4. KETARIK KE NPC JUAL
         statusFunc("🏃 Ketarik ke NPC Jual...")
         ketarikKeTarget(npcPos)
-
+        
+        -- 5. JUAL SEMUA MS
         statusFunc("💰 Menjual MS")
         jualSemua()
-
+        
         statusFunc("🔄 Loop selesai, ulang...")
         task.wait(1)
     end
-
+    
     fullyRunning = false
     statusFunc("⏹ Dihentikan")
 end
@@ -376,10 +439,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED " .. TWEEN_SPEED
+titleText.Text = "FULLY NV - TARIK & TIMING"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 14
+titleText.TextSize = 13
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -397,7 +460,7 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
 scroll.ScrollBarThickness = 4
 
 local layoutList = Instance.new("UIListLayout", scroll)
@@ -422,7 +485,6 @@ local function addLabel(parent, text, color, size)
     l.Font = Enum.Font.Gotham
     l.TextSize = size or 11
     l.TextXAlignment = Enum.TextXAlignment.Left
-    l.TextWrapped = true
     return l
 end
 
@@ -489,40 +551,6 @@ for i = 1, 4 do
     apartBtns[i] = btn
 end
 
--- Pot
-local potCard = addCard(scroll, 60)
-addLabel(potCard, "Pilih Pot")
-local potKanan = Instance.new("TextButton", potCard)
-potKanan.Size = UDim2.new(0.45, -5, 0, 35)
-potKanan.Position = UDim2.new(0.03, 0, 0.5, -17.5)
-potKanan.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-potKanan.Text = "POT KANAN"
-potKanan.TextColor3 = Color3.new(1,1,1)
-potKanan.Font = Enum.Font.GothamBold
-potKanan.TextSize = 12
-Instance.new("UICorner", potKanan).CornerRadius = UDim.new(0, 6)
-
-local potKiri = Instance.new("TextButton", potCard)
-potKiri.Size = UDim2.new(0.45, -5, 0, 35)
-potKiri.Position = UDim2.new(0.52, 0, 0.5, -17.5)
-potKiri.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-potKiri.Text = "POT KIRI"
-potKiri.TextColor3 = Color3.new(1,1,1)
-potKiri.Font = Enum.Font.GothamBold
-potKiri.TextSize = 12
-Instance.new("UICorner", potKiri).CornerRadius = UDim.new(0, 6)
-
-potKanan.MouseButton1Click:Connect(function()
-    selectedPot = "kanan"
-    potKanan.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-    potKiri.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-end)
-potKiri.MouseButton1Click:Connect(function()
-    selectedPot = "kiri"
-    potKiri.BackgroundColor3 = Color3.fromRGB(130, 60, 240)
-    potKanan.BackgroundColor3 = Color3.fromRGB(24, 21, 40)
-end)
-
 -- Status
 local statusCardUI = addCard(scroll, 50)
 local statusTextUI = addLabel(statusCardUI, "Belum dimulai", Color3.fromRGB(145, 138, 175), 11)
@@ -552,12 +580,12 @@ Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 
 local function setStatus(msg)
     statusTextUI.Text = msg
-    print(msg)
+    print("[FullyNV] " .. msg)
 end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (speed " .. TWEEN_SPEED .. ", turun 5)...")
+    setStatus("🚀 Memulai Fully NV...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -568,7 +596,7 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
--- Base Plate
+-- Base Plate (Opsional)
 local baseCardUI = addCard(scroll, 60)
 local createBase = Instance.new("TextButton", baseCardUI)
 createBase.Size = UDim2.new(0.3, -5, 0, 35)
@@ -603,4 +631,4 @@ removeBase.TextSize = 11
 Instance.new("UICorner", removeBase).CornerRadius = UDim.new(0, 6)
 removeBase.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV SIAP! Speed = " .. TWEEN_SPEED .. ", turun 5 studs")
+print("✅ FULLY NV FINAL SIAP! TWEEN SPEED " .. TWEEN_SPEED)

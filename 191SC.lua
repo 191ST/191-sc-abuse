@@ -1,5 +1,5 @@
 -- ELIXIR 3.5 -- REDESIGNED: DEEP PURPLE THEME + TEXT SIDEBAR
--- FIXED: GUI MUNCUL
+-- FULL SCRIPT DENGAN SEMUA FITUR ASLI + PAGE FULLY NV
 
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
@@ -10,16 +10,13 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
--- PASTIKAN KARAKTER ADA
 repeat task.wait() until player.Character
-repeat task.wait() until player.Character:FindFirstChild("HumanoidRootPart")
 
 local playerGui = player:WaitForChild("PlayerGui")
 
--- CEK APAKAH GUI SUDAH ADA
-if playerGui:FindFirstChild("ELIXIR_3_5") then
-	playerGui.ELIXIR_3_5:Destroy()
-end
+-- HAPUS GUI LAMA JIKA ADA
+pcall(function() playerGui:FindFirstChild("ELIXIR_3_5"):Destroy() end)
+pcall(function() game.CoreGui:FindFirstChild("ELIXIR_3_5"):Destroy() end)
 
 local running = false
 local autoSellEnabled = false
@@ -87,9 +84,7 @@ local function vehicleTeleport(cf)
 	local vehicle = seat:FindFirstAncestorOfClass("Model")
 	if not vehicle then return end
 	if not vehicle.PrimaryPart then vehicle.PrimaryPart = seat end
-	pcall(function()
-		vehicle:SetPrimaryPartCFrame(cf)
-	end)
+	pcall(function() vehicle:SetPrimaryPartCFrame(cf) end)
 	task.wait(1)
 	if seat then
 		pcall(function() seat.Throttle = 1 end)
@@ -105,21 +100,15 @@ local function fill(bar, time)
 	task.delay(time, function() if bar then bar.Size = UDim2.new(0,0,1,0) end end)
 end
 
--- ============================================================
 -- GUI SETUP
--- ============================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "ELIXIR_3_5"
 gui.Parent = playerGui
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
--- Pastikan gui tampil
 gui.Enabled = true
 
--- ============================================================
 -- COLOR PALETTE
--- ============================================================
 local C = {
 	bg        = Color3.fromRGB(8,  7,  14),
 	surface   = Color3.fromRGB(14, 12, 24),
@@ -134,14 +123,16 @@ local C = {
 	textMid   = Color3.fromRGB(145, 138, 175),
 	textDim   = Color3.fromRGB(75,  68, 100),
 	green     = Color3.fromRGB(55,  200, 110),
+	greenD    = Color3.fromRGB(30,  140, 70),
 	red       = Color3.fromRGB(220, 60,  75),
+	orange    = Color3.fromRGB(255, 160, 40),
+	purple    = Color3.fromRGB(148, 80,  255),
+	cyan      = Color3.fromRGB(50,  210, 230),
 	border    = Color3.fromRGB(38,  32,  62),
 	borderAct = Color3.fromRGB(100, 55, 190),
 }
 
--- ============================================================
 -- NOTIFICATION SYSTEM
--- ============================================================
 local notifContainer = Instance.new("Frame", gui)
 notifContainer.Size = UDim2.new(0, 270, 1, 0)
 notifContainer.Position = UDim2.new(1, -280, 0, 0)
@@ -224,9 +215,7 @@ local function notify(title, msg, ntype)
 	end)
 end
 
--- ============================================================
 -- MAIN WINDOW
--- ============================================================
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 660, 0, 430)
 main.Position = UDim2.new(0.5, -330, 0.5, -215)
@@ -486,6 +475,52 @@ local function card(parent, h, order)
 	return f
 end
 
+local function makeToggleBtn(parent, text, order)
+	local f = card(parent, 38, order)
+	local btn = Instance.new("TextButton", f)
+	btn.Size = UDim2.new(1, 0, 1, 0)
+	btn.BackgroundTransparency = 1
+	btn.Font = Enum.Font.GothamSemibold
+	btn.TextSize = 12
+	btn.TextColor3 = C.text
+	btn.Text = text
+	btn.BorderSizePixel = 0
+
+	local pill = Instance.new("Frame", f)
+	pill.Size = UDim2.new(0, 28, 0, 14)
+	pill.Position = UDim2.new(1, -40, 0.5, -7)
+	pill.BackgroundColor3 = C.textDim
+	pill.BorderSizePixel = 0
+	Instance.new("UICorner", pill).CornerRadius = UDim.new(1, 0)
+
+	local knob = Instance.new("Frame", pill)
+	knob.Size = UDim2.new(0, 10, 0, 10)
+	knob.Position = UDim2.new(0, 2, 0.5, -5)
+	knob.BackgroundColor3 = Color3.new(1,1,1)
+	knob.BorderSizePixel = 0
+	Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+	local state = false
+	local function setToggle(on)
+		state = on
+		if on then
+			TweenService:Create(pill, TweenInfo.new(0.18), {BackgroundColor3 = C.accent}):Play()
+			TweenService:Create(knob, TweenInfo.new(0.18), {Position = UDim2.new(1, -12, 0.5, -5)}):Play()
+			btn.TextColor3 = C.accentGlow
+		else
+			TweenService:Create(pill, TweenInfo.new(0.18), {BackgroundColor3 = C.textDim}):Play()
+			TweenService:Create(knob, TweenInfo.new(0.18), {Position = UDim2.new(0, 2, 0.5, -5)}):Play()
+			btn.TextColor3 = C.text
+		end
+	end
+
+	btn.MouseButton1Click:Connect(function()
+		setToggle(not state)
+	end)
+
+	return btn, f, setToggle
+end
+
 local function makeActionBtn(parent, text, color, order)
 	local f = Instance.new("TextButton", parent)
 	f.Size = UDim2.new(1, 0, 0, 36)
@@ -509,6 +544,88 @@ local function makeActionBtn(parent, text, color, order)
 		TweenService:Create(f, TweenInfo.new(0.12), {BackgroundColor3 = color or C.accentDim}):Play()
 	end)
 	return f
+end
+
+local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callback)
+	local wrap = card(parent, 54, order)
+
+	local lbl = Instance.new("TextLabel", wrap)
+	lbl.Position = UDim2.new(0, 12, 0, 8)
+	lbl.Size = UDim2.new(1, -80, 0, 16)
+	lbl.BackgroundTransparency = 1
+	lbl.Text = labelText
+	lbl.Font = Enum.Font.GothamSemibold
+	lbl.TextSize = 11
+	lbl.TextColor3 = C.textMid
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+	local valLbl = Instance.new("TextLabel", wrap)
+	valLbl.Position = UDim2.new(1, -52, 0, 8)
+	valLbl.Size = UDim2.new(0, 42, 0, 16)
+	valLbl.BackgroundTransparency = 1
+	valLbl.Text = tostring(defaultV)
+	valLbl.Font = Enum.Font.GothamBold
+	valLbl.TextSize = 12
+	valLbl.TextColor3 = C.accentGlow
+	valLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+	local track = Instance.new("Frame", wrap)
+	track.Position = UDim2.new(0, 12, 0, 34)
+	track.Size = UDim2.new(1, -24, 0, 5)
+	track.BackgroundColor3 = C.border
+	track.BorderSizePixel = 0
+	track.Active = true
+	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+	local fill2 = Instance.new("Frame", track)
+	fill2.Size = UDim2.new((defaultV - minV)/(maxV - minV), 0, 1, 0)
+	fill2.BackgroundColor3 = C.accent
+	fill2.BorderSizePixel = 0
+	Instance.new("UICorner", fill2).CornerRadius = UDim.new(1, 0)
+
+	local knob2 = Instance.new("Frame", track)
+	local kp = (defaultV - minV)/(maxV - minV)
+	knob2.Size = UDim2.new(0, 14, 0, 14)
+	knob2.Position = UDim2.new(kp, -7, 0.5, -7)
+	knob2.BackgroundColor3 = Color3.new(1,1,1)
+	knob2.BorderSizePixel = 0
+	Instance.new("UICorner", knob2).CornerRadius = UDim.new(1, 0)
+
+	local ks = Instance.new("UIStroke", knob2)
+	ks.Color = C.accent
+	ks.Thickness = 2
+
+	local dragging = false
+
+	local function update(x)
+		local pos = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+		local val = math.floor(minV + pos * (maxV - minV))
+		knob2.Position = UDim2.new(pos, -7, 0.5, -7)
+		fill2.Size = UDim2.new(pos, 0, 1, 0)
+		valLbl.Text = tostring(val)
+		if callback then callback(val) end
+	end
+
+	track.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			update(input.Position.X)
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input.Position.X)
+		end
+	end)
+
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+
+	return wrap, valLbl
 end
 
 local function makeStatusRow(parent, label, order)
@@ -541,12 +658,133 @@ local function corner(p, r)
 	Instance.new("UICorner", p).CornerRadius = UDim.new(0, r or 8)
 end
 
+local function stroke(p, col, th)
+	local s = Instance.new("UIStroke", p)
+	s.Color = col or C.border
+	s.Thickness = th or 1
+	return s
+end
+
+local function glow(p, col, th)
+	local s = Instance.new("UIStroke", p)
+	s.Color = col or C.accent
+	s.Thickness = th or 2
+	s.Transparency = 0.5
+	return s
+end
+
+local function line(p, y)
+	local d = Instance.new("Frame", p)
+	d.Size = UDim2.new(1, -24, 0, 1)
+	d.Position = UDim2.new(0, 12, 0, y)
+	d.BackgroundColor3 = C.border
+	d.BorderSizePixel = 0
+	d.ZIndex = 2
+end
+
+local function secHdr(p, y, txt)
+	local bar = Instance.new("Frame", p)
+	bar.Size = UDim2.new(0, 3, 0, 12)
+	bar.Position = UDim2.new(0, 12, 0, y + 3)
+	bar.BackgroundColor3 = C.accent
+	bar.BorderSizePixel = 0
+	bar.ZIndex = 3
+	corner(bar, 2)
+	
+	local l = Instance.new("TextLabel", p)
+	l.Size = UDim2.new(1, -30, 0, 18)
+	l.Position = UDim2.new(0, 20, 0, y)
+	l.BackgroundTransparency = 1
+	l.Text = txt
+	l.Font = Enum.Font.GothamBold
+	l.TextSize = 10
+	l.TextColor3 = C.textMid
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.ZIndex = 3
+	return l
+end
+
+local function statRow(p, y, icon, lbl, valCol)
+	local row = Instance.new("Frame", p)
+	row.Size = UDim2.new(1, -24, 0, 34)
+	row.Position = UDim2.new(0, 12, 0, y)
+	row.BackgroundColor3 = C.card
+	row.BorderSizePixel = 0
+	row.ZIndex = 2
+	corner(row, 8)
+	
+	local ic = Instance.new("TextLabel", row)
+	ic.Size = UDim2.new(0, 28, 1, 0)
+	ic.Position = UDim2.new(0, 4, 0, 0)
+	ic.BackgroundTransparency = 1
+	ic.Text = icon
+	ic.Font = Enum.Font.Gotham
+	ic.TextSize = 13
+	ic.TextColor3 = C.text
+	ic.TextXAlignment = Enum.TextXAlignment.Center
+	ic.ZIndex = 3
+	
+	local nm = Instance.new("TextLabel", row)
+	nm.Size = UDim2.new(0.55, -32, 1, 0)
+	nm.Position = UDim2.new(0, 34, 0, 0)
+	nm.BackgroundTransparency = 1
+	nm.Text = lbl
+	nm.Font = Enum.Font.Gotham
+	nm.TextSize = 11
+	nm.TextColor3 = C.textMid
+	nm.TextXAlignment = Enum.TextXAlignment.Left
+	nm.ZIndex = 3
+	
+	local vl = Instance.new("TextLabel", row)
+	vl.Size = UDim2.new(0.45, -10, 1, 0)
+	vl.Position = UDim2.new(0.55, 0, 0, 0)
+	vl.BackgroundTransparency = 1
+	vl.Text = "0"
+	vl.Font = Enum.Font.GothamBold
+	vl.TextSize = 13
+	vl.TextColor3 = valCol or C.accent
+	vl.TextXAlignment = Enum.TextXAlignment.Right
+	vl.ZIndex = 3
+	
+	return vl
+end
+
+local function actionBtn(parent, y, txt, bg, txtC)
+	local w = Instance.new("Frame", parent)
+	w.Size = UDim2.new(1, -24, 0, 36)
+	w.Position = UDim2.new(0, 12, 0, y)
+	w.BackgroundColor3 = bg or C.accent
+	w.BorderSizePixel = 0
+	w.ZIndex = 3
+	corner(w, 8)
+	
+	local sh = Instance.new("Frame", w)
+	sh.Size = UDim2.new(1, 0, 0.5, 0)
+	sh.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	sh.BackgroundTransparency = 0.92
+	sh.BorderSizePixel = 0
+	sh.ZIndex = 4
+	corner(sh, 8)
+	
+	local b = Instance.new("TextButton", w)
+	b.Size = UDim2.new(1, 0, 1, 0)
+	b.BackgroundTransparency = 1
+	b.Text = txt
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 11
+	b.TextColor3 = txtC or C.text
+	b.ZIndex = 4
+	b.TextScaled = false
+	
+	return w, b
+end
+
 local function hoverBtn(w, b, nc, hc)
 	b.MouseEnter:Connect(function()
-		TweenService:Create(w, TweenInfo.new(0.1), {BackgroundColor3=hc}):Play()
+		TweenService:Create(w, TweenInfo.new(0.1), {BackgroundColor3 = hc}):Play()
 	end)
 	b.MouseLeave:Connect(function()
-		TweenService:Create(w, TweenInfo.new(0.1), {BackgroundColor3=nc}):Play()
+		TweenService:Create(w, TweenInfo.new(0.1), {BackgroundColor3 = nc}):Play()
 	end)
 end
 
@@ -613,7 +851,7 @@ local function stepperRowFloat(parent, y, lbl, minV, maxV, defV, step, unit)
 end
 
 -- ============================================================
--- FARM PAGE (SEDERHANA)
+-- FARM PAGE
 -- ============================================================
 local fp = pages["FARM"]
 
@@ -639,33 +877,71 @@ local bagVal, _    = makeStatusRow(fp, "Empty Bag", 7)
 
 sectionLabel(fp, "Controls", 8)
 
-local farmToggleBtn = makeActionBtn(fp, "START FARM", C.accentDim, 10)
+local buySliderWrap, buyValLbl = makeSlider(fp, "BUY AMOUNT", 1, 25, 1, 9, function(v)
+	buyAmount = v
+end)
 
--- FARM LOGIC SEDERHANA
-local farmRunning = false
-local function simpleCook()
-	while farmRunning do
-		if countItem("Water") == 0 or countItem("Sugar Block Bag") == 0 or countItem("Gelatin") == 0 then
-			statusLabel.Text = "Bahan habis!"
-			break
-		end
-		
+local farmToggleBtn = makeActionBtn(fp, "START FARM", C.accentDim, 10)
+local sellToggleBtn = makeActionBtn(fp, "AUTO SELL : OFF", C.card, 11)
+local buyNowBtn     = makeActionBtn(fp, "BUY NOW", C.card, 12)
+
+sectionLabel(fp, "Cook Progress", 13)
+
+local function makeProgressCard(label, order)
+	local f = card(fp, 34, order)
+	local lbl3 = Instance.new("TextLabel", f)
+	lbl3.Position = UDim2.new(0, 10, 0, 5)
+	lbl3.Size = UDim2.new(0.6, 0, 0, 13)
+	lbl3.BackgroundTransparency = 1
+	lbl3.Text = label
+	lbl3.Font = Enum.Font.GothamSemibold
+	lbl3.TextSize = 10
+	lbl3.TextColor3 = C.textMid
+	lbl3.TextXAlignment = Enum.TextXAlignment.Left
+	local bg2 = Instance.new("Frame", f)
+	bg2.Position = UDim2.new(0, 10, 0, 22)
+	bg2.Size = UDim2.new(1, -20, 0, 5)
+	bg2.BackgroundColor3 = C.border
+	bg2.BorderSizePixel = 0
+	Instance.new("UICorner", bg2).CornerRadius = UDim.new(1, 0)
+	local bar2 = Instance.new("Frame", bg2)
+	bar2.Size = UDim2.new(0, 0, 1, 0)
+	bar2.BackgroundColor3 = C.accent
+	bar2.BorderSizePixel = 0
+	Instance.new("UICorner", bar2).CornerRadius = UDim.new(1, 0)
+	return bar2
+end
+
+local waterBar   = makeProgressCard("Water (20s)", 14)
+local sugarBar   = makeProgressCard("Sugar (1s)", 15)
+local gelatinBar = makeProgressCard("Gelatin (1s)", 16)
+local bagBar     = makeProgressCard("Bag (45s)", 17)
+
+-- FARM LOGIC
+local farmRun = false
+local function cookLoop()
+	while farmRun do
 		if equip("Water") then
 			statusLabel.Text = "Cooking Water..."
+			statusLabel.TextColor3 = C.accentGlow
+			if waterBar then fill(waterBar, 20) end
 			holdE(.7)
 			task.wait(20)
 		end
 		if equip("Sugar Block Bag") then
 			statusLabel.Text = "Cooking Sugar..."
+			if sugarBar then fill(sugarBar, 1) end
 			holdE(.7)
 			task.wait(1)
 		end
 		if equip("Gelatin") then
 			statusLabel.Text = "Cooking Gelatin..."
+			if gelatinBar then fill(gelatinBar, 1) end
 			holdE(.7)
 			task.wait(1)
 		end
 		statusLabel.Text = "Waiting..."
+		if bagBar then fill(bagBar, 45) end
 		task.wait(45)
 		if equip("Empty Bag") then
 			statusLabel.Text = "Collecting..."
@@ -674,24 +950,957 @@ local function simpleCook()
 		end
 	end
 	statusLabel.Text = "IDLE"
+	statusLabel.TextColor3 = C.textMid
+end
+
+local buying = false
+local function autoBuyItems()
+	if buying then return end
+	buying = true
+	notify("Buy", "Membeli x" .. buyAmount, "info")
+	for i = 1, buyAmount do
+		pcall(function() buyRemote:FireServer("Water") end) task.wait(.35)
+		pcall(function() buyRemote:FireServer("Sugar Block Bag") end) task.wait(.35)
+		pcall(function() buyRemote:FireServer("Gelatin") end) task.wait(.35)
+		pcall(function() buyRemote:FireServer("Empty Bag") end) task.wait(.45)
+	end
+	notify("Buy", "Selesai beli x" .. buyAmount, "success")
+	buying = false
+end
+
+local function autoSellItems()
+	local bags = {"Small Marshmallow Bag","Medium Marshmallow Bag","Large Marshmallow Bag"}
+	for _,bag in pairs(bags) do
+		while countItem(bag) > 0 and autoSellEnabled do
+			if equip(bag) then holdE(.7) task.wait(1)
+			else break end
+		end
+	end
+	notify("Sell", "Semua bag terjual!", "success")
 end
 
 farmToggleBtn.MouseButton1Click:Connect(function()
-	farmRunning = not farmRunning
-	if farmRunning then
+	farmRun = not farmRun
+	if farmRun then
 		farmToggleBtn.Text = "STOP FARM"
-		farmToggleBtn.BackgroundColor3 = C.red
+		TweenService:Create(farmToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.red}):Play()
 		notify("Farm", "Auto farm dimulai!", "success")
-		task.spawn(simpleCook)
+		task.spawn(cookLoop)
 	else
 		farmToggleBtn.Text = "START FARM"
-		farmToggleBtn.BackgroundColor3 = C.accentDim
+		TweenService:Create(farmToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
 		notify("Farm", "Auto farm dihentikan.", "error")
 	end
 end)
 
+buyNowBtn.MouseButton1Click:Connect(function()
+	task.spawn(autoBuyItems)
+end)
+
+sellToggleBtn.MouseButton1Click:Connect(function()
+	autoSellEnabled = not autoSellEnabled
+	if autoSellEnabled then
+		sellToggleBtn.Text = "AUTO SELL : ON"
+		TweenService:Create(sellToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.accentDim}):Play()
+		notify("Sell", "Auto sell aktif!", "success")
+		task.spawn(autoSellItems)
+	else
+		sellToggleBtn.Text = "AUTO SELL : OFF"
+		TweenService:Create(sellToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.card}):Play()
+	end
+end)
+
 -- ============================================================
--- FULLY NV PAGE
+-- AUTO PAGE
+-- ============================================================
+local ap = pages["AUTO"]
+
+sectionLabel(ap, "Auto Farm", 1)
+
+local autoFarmToggle, autoFarmCard = makeToggleBtn(ap, "Auto Farm Loop", 2)
+autoFarmCard.Size = UDim2.new(1,0,0,42)
+
+local _, cookValLbl = makeSlider(ap, "COOK AMOUNT", 1, 50, 5, 3, function(v)
+	cookAmount = v
+end)
+
+sectionLabel(ap, "Protection", 4)
+local antiHitToggle, antiHitCard = makeToggleBtn(ap, "Anti Hit + Anti Approach", 5)
+antiHitCard.Size = UDim2.new(1,0,0,42)
+
+local antiStatusCard = card(ap, 30, 6)
+local antiStatusLbl = Instance.new("TextLabel", antiStatusCard)
+antiStatusLbl.Size = UDim2.new(1,-20,1,0)
+antiStatusLbl.Position = UDim2.new(0,12,0,0)
+antiStatusLbl.BackgroundTransparency = 1
+antiStatusLbl.Text = "Idle"
+antiStatusLbl.Font = Enum.Font.Gotham
+antiStatusLbl.TextSize = 11
+antiStatusLbl.TextColor3 = C.textMid
+antiStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+-- AUTO FARM LOGIC
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local function getChar() return player.Character or player.CharacterAdded:Wait() end
+local function getHumanoid() return getChar():FindFirstChild("Humanoid") end
+local function getHRP() return getChar():FindFirstChild("HumanoidRootPart") end
+local buyRemoteV2 = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
+local farmID = 0
+local storePos = Vector3.new(510.7584,3.5872,600.3163)
+
+local function freezeVehicle(vehicle)
+	if not vehicle or not vehicle.PrimaryPart then return end
+	local p = vehicle.PrimaryPart
+	p.AssemblyLinearVelocity = Vector3.zero
+	p.AssemblyAngularVelocity = Vector3.zero
+end
+
+local function pressE2(d)
+	d = d or 0.8
+	vim:SendKeyEvent(true,"E",false,game)
+	task.wait(d)
+	vim:SendKeyEvent(false,"E",false,game)
+end
+
+local function equipV2(name)
+	if autoFarmStopping then return end
+	local char = getChar()
+	local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
+	if tool then 
+		local hum = getHumanoid()
+		if hum then hum:EquipTool(tool) end
+		task.wait(.25) 
+		return true 
+	end
+end
+
+local function countItemV2(name)
+	local total = 0
+	for _,v in pairs(player.Backpack:GetChildren()) do if v.Name == name then total += 1 end end
+	local char = getChar()
+	for _,v in pairs(char:GetChildren()) do if v:IsA("Tool") and v.Name == name then total += 1 end end
+	return total
+end
+
+local function autoBuyV2()
+	for i = 1, cookAmount do
+		if not autoFarmRunning or autoFarmStopping then break end
+		pcall(function() buyRemoteV2:FireServer("Water") end) task.wait(0.35)
+		pcall(function() buyRemoteV2:FireServer("Sugar Block Bag") end) task.wait(0.35)
+		pcall(function() buyRemoteV2:FireServer("Gelatin") end) task.wait(0.35)
+		pcall(function() buyRemoteV2:FireServer("Empty Bag") end) task.wait(0.35)
+	end
+end
+
+local function findStove()
+	local hrp = getHRP()
+	if not hrp then return end
+	local nearest, dist = nil, math.huge
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and string.find(v.Name:lower(),"stove") then
+			local d = (v.Position - hrp.Position).Magnitude
+			if d < dist then dist = d nearest = v end
+		end
+	end
+	return nearest
+end
+
+local function vehicleTP(target)
+	if autoFarmStopping then return end
+	local seat = getHumanoid().SeatPart
+	if not seat then return end
+	local vehicle = seat:FindFirstAncestorOfClass("Model")
+	if not vehicle then return end
+	if not vehicle.PrimaryPart then vehicle.PrimaryPart = seat end
+	local rot = vehicle.PrimaryPart.CFrame - vehicle.PrimaryPart.Position
+	pcall(function()
+		vehicle:SetPrimaryPartCFrame(CFrame.new(target + Vector3.new(0,2,0)) * rot)
+		freezeVehicle(vehicle)
+		task.wait(0.25)
+		vehicle:SetPrimaryPartCFrame(CFrame.new(target) * rot)
+		freezeVehicle(vehicle)
+	end)
+	task.wait(0.4)
+end
+
+local function moveToStove(stove)
+	if not stove or autoFarmStopping then return end
+	local seat = getHumanoid().SeatPart
+	if not seat then return end
+	local vehicle = seat:FindFirstAncestorOfClass("Model")
+	if not vehicle or not vehicle.PrimaryPart then return end
+	local hrp = getHRP()
+	if not hrp then return end
+	local dir = (stove.Position - hrp.Position).Unit
+	local targetPos = stove.Position - (dir * 3.5) + Vector3.new(0,1.5,0)
+	local _, y, _ = vehicle.PrimaryPart.CFrame:ToOrientation()
+	pcall(function()
+		vehicle:SetPrimaryPartCFrame(CFrame.new(targetPos) * CFrame.Angles(0,y,0))
+		freezeVehicle(vehicle)
+	end)
+	task.wait(0.4)
+end
+
+local function cookV2()
+	if not autoFarmRunning or autoFarmStopping then return end
+	local stove = findStove()
+	moveToStove(stove)
+	for i = 1, cookAmount do
+		if autoFarmStopping then return end
+		if autoFarmRunning and equipV2("Water") then pressE2() task.wait(20) end
+		if autoFarmRunning and equipV2("Sugar Block Bag") then task.wait(0.25) pressE2(1) task.wait(1.3) end
+		if autoFarmRunning and equipV2("Gelatin") then task.wait(0.25) pressE2(1) task.wait(1.3) end
+		task.wait(45)
+		if autoFarmRunning and equipV2("Empty Bag") then pressE2() task.wait(1.5) end
+	end
+end
+
+local function autoSellV2()
+	local bags = {"Small Marshmallow Bag","Medium Marshmallow Bag","Large Marshmallow Bag"}
+	for _,bag in pairs(bags) do
+		while autoFarmRunning and not autoFarmStopping and countItemV2(bag) > 0 do
+			if equipV2(bag) then pressE2() task.wait(0.8)
+			else break end
+		end
+	end
+end
+
+local function farmLoop(id)
+	local hrp = getHRP()
+	if not hrp then return end
+	local apartPos = hrp.Position
+	while id == farmID and autoFarmRunning and not autoFarmStopping do
+		vehicleTP(storePos)
+		task.wait(0.5)
+		autoBuyV2()
+		task.wait(1)
+		vehicleTP(apartPos)
+		task.wait(1.2)
+		cookV2()
+		vehicleTP(storePos)
+		task.wait(0.5)
+		autoSellV2()
+		task.wait(0.5)
+	end
+end
+
+autoFarmToggle.MouseButton1Click:Connect(function()
+	autoFarmRunning = not autoFarmRunning
+	if autoFarmRunning then
+		farmID += 1
+		local currentID = farmID
+		autoFarmStopping = false
+		notify("Auto Farm", "Loop dimulai!", "success")
+		task.spawn(function() farmLoop(currentID) end)
+	else
+		autoFarmRunning = false
+		autoFarmStopping = true
+		notify("Auto Farm", "Loop dihentikan.", "error")
+	end
+end)
+
+-- ANTI HIT LOGIC
+local SAFE_POS = Vector3.new(579.0, 3.5, -539.7)
+local MALL_POS = Vector3.new(-725.4, 4.8, 587.4)
+local APPROACH_RADIUS = 20
+local antiHitConn, antiApprConn
+getgenv().ANTI_HIT = false
+
+local function startAntiHit()
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+	antiHitConn = hum.HealthChanged:Connect(function(newHealth)
+		if not getgenv().ANTI_HIT then return end
+		if newHealth < hum.MaxHealth and newHealth > 0 then
+			antiStatusLbl.Text = "Kena hit! TP..."
+			vehicleTeleport(CFrame.new(SAFE_POS))
+		end
+	end)
+end
+
+local NPC_ZONE_POS = Vector3.new(510.7584, 3.5872, 600.3163)
+local NPC_ZONE_RADIUS = 35
+
+local function startAntiApproach()
+	antiApprConn = RunService.Heartbeat:Connect(function()
+		if not getgenv().ANTI_HIT then return end
+		local char = player.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if not hrp then return end
+		local distToNPC = (hrp.Position - NPC_ZONE_POS).Magnitude
+		if distToNPC <= NPC_ZONE_RADIUS then
+			antiStatusLbl.Text = "Paused (di zona NPC)"
+			return
+		end
+		for _, plr in pairs(Players:GetPlayers()) do
+			if plr == player then continue end
+			local c = plr.Character
+			local h = c and c:FindFirstChild("HumanoidRootPart")
+			if h then
+				local d = (hrp.Position - h.Position).Magnitude
+				if d <= APPROACH_RADIUS then
+					antiStatusLbl.Text = plr.Name .. " mendekat!"
+					vehicleTeleport(CFrame.new(MALL_POS))
+					task.wait(1)
+					return
+				end
+			end
+		end
+		antiStatusLbl.Text = "Aktif | Radius: " .. APPROACH_RADIUS
+	end)
+end
+
+local function stopAntiHit()
+	if antiHitConn then antiHitConn:Disconnect() antiHitConn = nil end
+	if antiApprConn then antiApprConn:Disconnect() antiApprConn = nil end
+	antiStatusLbl.Text = "Idle"
+end
+
+player.CharacterAdded:Connect(function()
+	if getgenv().ANTI_HIT then
+		task.wait(1)
+		startAntiHit()
+		startAntiApproach()
+	end
+end)
+
+antiHitToggle.MouseButton1Click:Connect(function()
+	getgenv().ANTI_HIT = not getgenv().ANTI_HIT
+	if getgenv().ANTI_HIT then
+		startAntiHit()
+		startAntiApproach()
+		notify("Protection", "Anti Hit + Approach aktif!", "success")
+	else
+		stopAntiHit()
+		notify("Protection", "Protection dimatikan.", "error")
+	end
+end)
+
+-- ============================================================
+-- STATUS PAGE
+-- ============================================================
+local sp = pages["STATUS"]
+
+local avatarCard = card(sp, 70, 1)
+local avatarImg2 = Instance.new("ImageLabel", avatarCard)
+avatarImg2.Position = UDim2.new(0, 10, 0.5, -26)
+avatarImg2.Size = UDim2.new(0, 52, 0, 52)
+avatarImg2.BackgroundColor3 = C.border
+avatarImg2.BorderSizePixel = 0
+Instance.new("UICorner", avatarImg2).CornerRadius = UDim.new(0, 8)
+
+local usernameLbl = Instance.new("TextLabel", avatarCard)
+usernameLbl.Position = UDim2.new(0, 72, 0, 14)
+usernameLbl.Size = UDim2.new(1, -82, 0, 20)
+usernameLbl.BackgroundTransparency = 1
+usernameLbl.Text = player.Name
+usernameLbl.Font = Enum.Font.GothamBlack
+usernameLbl.TextSize = 15
+usernameLbl.TextColor3 = C.text
+usernameLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local displayLbl = Instance.new("TextLabel", avatarCard)
+displayLbl.Position = UDim2.new(0, 72, 0, 36)
+displayLbl.Size = UDim2.new(1, -82, 0, 14)
+displayLbl.BackgroundTransparency = 1
+displayLbl.Text = "@" .. player.DisplayName
+displayLbl.Font = Enum.Font.Gotham
+displayLbl.TextSize = 11
+displayLbl.TextColor3 = C.textDim
+displayLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+task.spawn(function()
+	local success, img = pcall(function()
+		return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+	end)
+	if success and img then avatarImg2.Image = img end
+end)
+
+sectionLabel(sp, "Inventory", 2)
+local statWaterVal   = makeStatusRow(sp, "Water", 3)
+local statSugarVal   = makeStatusRow(sp, "Sugar Block Bag", 4)
+local statGelatinVal = makeStatusRow(sp, "Gelatin", 5)
+local statBagVal     = makeStatusRow(sp, "Empty Bag", 6)
+
+sectionLabel(sp, "Marshmallow Bags", 7)
+local statSmallVal  = makeStatusRow(sp, "Small Bag", 8)
+local statMedVal    = makeStatusRow(sp, "Medium Bag", 9)
+local statLargeVal  = makeStatusRow(sp, "Large Bag", 10)
+
+local totalCard2 = card(sp, 36, 11)
+local totalLblLeft = Instance.new("TextLabel", totalCard2)
+totalLblLeft.Position = UDim2.new(0,12,0,0)
+totalLblLeft.Size = UDim2.new(0.5,0,1,0)
+totalLblLeft.BackgroundTransparency = 1
+totalLblLeft.Text = "Total Bags"
+totalLblLeft.Font = Enum.Font.GothamBold
+totalLblLeft.TextSize = 12
+totalLblLeft.TextColor3 = C.text
+totalLblLeft.TextXAlignment = Enum.TextXAlignment.Left
+
+local totalVal2 = Instance.new("TextLabel", totalCard2)
+totalVal2.Position = UDim2.new(0.5,0,0,0)
+totalVal2.Size = UDim2.new(0.5,-12,1,0)
+totalVal2.BackgroundTransparency = 1
+totalVal2.Text = "0"
+totalVal2.Font = Enum.Font.GothamBlack
+totalVal2.TextSize = 15
+totalVal2.TextColor3 = C.accentGlow
+totalVal2.TextXAlignment = Enum.TextXAlignment.Right
+
+-- ============================================================
+-- TP PAGE
+-- ============================================================
+local tp = pages["TP"]
+
+do
+	local apart1 = CFrame.new(1140.319091796875,10.105062484741211,450.2520446777344)*CFrame.new(0,2,0)
+	local apart2 = CFrame.new(1141.39099,10.1050625,422.805542)*CFrame.new(0,2,0)
+	local apart3 = CFrame.new(986.987305,10.1050644,248.435837)*CFrame.new(0,2,0)
+	local apart4 = CFrame.new(986.299194,10.1050644,219.940186)*CFrame.new(0,2,0)
+	local apart5 = CFrame.new(924.781006,10.1050644,41.1367264)*CFrame.Angles(0,math.rad(90),0)
+	local apart6 = CFrame.new(896.671997,10.1050644,40.6403999)*CFrame.Angles(0,math.rad(90),0)
+	local csn1 = CFrame.new(1178.8331298828125,3.95,-227.3722381591797)
+	local csn2 = CFrame.new(1205.0880126953125,3.95,-220.54200744628906)
+	local csn3 = CFrame.new(1204.281005859375,3.7122225761413574,-182.851318359375)
+	local csn4 = CFrame.new(1178.5850830078125,3.712223529815674,-189.7107696533203)
+
+	local function tpBtn(label, cf, order)
+		local b = makeActionBtn(tp, label, C.card, order)
+		b.MouseButton1Click:Connect(function()
+			notify("Teleport", "Menuju "..label.."...", "info")
+			vehicleTeleport(cf)
+			notify("Teleport", "Tiba di "..label, "success")
+		end)
+	end
+
+	sectionLabel(tp, "Quick", 1)
+	tpBtn("NPC Store", npcPos, 2)
+	tpBtn("Tier", tierPos, 3)
+	sectionLabel(tp, "Apartments", 4)
+	tpBtn("Apart 1", apart1, 5)
+	tpBtn("Apart 2", apart2, 6)
+	tpBtn("Apart 3", apart3, 7)
+	tpBtn("Apart 4", apart4, 8)
+	tpBtn("Apart 5", apart5, 9)
+	tpBtn("Apart 6", apart6, 10)
+	sectionLabel(tp, "CSN", 11)
+	tpBtn("CSN 1", csn1, 12)
+	tpBtn("CSN 2", csn2, 13)
+	tpBtn("CSN 3", csn3, 14)
+	tpBtn("CSN 4", csn4, 15)
+end
+
+-- ============================================================
+-- ESP PAGE
+-- ============================================================
+local ep = pages["ESP"]
+
+local MaxDistance = 500
+local Enabled = false
+local ShowName = true
+local ShowHealth = true
+local ShowDistance = true
+
+sectionLabel(ep, "ESP Settings", 1)
+
+local espToggle, espCard, setEsp = makeToggleBtn(ep, "ESP Enabled", 2)
+espCard.Size = UDim2.new(1,0,0,42)
+
+do
+	local nameToggle, nameCard, setName = makeToggleBtn(ep, "Show Names", 3)
+	nameCard.Size = UDim2.new(1,0,0,42)
+	setName(true)
+	nameToggle.MouseButton1Click:Connect(function() ShowName = not ShowName end)
+
+	local healthToggle, healthCard, setHealth = makeToggleBtn(ep, "Show Health Bar", 4)
+	healthCard.Size = UDim2.new(1,0,0,42)
+	setHealth(true)
+	healthToggle.MouseButton1Click:Connect(function() ShowHealth = not ShowHealth end)
+
+	local distToggle, distCard, setDist = makeToggleBtn(ep, "Show Distance", 5)
+	distCard.Size = UDim2.new(1,0,0,42)
+	setDist(true)
+	distToggle.MouseButton1Click:Connect(function() ShowDistance = not ShowDistance end)
+end
+
+makeSlider(ep, "MAX DISTANCE", 50, 8000, 500, 6, function(v)
+	MaxDistance = v
+end)
+
+espToggle.MouseButton1Click:Connect(function()
+	Enabled = not Enabled
+	setEsp(Enabled)
+	notify("ESP", Enabled and "ESP diaktifkan" or "ESP dimatikan", Enabled and "success" or "error")
+end)
+
+-- ESP DRAWING
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local ESP_DATA = {}
+local PURPLE_ESP = Color3.fromRGB(130, 60, 240)
+
+local function createESP(p)
+	local box = {}
+	for i = 1,8 do
+		local line = Drawing.new("Line")
+		line.Thickness = 2
+		line.Color = PURPLE_ESP
+		line.Visible = false
+		table.insert(box, line)
+	end
+	local name2 = Drawing.new("Text")
+	name2.Size = 13
+	name2.Center = true
+	name2.Outline = true
+	name2.Color = Color3.new(1,1,1)
+	name2.Visible = false
+	local health2 = Drawing.new("Line")
+	health2.Thickness = 3
+	health2.Visible = false
+	ESP_DATA[p] = {box = box, name = name2, health = health2}
+end
+
+local function removeESP(p)
+	if ESP_DATA[p] then
+		for _,l in pairs(ESP_DATA[p].box) do l:Remove() end
+		ESP_DATA[p].name:Remove()
+		ESP_DATA[p].health:Remove()
+		ESP_DATA[p] = nil
+	end
+end
+
+for _,p in pairs(Players:GetPlayers()) do
+	if p ~= LocalPlayer then createESP(p) end
+end
+Players.PlayerAdded:Connect(function(p) if p ~= LocalPlayer then createESP(p) end end)
+Players.PlayerRemoving:Connect(removeESP)
+
+RunService.RenderStepped:Connect(function()
+	for p, data in pairs(ESP_DATA) do
+		if not Enabled then
+			for _,l in pairs(data.box) do l.Visible = false end
+			data.name.Visible = false
+			data.health.Visible = false
+			continue
+		end
+		local char = p.Character
+		if not char then continue end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		local hum = char:FindFirstChild("Humanoid")
+		if not hrp or not hum then continue end
+		local pos, visible = Camera:WorldToViewportPoint(hrp.Position)
+		if visible then
+			local scale = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0,3,0)).Y - Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0,3,0)).Y
+			local width = scale * 0.6
+			local height = scale * 1.2
+			local x, y = pos.X, pos.Y
+			local left, right = x - width/2, x + width/2
+			local top2, bottom = y - height/2, y + height/2
+			local corner2 = width/4
+			local lines = data.box
+			lines[1].From = Vector2.new(left,top2); lines[1].To = Vector2.new(left+corner2,top2)
+			lines[2].From = Vector2.new(left,top2); lines[2].To = Vector2.new(left,top2+corner2)
+			lines[3].From = Vector2.new(right,top2); lines[3].To = Vector2.new(right-corner2,top2)
+			lines[4].From = Vector2.new(right,top2); lines[4].To = Vector2.new(right,top2+corner2)
+			lines[5].From = Vector2.new(left,bottom); lines[5].To = Vector2.new(left+corner2,bottom)
+			lines[6].From = Vector2.new(left,bottom); lines[6].To = Vector2.new(left,bottom-corner2)
+			lines[7].From = Vector2.new(right,bottom); lines[7].To = Vector2.new(right-corner2,bottom)
+			lines[8].From = Vector2.new(right,bottom); lines[8].To = Vector2.new(right,bottom-corner2)
+			for _,l in pairs(lines) do l.Visible = true end
+
+			local lp = LocalPlayer.Character
+			if not lp or not lp:FindFirstChild("HumanoidRootPart") then continue end
+			local distance2 = math.floor((lp.HumanoidRootPart.Position - hrp.Position).Magnitude)
+
+			if distance2 > MaxDistance then
+				for _,l in pairs(data.box) do l.Visible = false end
+				data.name.Visible = false
+				data.health.Visible = false
+				continue
+			end
+
+			if ShowName then
+				data.name.Text = ShowDistance and (p.Name .. " [" .. distance2 .. "]") or p.Name
+				data.name.Position = Vector2.new(x, top2 - 15)
+				data.name.Visible = true
+			else
+				data.name.Visible = false
+			end
+
+			local hpPct = hum.MaxHealth > 0 and math.clamp(hum.Health/hum.MaxHealth, 0, 1) or 0
+			data.health.From = Vector2.new(left+2, bottom-3)
+			data.health.To = Vector2.new(left+2+((width-4)*hpPct), bottom-3)
+			data.health.Color = Color3.fromRGB(255*(1-hpPct), 255*hpPct, 0)
+			data.health.Visible = ShowHealth
+		else
+			for _,l in pairs(data.box) do l.Visible = false end
+			data.name.Visible = false
+			data.health.Visible = false
+		end
+	end
+end)
+
+-- ============================================================
+-- RESPAWN PAGE
+-- ============================================================
+local rp = pages["RESPAWN"]
+
+local selectedSpawn = nil
+
+local respStatusCard = card(rp, 36, 1)
+local respStatusLbl = Instance.new("TextLabel", respStatusCard)
+respStatusLbl.Size = UDim2.new(1,-20,1,0)
+respStatusLbl.Position = UDim2.new(0,12,0,0)
+respStatusLbl.BackgroundTransparency = 1
+respStatusLbl.Text = "Belum dipilih"
+respStatusLbl.Font = Enum.Font.GothamSemibold
+respStatusLbl.TextSize = 11
+respStatusLbl.TextColor3 = C.textMid
+respStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+sectionLabel(rp, "Pilih Spawn", 2)
+
+local spawnBtns = {}
+local function makeSpawnBtn2(name, pos, order)
+	local b = makeActionBtn(rp, name, C.card, order)
+	b.MouseButton1Click:Connect(function()
+		selectedSpawn = pos
+		for _, sb in pairs(spawnBtns) do
+			TweenService:Create(sb, TweenInfo.new(0.15), {BackgroundColor3 = C.card}):Play()
+		end
+		TweenService:Create(b, TweenInfo.new(0.15), {BackgroundColor3 = C.accentDim}):Play()
+		respStatusLbl.Text = name
+		notify("Spawn", name .. " dipilih", "success")
+	end)
+	table.insert(spawnBtns, b)
+end
+
+makeSpawnBtn2("Dealer",     Vector3.new(511,3,601),         3)
+makeSpawnBtn2("RS 1",       Vector3.new(1140.8,10.1,451.8), 4)
+makeSpawnBtn2("RS 2",       Vector3.new(1141.2,10.1,423.2), 5)
+makeSpawnBtn2("Tier 1",     Vector3.new(985.9,10.1,247),    6)
+makeSpawnBtn2("Tier 2",     Vector3.new(989.3,11.0,228.3),  7)
+makeSpawnBtn2("Trash 1",    Vector3.new(890.9,10.1,44.3),   8)
+makeSpawnBtn2("Trash 2",    Vector3.new(920.4,10.1,46.3),   9)
+makeSpawnBtn2("Dealership", Vector3.new(733.5,4.6,431.9),   10)
+makeSpawnBtn2("GS Ujung",   Vector3.new(-467.1,4.8,353.5),  11)
+makeSpawnBtn2("GS Mid",     Vector3.new(218.7,3.7,-176.2),  12)
+
+local respawnBtn = makeActionBtn(rp, "RESPAWN SEKARANG", C.accent, 13)
+
+respawnBtn.MouseButton1Click:Connect(function()
+	if not selectedSpawn then
+		notify("Respawn", "Pilih spawn terlebih dulu!", "error")
+		return
+	end
+	local char = player.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	if not hum then return end
+	notify("Respawn", "Sedang respawn...", "info")
+	local StarterGui = game:GetService("StarterGui")
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+	task.wait(0.3)
+	hum.Health = 0
+	task.wait(0.2)
+	player.CharacterAdded:Wait()
+	task.wait(1)
+	local newChar = player.Character
+	local hrp = newChar and newChar:FindFirstChild("HumanoidRootPart")
+	if hrp then
+		hrp.CFrame = CFrame.new(selectedSpawn)
+		task.wait(0.3)
+	end
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+	notify("Respawn", "Berhasil respawn!", "success")
+	respStatusLbl.Text = "Respawn berhasil!"
+end)
+
+-- ============================================================
+-- UNDERPOT PAGE (SEDERHANA)
+-- ============================================================
+local up = pages["UNDERPOT"]
+
+local deletedStack = {}
+local originalPositions = {}
+local currentRoadOffset = 0
+local isDeleting = false
+getgenv().LOWER_ROAD = false
+
+local scannedPrompts = {}
+local SCAN_RADIUS = 50
+local ROAD_DEPTH = 6
+
+local ROAD_KEYWORDS = {
+	"road","street","sidewalk","pavement","asphalt",
+	"ground","floor","path","lane","crossing",
+	"jalan","trotoar","jalanan"
+}
+
+local upStatusCard = card(up, 36, 1)
+local upStatusLbl = Instance.new("TextLabel", upStatusCard)
+upStatusLbl.Size = UDim2.new(1,-20,1,0)
+upStatusLbl.Position = UDim2.new(0,12,0,0)
+upStatusLbl.BackgroundTransparency = 1
+upStatusLbl.Text = "Idle"
+upStatusLbl.Font = Enum.Font.GothamSemibold
+upStatusLbl.TextSize = 11
+upStatusLbl.TextColor3 = C.textMid
+upStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local upUndoCard = card(up, 30, 2)
+local upUndoLbl = Instance.new("TextLabel", upUndoCard)
+upUndoLbl.Size = UDim2.new(1,-20,1,0)
+upUndoLbl.Position = UDim2.new(0,12,0,0)
+upUndoLbl.BackgroundTransparency = 1
+upUndoLbl.Text = "Undo Stack: 0 object"
+upUndoLbl.Font = Enum.Font.Gotham
+upUndoLbl.TextSize = 11
+upUndoLbl.TextColor3 = C.textDim
+upUndoLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+sectionLabel(up, "Lower Road (depth: 6)", 3)
+
+local lowerRoadBtn = makeActionBtn(up, "LOWER : OFF", Color3.fromRGB(60, 20, 140), 4)
+
+sectionLabel(up, "Delete Floor", 5)
+
+local deleteFloorBtn = makeActionBtn(up, "DELETE FLOOR DI BAWAH", Color3.fromRGB(120, 20, 50), 6)
+local undoFloorBtn   = makeActionBtn(up, "UNDO", C.card, 7)
+
+sectionLabel(up, "Prompt Scanner (radius: 50)", 8)
+
+local upPromptCountCard = card(up, 30, 9)
+local upPromptCountLbl = Instance.new("TextLabel", upPromptCountCard)
+upPromptCountLbl.Size = UDim2.new(1,-20,1,0)
+upPromptCountLbl.Position = UDim2.new(0,12,0,0)
+upPromptCountLbl.BackgroundTransparency = 1
+upPromptCountLbl.Text = "0 prompt ditemukan"
+upPromptCountLbl.Font = Enum.Font.Gotham
+upPromptCountLbl.TextSize = 11
+upPromptCountLbl.TextColor3 = C.textDim
+upPromptCountLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+local findCookBtn    = makeActionBtn(up, "FIND COOK", Color3.fromRGB(0, 100, 80), 10)
+local restoreCookBtn = makeActionBtn(up, "RESTORE COOK", C.card, 11)
+
+local function isRoadPart(part)
+	if not part:IsA("BasePart") and not part:IsA("UnionOperation") then return false end
+	local nameLower = part.Name:lower()
+	for _, kw in pairs(ROAD_KEYWORDS) do
+		if nameLower:find(kw) then return true end
+	end
+	if part.Parent then
+		local parentName = part.Parent.Name:lower()
+		for _, kw in pairs(ROAD_KEYWORDS) do
+			if parentName:find(kw) then return true end
+		end
+	end
+	return false
+end
+
+local function lowerAllRoads()
+	local count = 0
+	originalPositions = {}
+	currentRoadOffset = ROAD_DEPTH
+	upStatusLbl.Text = "Mencari jalanan..."
+	task.wait(0.1)
+	for _, obj in pairs(workspace:GetDescendants()) do
+		if isRoadPart(obj) then
+			originalPositions[obj] = obj.CFrame
+			obj.CFrame = obj.CFrame * CFrame.new(0, -ROAD_DEPTH, 0)
+			count += 1
+		end
+	end
+	local char = player.Character
+	if char then
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -ROAD_DEPTH, 0) end
+	end
+	upStatusLbl.Text = count .. " part jalan diturunkan -6Y"
+end
+
+local function restoreAllRoads()
+	local count = 0
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	for part, originalCF in pairs(originalPositions) do
+		if part and part.Parent then
+			part.CFrame = originalCF
+			count += 1
+		end
+	end
+	if hrp and currentRoadOffset ~= 0 then
+		hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y + currentRoadOffset, hrp.Position.Z)
+		hrp.AssemblyLinearVelocity = Vector3.zero
+	end
+	originalPositions = {}
+	currentRoadOffset = 0
+	upStatusLbl.Text = count .. " part jalan dikembalikan"
+end
+
+lowerRoadBtn.MouseButton1Click:Connect(function()
+	getgenv().LOWER_ROAD = not getgenv().LOWER_ROAD
+	if getgenv().LOWER_ROAD then
+		lowerRoadBtn.Text = "LOWER : ON"
+		TweenService:Create(lowerRoadBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
+		notify("Lower", "Jalan diturunkan!", "success")
+		task.spawn(lowerAllRoads)
+	else
+		lowerRoadBtn.Text = "LOWER : OFF"
+		TweenService:Create(lowerRoadBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 20, 140)}):Play()
+		restoreAllRoads()
+		notify("Lower", "Jalan dikembalikan.", "error")
+	end
+end)
+
+undoFloorBtn.MouseButton1Click:Connect(function()
+	local last = table.remove(deletedStack)
+	if last and last.object then
+		last.object.Parent = last.parent
+		upUndoLbl.Text = "Undo Stack: " .. #deletedStack .. " object"
+		upStatusLbl.Text = "Undo berhasil"
+		notify("Delete", "Undo berhasil!", "success")
+	else
+		upStatusLbl.Text = "Tidak ada yang bisa di-undo"
+		notify("Delete", "Tidak ada yang bisa di-undo.", "error")
+	end
+end)
+
+deleteFloorBtn.MouseButton1Click:Connect(function()
+	if isDeleting then return end
+	isDeleting = true
+	deleteFloorBtn.Text = "Memproses..."
+	TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 0, 30)}):Play()
+
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		upStatusLbl.Text = "HumanoidRootPart tidak ada"
+		isDeleting = false
+		deleteFloorBtn.Text = "DELETE FLOOR DI BAWAH"
+		TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
+		return
+	end
+
+	upStatusLbl.Text = "Mencari object di bawah..."
+
+	local rayOrigin = hrp.Position
+	local rayDir = Vector3.new(0, -15, 0)
+	local rayParams = RaycastParams.new()
+	rayParams.FilterDescendantsInstances = {char}
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+
+	local result = workspace:Raycast(rayOrigin, rayDir, rayParams)
+	if result and result.Instance then
+		local hit = result.Instance
+		if hit and hit.Parent then
+			table.insert(deletedStack, {object = hit:Clone(), parent = hit.Parent})
+			hit:Destroy()
+			upUndoLbl.Text = "Undo Stack: " .. #deletedStack .. " object"
+			upStatusLbl.Text = "Deleted: " .. hit.Name
+			notify("Delete", "Part dihapus!", "success")
+		end
+	else
+		upStatusLbl.Text = "Tidak ada object di bawah"
+		notify("Delete", "Tidak ada object terdeteksi.", "error")
+	end
+
+	task.wait(0.3)
+	isDeleting = false
+	deleteFloorBtn.Text = "DELETE FLOOR DI BAWAH"
+	TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 20, 50)}):Play()
+end)
+
+local function getPromptPosition(prompt)
+	local p = prompt.Parent
+	if not p then return nil end
+	if p:IsA("BasePart") then return p.Position end
+	if p:IsA("Attachment") then return p.WorldPosition end
+	if p:IsA("Model") and p.PrimaryPart then return p.PrimaryPart.Position end
+	return nil
+end
+
+local function doPromptScan()
+	local char = player.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	if not hrp then upStatusLbl.Text = "HumanoidRootPart tidak ada" return end
+
+	for prompt, data in pairs(scannedPrompts) do
+		if prompt and prompt.Parent then
+			prompt.MaxActivationDistance = data.maxDist
+			prompt.RequiresLineOfSight   = data.lineOfSight
+			prompt.Enabled               = data.enabled
+			prompt.HoldDuration          = data.holdDuration
+		end
+	end
+	scannedPrompts = {}
+
+	upStatusLbl.Text = "Scanning prompt..."
+	local found = 0
+
+	for _, v in ipairs(workspace:GetDescendants()) do
+		if v:IsA("ProximityPrompt") then
+			local pos = getPromptPosition(v)
+			if pos then
+				local dist = (hrp.Position - pos).Magnitude
+				if dist <= SCAN_RADIUS then
+					scannedPrompts[v] = {
+						maxDist      = v.MaxActivationDistance,
+						lineOfSight  = v.RequiresLineOfSight,
+						enabled      = v.Enabled,
+						holdDuration = v.HoldDuration,
+					}
+					v.Enabled               = true
+					v.MaxActivationDistance = 20
+					v.RequiresLineOfSight   = false
+					v.HoldDuration          = 0
+					found += 1
+				end
+			end
+		end
+	end
+
+	upPromptCountLbl.Text = found .. " prompt ditemukan"
+	upStatusLbl.Text = "Scan: " .. found .. " prompt dimodifikasi"
+end
+
+local function doRestorePrompts()
+	local count = 0
+	for prompt, data in pairs(scannedPrompts) do
+		if prompt and prompt.Parent then
+			prompt.MaxActivationDistance = data.maxDist
+			prompt.RequiresLineOfSight   = data.lineOfSight
+			prompt.Enabled               = data.enabled
+			prompt.HoldDuration          = data.holdDuration
+			count += 1
+		end
+	end
+	scannedPrompts = {}
+	upPromptCountLbl.Text = "0 prompt ditemukan"
+	upStatusLbl.Text = count .. " prompt di-restore"
+end
+
+findCookBtn.MouseButton1Click:Connect(function()
+	findCookBtn.Text = "Scanning..."
+	TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 60, 50)}):Play()
+	task.spawn(function()
+		doPromptScan()
+		notify("Prompt", upPromptCountLbl.Text, "success")
+		task.wait(0.3)
+		findCookBtn.Text = "FIND COOK"
+		TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 100, 80)}):Play()
+	end)
+end)
+
+restoreCookBtn.MouseButton1Click:Connect(function()
+	doRestorePrompts()
+	notify("Prompt", "Prompt di-restore.", "info")
+end)
+
+-- ============================================================
+-- FULLY NV PAGE (APART CASINO)
 -- ============================================================
 local fullyNVPage = pages["FULLY NV"]
 
@@ -759,7 +1968,7 @@ local function teleportToStage(cf)
 	return true
 end
 
-local function spamE()
+local function spamE3()
 	for i = 1, 3 do
 		pcall(function()
 			vim:SendKeyEvent(true, "E", false, game)
@@ -770,29 +1979,29 @@ local function spamE()
 	end
 end
 
-local function processCooking()
+local function processCookingNV()
 	if countItem("Water") == 0 or countItem("Sugar Block Bag") == 0 or countItem("Gelatin") == 0 then
 		return false, "Bahan habis!"
 	end
 	
 	if equip("Water") then
-		spamE()
+		spamE3()
 		task.wait(20)
 	end
 	
 	if equip("Sugar Block Bag") then
-		spamE()
+		spamE3()
 		task.wait(1)
 	end
 	
 	if equip("Gelatin") then
-		spamE()
+		spamE3()
 		task.wait(1)
 		task.wait(0.5)
 	end
 	
 	if equip("Empty Bag") then
-		spamE()
+		spamE3()
 		task.wait(1.5)
 	end
 	
@@ -832,12 +2041,12 @@ local function fullyNVLoop(setStatusFunc)
 			end
 			
 			task.wait(stepDelay)
-			spamE()
+			spamE3()
 			task.wait(0.3)
 			
 			if fullyNVRunning then
 				setStatusFunc("Memasak di " .. stageName, C.green)
-				local cookSuccess, cookMsg = processCooking()
+				local cookSuccess, cookMsg = processCookingNV()
 				if not cookSuccess then
 					setStatusFunc(cookMsg, C.red)
 					break
@@ -978,8 +2187,8 @@ local function setNVStatus(msg, col)
 	nvStatusLbl.TextColor3 = col or C.textMid
 end
 
-local startNVW, startNVB = makeActionBtn(fullyNVPage, "▶ START FULLY NV", C.greenD, 11)
-local stopNVW, stopNVB = makeActionBtn(fullyNVPage, "■ STOP FULLY NV", C.red, 12)
+local startNVW, startNVB = actionBtn(fullyNVPage, "▶ START FULLY NV", C.greenD, 11)
+local stopNVW, stopNVB = actionBtn(fullyNVPage, "■ STOP FULLY NV", C.red, 12)
 stopNVW.Visible = false
 
 local function setNVUI(running)
@@ -1022,11 +2231,79 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- ============================================================
--- STARTUP
+-- STATUS LOOP
 -- ============================================================
+task.spawn(function()
+	while gui and gui.Parent do
+		local w  = countItem("Water")
+		local sg = countItem("Sugar Block Bag")
+		local ge = countItem("Gelatin")
+		local bg = countItem("Empty Bag")
+		local sm = countItem("Small Marshmallow Bag")
+		local md = countItem("Medium Marshmallow Bag")
+		local lg = countItem("Large Marshmallow Bag")
+
+		pcall(function()
+			if waterVal    then waterVal.Text    = tostring(w)  end
+			if sugarVal    then sugarVal.Text    = tostring(sg) end
+			if gelatinVal  then gelatinVal.Text  = tostring(ge) end
+			if bagVal      then bagVal.Text      = tostring(bg) end
+			if statWaterVal   then statWaterVal.Text   = tostring(w)  end
+			if statSugarVal   then statSugarVal.Text   = tostring(sg) end
+			if statGelatinVal then statGelatinVal.Text = tostring(ge) end
+			if statBagVal     then statBagVal.Text     = tostring(bg) end
+			if statSmallVal   then statSmallVal.Text   = tostring(sm) end
+			if statMedVal     then statMedVal.Text     = tostring(md) end
+			if statLargeVal   then statLargeVal.Text   = tostring(lg) end
+			if totalVal2      then totalVal2.Text      = tostring(sm+md+lg) end
+		end)
+
+		task.wait(0.5)
+	end
+end)
+
+-- MINIMIZE BUTTON
+local bodyVisible = true
+
+minBtn.MouseButton1Click:Connect(function()
+	bodyVisible = not bodyVisible
+	sidebar.Visible = bodyVisible
+	content.Visible = bodyVisible
+	if bodyVisible then
+		TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 430)}):Play()
+	else
+		TweenService:Create(main, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 660, 0, 46)}):Play()
+	end
+end)
+
+-- HIDE BUTTON + KEYBIND Z
+local hideBtn2 = Instance.new("TextButton", gui)
+hideBtn2.Size = UDim2.new(0, 42, 0, 42)
+hideBtn2.Position = UDim2.new(1, -52, 0.5, -21)
+hideBtn2.Text = "E"
+hideBtn2.Font = Enum.Font.GothamBlack
+hideBtn2.TextSize = 15
+hideBtn2.BackgroundColor3 = C.accent
+hideBtn2.TextColor3 = Color3.new(1,1,1)
+hideBtn2.Active = true
+hideBtn2.Draggable = true
+hideBtn2.BorderSizePixel = 0
+Instance.new("UICorner", hideBtn2).CornerRadius = UDim.new(0, 10)
+
+hideBtn2.MouseButton1Click:Connect(function()
+	main.Visible = not main.Visible
+end)
+
+ContextActionService:BindAction("toggleUI_ELIXIR", function(_, state)
+	if state == Enum.UserInputState.Begin then
+		main.Visible = not main.Visible
+	end
+end, false, Enum.KeyCode.Z)
+
+-- STARTUP
 switchTab("FULLY NV")
 task.wait(0.3)
 notify("ELIXIR 3.5", "Script berhasil diload! Klik tab FULLY NV", "success")
 
-print("=== ELIXIR 3.5 LOADED ===")
-print("GUI harus muncul. Jika tidak, cek output untuk error.")
+print("=== ELIXIR 3.5 FULLY LOADED ===")
+print("Semua fitur asli tetap ada + page FULLY NV")

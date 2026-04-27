@@ -1,7 +1,5 @@
 -- ============================================================
--- SCRIPT FULLY NV + DANGER TP
--- Creator: [user]
--- Fitur: Auto masak Casino Apart + Teleport dengan lukai diri
+-- SCRIPT FULLY NV + DANGER TP (LENGKAP DENGAN 12 LOKASI TP)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -42,8 +40,8 @@ gui.Parent = playerGui
 gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 400, 0, 500)
-main.Position = UDim2.new(0.5, -200, 0.5, -250)
+main.Size = UDim2.new(0, 450, 0, 550)
+main.Position = UDim2.new(0.5, -225, 0.5, -275)
 main.BackgroundColor3 = C.bg
 main.Active = true
 main.Draggable = true
@@ -105,7 +103,7 @@ for i, tabName in ipairs(tabs) do
     content.BackgroundTransparency = 1
     content.ScrollBarThickness = 3
     content.Visible = i == 1
-    content.CanvasSize = UDim2.new(0, 0, 0, 600)
+    content.CanvasSize = UDim2.new(0, 0, 0, 800)
     
     local pad = Instance.new("UIPadding", content)
     pad.PaddingTop = UDim.new(0, 12)
@@ -120,11 +118,20 @@ for i, tabName in ipairs(tabs) do
             cb.Visible = (j == i)
             tabBtns[j].TextColor3 = (j == i) and C.accent or C.textDim
         end
+        -- update canvas size
+        task.wait(0.05)
+        local totalH = 0
+        for _, child in ipairs(content:GetChildren()) do
+            if child:IsA("Frame") then
+                totalH = totalH + child.Size.Y.Offset + 8
+            end
+        end
+        content.CanvasSize = UDim2.new(0, 0, 0, totalH + 20)
     end)
 end
 
 -- ============================================================
--- SECTION FULLY NV
+-- SECTION FULLY NV (sama seperti sebelumnya, tapi disederhanakan)
 -- ============================================================
 local fullyContent = contents[1]
 
@@ -172,8 +179,8 @@ apartLabel.TextColor3 = C.textDim
 apartLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local apartDropdown = Instance.new("TextButton", apartFrame)
-apartDropdown.Size = UDim2.new(0, 140, 0, 32)
-apartDropdown.Position = UDim2.new(1, -152, 0.5, -16)
+apartDropdown.Size = UDim2.new(0, 160, 0, 32)
+apartDropdown.Position = UDim2.new(1, -172, 0.5, -16)
 apartDropdown.BackgroundColor3 = C.bg
 apartDropdown.Text = "Pilih Apart"
 apartDropdown.Font = Enum.Font.Gotham
@@ -191,8 +198,8 @@ apartDropdown.MouseButton1Click:Connect(function()
     if dropdownOpen then if dropdownList then dropdownList:Destroy() end dropdownOpen = false return end
     dropdownOpen = true
     dropdownList = Instance.new("Frame", fullyContent)
-    dropdownList.Size = UDim2.new(0, 140, 0, #apartOptions * 32)
-    dropdownList.Position = UDim2.new(1, -152, 0, apartFrame.AbsolutePosition.Y + 40)
+    dropdownList.Size = UDim2.new(0, 160, 0, #apartOptions * 32)
+    dropdownList.Position = UDim2.new(1, -172, 0, apartFrame.AbsolutePosition.Y + 40)
     dropdownList.BackgroundColor3 = C.card
     Instance.new("UICorner", dropdownList).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", dropdownList).Color = C.border
@@ -233,8 +240,8 @@ potLabel.TextColor3 = C.textDim
 potLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local potDropdown = Instance.new("TextButton", potFrame)
-potDropdown.Size = UDim2.new(0, 140, 0, 32)
-potDropdown.Position = UDim2.new(1, -152, 0.5, -16)
+potDropdown.Size = UDim2.new(0, 160, 0, 32)
+potDropdown.Position = UDim2.new(1, -172, 0.5, -16)
 potDropdown.BackgroundColor3 = C.bg
 potDropdown.Text = "Pilih POT"
 potDropdown.Font = Enum.Font.Gotham
@@ -252,8 +259,8 @@ potDropdown.MouseButton1Click:Connect(function()
     if potDropdownOpen then if potDropdownList then potDropdownList:Destroy() end potDropdownOpen = false return end
     potDropdownOpen = true
     potDropdownList = Instance.new("Frame", fullyContent)
-    potDropdownList.Size = UDim2.new(0, 140, 0, #potOptions * 32)
-    potDropdownList.Position = UDim2.new(1, -152, 0, potFrame.AbsolutePosition.Y + 40)
+    potDropdownList.Size = UDim2.new(0, 160, 0, #potOptions * 32)
+    potDropdownList.Position = UDim2.new(1, -172, 0, potFrame.AbsolutePosition.Y + 40)
     potDropdownList.BackgroundColor3 = C.card
     Instance.new("UICorner", potDropdownList).CornerRadius = UDim.new(0, 6)
     Instance.new("UIStroke", potDropdownList).Color = C.border
@@ -332,85 +339,52 @@ Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 stopBtn.Visible = false
 
 -- ============================================================
--- KOORDINAT CASINO APART
+-- KOORDINAT CASINO APART (SEDERHANA)
 -- ============================================================
 local apartCoords = {
     [1] = { -- APART CASINO 1
         {
-            {cf = CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00), name = "Tahap 1"},
-            {cf = CFrame.new(1199.75, 3.71, -238.12) * CFrame.Angles(-0.00, -0.05, -0.00), name = "Tahap 2"},
-            {cf = CFrame.new(1199.74, 6.59, -233.05) * CFrame.Angles(-0.00, 0.00, -0.00), name = "Tahap 3"},
-            {cf = CFrame.new(1199.66, 6.59, -227.75) * CFrame.Angles(0.00, -0.00, 0.00), name = "Tahap 4"},
-            {
-                kanan = CFrame.new(1199.66, 6.59, -227.75) * CFrame.Angles(0.00, -0.00, 0.00),
-                kiri = CFrame.new(1199.66, 6.59, -227.75) * CFrame.Angles(0.00, -0.00, 0.00),
-                name = "Tahap 5"
-            },
-            {
-                kanan = CFrame.new(1199.91, 7.56, -219.75) * CFrame.Angles(-0.00, 0.05, 0.00),
-                kiri = CFrame.new(1199.75, 7.45, -217.66) * CFrame.Angles(0.00, -0.12, -0.00),
-                name = "Tahap 6"
-            },
-            {
-                kanan = CFrame.new(1199.87, 15.96, -215.33) * CFrame.Angles(0.00, 0.05, 0.00),
-                kiri = CFrame.new(1199.38, 15.96, -220.53) * CFrame.Angles(0.00, 0.06, 0.00),
-                name = "Tahap 7"
-            },
+            {cf = CFrame.new(1196.51, 3.71, -241.13), name = "Tahap 1"},
+            {cf = CFrame.new(1199.75, 3.71, -238.12), name = "Tahap 2"},
+            {cf = CFrame.new(1199.74, 6.59, -233.05), name = "Tahap 3"},
+            {cf = CFrame.new(1199.66, 6.59, -227.75), name = "Tahap 4"},
+            {kanan = CFrame.new(1199.91, 7.56, -219.75), kiri = CFrame.new(1199.75, 7.45, -217.66), name = "Tahap 5"},
+            {kanan = CFrame.new(1199.87, 15.96, -215.33), kiri = CFrame.new(1199.38, 15.96, -220.53), name = "Tahap 6"},
         }
     },
     [2] = { -- APART CASINO 2
         {
-            {cf = CFrame.new(1186.34, 3.71, -242.92) * CFrame.Angles(0.00, -0.06, 0.00), name = "Tahap 1"},
-            {cf = CFrame.new(1183.00, 6.59, -233.78) * CFrame.Angles(-0.00, 0.00, 0.00), name = "Tahap 2"},
-            {cf = CFrame.new(1182.70, 7.32, -229.73) * CFrame.Angles(-0.00, -0.01, 0.00), name = "Tahap 3"},
-            {cf = CFrame.new(1182.75, 6.59, -224.78) * CFrame.Angles(-0.00, -0.01, 0.00), name = "Tahap 4"},
-            {
-                kanan = CFrame.new(1183.43, 15.96, -229.66) * CFrame.Angles(0.00, 0.02, -0.00),
-                kiri = CFrame.new(1183.22, 15.96, -225.63) * CFrame.Angles(0.00, -0.04, -0.00),
-                name = "Tahap 5"
-            },
+            {cf = CFrame.new(1186.34, 3.71, -242.92), name = "Tahap 1"},
+            {cf = CFrame.new(1183.00, 6.59, -233.78), name = "Tahap 2"},
+            {cf = CFrame.new(1182.70, 7.32, -229.73), name = "Tahap 3"},
+            {cf = CFrame.new(1182.75, 6.59, -224.78), name = "Tahap 4"},
+            {kanan = CFrame.new(1183.43, 15.96, -229.66), kiri = CFrame.new(1183.22, 15.96, -225.63), name = "Tahap 5"},
         }
     },
     [3] = { -- APART CASINO 3
         {
-            {cf = CFrame.new(1196.17, 3.71, -205.72) * CFrame.Angles(0.00, -0.03, -0.00), name = "Tahap 1"},
-            {cf = CFrame.new(1199.76, 3.71, -196.51) * CFrame.Angles(0.00, -0.04, 0.00), name = "Tahap 2"},
-            {cf = CFrame.new(1199.69, 6.59, -191.16) * CFrame.Angles(-0.00, -0.06, -0.00), name = "Tahap 3"},
-            {cf = CFrame.new(1199.42, 6.59, -185.27) * CFrame.Angles(-0.00, 0.01, 0.00), name = "Tahap 4"},
-            {
-                kanan = CFrame.new(1199.42, 6.59, -185.27) * CFrame.Angles(-0.00, 0.01, 0.00),
-                kiri = CFrame.new(1199.95, 7.07, -177.69) * CFrame.Angles(-0.00, 0.01, 0.00),
-                name = "Tahap 5"
-            },
-            {
-                kanan = CFrame.new(1199.55, 15.96, -181.89) * CFrame.Angles(0.00, -0.09, 0.00),
-                kiri = CFrame.new(1199.46, 15.96, -177.81) * CFrame.Angles(-0.00, -0.05, -0.00),
-                name = "Tahap 6"
-            },
+            {cf = CFrame.new(1196.17, 3.71, -205.72), name = "Tahap 1"},
+            {cf = CFrame.new(1199.76, 3.71, -196.51), name = "Tahap 2"},
+            {cf = CFrame.new(1199.69, 6.59, -191.16), name = "Tahap 3"},
+            {cf = CFrame.new(1199.42, 6.59, -185.27), name = "Tahap 4"},
+            {kanan = CFrame.new(1199.42, 6.59, -185.27), kiri = CFrame.new(1199.95, 7.07, -177.69), name = "Tahap 5"},
+            {kanan = CFrame.new(1199.55, 15.96, -181.89), kiri = CFrame.new(1199.46, 15.96, -177.81), name = "Tahap 6"},
         }
     },
     [4] = { -- APART CASINO 4
         {
-            {cf = CFrame.new(1187.70, 3.71, -209.73) * CFrame.Angles(0.00, -0.03, 0.00), name = "Tahap 1"},
-            {cf = CFrame.new(1182.27, 3.71, -204.65) * CFrame.Angles(-0.00, 0.09, -0.00), name = "Tahap 2"},
-            {cf = CFrame.new(1182.23, 3.71, -198.77) * CFrame.Angles(0.00, -0.04, -0.00), name = "Tahap 3"},
-            {cf = CFrame.new(1183.06, 6.59, -193.92) * CFrame.Angles(0.00, 0.08, -0.00), name = "Tahap 4"},
-            {
-                kanan = CFrame.new(1182.60, 7.56, -191.29) * CFrame.Angles(-0.00, -0.02, -0.00),
-                kiri = CFrame.new(1183.36, 6.72, -187.25) * CFrame.Angles(-0.00, -0.04, -0.00),
-                name = "Tahap 5"
-            },
-            {
-                kanan = CFrame.new(1183.24, 15.96, -191.25) * CFrame.Angles(-0.00, -0.01, 0.00),
-                kiri = CFrame.new(1183.08, 15.96, -187.36) * CFrame.Angles(-0.00, -0.05, -0.00),
-                name = "Tahap 6"
-            },
+            {cf = CFrame.new(1187.70, 3.71, -209.73), name = "Tahap 1"},
+            {cf = CFrame.new(1182.27, 3.71, -204.65), name = "Tahap 2"},
+            {cf = CFrame.new(1182.23, 3.71, -198.77), name = "Tahap 3"},
+            {cf = CFrame.new(1183.06, 6.59, -193.92), name = "Tahap 4"},
+            {kanan = CFrame.new(1182.60, 7.56, -191.29), kiri = CFrame.new(1183.36, 6.72, -187.25), name = "Tahap 5"},
+            {kanan = CFrame.new(1183.24, 15.96, -191.25), kiri = CFrame.new(1183.08, 15.96, -187.36), name = "Tahap 6"},
         }
     }
 }
 
 -- ============================================================
--- BODY VELOCITY TWEEN SYSTEM
+-- BODY VELOCITY TWEEN
 -- ============================================================
 local nvRunning = false
 local nvStopFlag = false
@@ -439,10 +413,8 @@ local function moveToPosition(targetPos, targetCF, onComplete)
     currentBodyGyro.CFrame = targetCF
     currentBodyGyro.Parent = hrp
     
-    local startPos = hrp.Position
-    local direction = (targetPos - startPos).Unit
     local speed = 12
-    local lastDistance = (targetPos - startPos).Magnitude
+    local lastDistance = (targetPos - hrp.Position).Magnitude
     local stuckTime = 0
     
     local connection
@@ -477,7 +449,6 @@ local function moveToPosition(targetPos, targetCF, onComplete)
             stopBodyVelocity()
             if newDistance > 3 and stuckTime > 2 then
                 hrp.CFrame = CFrame.new(targetPos)
-                task.wait(0.1)
             end
             if onComplete then onComplete(true) end
         end
@@ -487,15 +458,10 @@ end
 local function blinkToPosition(pos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(pos)
-        task.wait(0.05)
-    end
+    if hrp then hrp.CFrame = CFrame.new(pos) end
 end
 
--- ============================================================
--- INTERAKSI MASAK
--- ============================================================
+-- Interaksi
 local function pressEOnce()
     vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
     task.wait(0.1)
@@ -516,9 +482,7 @@ local function interactAndWait(toolName, waitTime, isSugarStep, isGelatinStep, s
     for i = 1, 3 do pressEOnce() task.wait(0.1) end
     
     if isSugarStep then
-        while nvRunning and not nvStopFlag and not sugarDoneFlag[1] do
-            task.wait(0.1)
-        end
+        while nvRunning and not nvStopFlag and not sugarDoneFlag[1] do task.wait(0.1) end
     elseif isGelatinStep then
         sugarDoneFlag[1] = true
     else
@@ -532,8 +496,7 @@ local function doCookSequenceForTahap(tahapIndex, targetCF)
     if not hrp then return false end
     
     local targetPos = targetCF.Position
-    local belowPos = Vector3.new(targetPos.X, targetPos.Y - 2, targetPos.Z)
-    blinkToPosition(belowPos)
+    blinkToPosition(Vector3.new(targetPos.X, targetPos.Y - 2, targetPos.Z))
     task.wait(0.1)
     
     local completed = false
@@ -550,16 +513,13 @@ local function doCookSequenceForTahap(tahapIndex, targetCF)
         while nvRunning and not nvStopFlag and not sugarFlag[1] do task.wait(0.1) end
     elseif tahapIndex == 3 then
         interactAndWait("Gelatin", 0, false, true, {false})
-    elseif tahapIndex >= 4 then
+    else
         interactAndWait("Empty Bag", 45, false, false, {false})
     end
     
     return true
 end
 
--- ============================================================
--- RUN FULLY NV
--- ============================================================
 local function runFullyNV()
     if not selectedApart or not selectedPot then
         statusLabel.Text = "❌ Pilih Apart dan POT dulu!"
@@ -574,17 +534,14 @@ local function runFullyNV()
     startBtn.Visible = false
     stopBtn.Visible = true
     
-    local apartData = apartCoords[selectedApart]
-    if not apartData then
+    local stages = apartCoords[selectedApart]
+    if not stages then
         statusLabel.Text = "❌ Data apart tidak ditemukan"
         startBtn.Visible = true
         stopBtn.Visible = false
         nvRunning = false
         return
     end
-    
-    local stages = apartData[1]
-    local totalStages = #stages
     
     for stageIdx, stage in ipairs(stages) do
         if nvStopFlag then break end
@@ -593,8 +550,7 @@ local function runFullyNV()
         if stage.cf then
             targetCF = stage.cf
         elseif stage.kanan and stage.kiri then
-            if selectedPot == 1 then targetCF = stage.kanan
-            else targetCF = stage.kiri end
+            targetCF = (selectedPot == 1) and stage.kanan or stage.kiri
         end
         
         if not targetCF then
@@ -602,16 +558,15 @@ local function runFullyNV()
             break
         end
         
-        progressLabel.Text = string.format("Tahap %d/%d: %s", stageIdx, totalStages, stage.name or "")
+        progressLabel.Text = string.format("Tahap %d/%d: %s", stageIdx, #stages, stage.name)
         
         local success = doCookSequenceForTahap(stageIdx, targetCF)
         if not success or nvStopFlag then break end
-        
         task.wait(0.3)
     end
     
     if nvStopFlag then
-        statusLabel.Text = "⏹ Dihentikan user"
+        statusLabel.Text = "⏹ Dihentikan"
         statusLabel.TextColor3 = C.orange
     else
         statusLabel.Text = "✅ FULLY NV selesai!"
@@ -641,7 +596,7 @@ stopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- SECTION DANGER TP
+-- SECTION DANGER TP (12 LOKASI LENGKAP)
 -- ============================================================
 local dtpContent = contents[2]
 
@@ -674,7 +629,7 @@ dtpDesc.TextColor3 = C.textDim
 dtpDesc.TextXAlignment = Enum.TextXAlignment.Center
 dtpDesc.TextWrapped = true
 
--- Status DTP
+-- Status
 local dtpStatusFrame = Instance.new("Frame", dtpContent)
 dtpStatusFrame.Size = UDim2.new(1, 0, 0, 40)
 dtpStatusFrame.BackgroundColor3 = C.card
@@ -685,7 +640,7 @@ local dtpStatusLabel = Instance.new("TextLabel", dtpStatusFrame)
 dtpStatusLabel.Size = UDim2.new(1, -16, 1, 0)
 dtpStatusLabel.Position = UDim2.new(0, 8, 0, 0)
 dtpStatusLabel.BackgroundTransparency = 1
-dtpStatusLabel.Text = "✅ SIAP — Pilih lokasi"
+dtpStatusLabel.Text = "✅ SIAP — Pilih lokasi di bawah"
 dtpStatusLabel.Font = Enum.Font.GothamBold
 dtpStatusLabel.TextSize = 11
 dtpStatusLabel.TextColor3 = C.green
@@ -705,35 +660,35 @@ healthBarFill.BackgroundColor3 = C.green
 healthBarFill.BorderSizePixel = 0
 Instance.new("UICorner", healthBarFill).CornerRadius = UDim.new(1, 0)
 
--- Lokasi DTP
-local dtpLocFrame = Instance.new("Frame", dtpContent)
-dtpLocFrame.Size = UDim2.new(1, 0, 0, 30)
-dtpLocFrame.BackgroundTransparency = 1
-dtpLocFrame.LayoutOrder = 3
+-- Label lokasi
+local locLabelFrame = Instance.new("Frame", dtpContent)
+locLabelFrame.Size = UDim2.new(1, 0, 0, 30)
+locLabelFrame.BackgroundTransparency = 1
+locLabelFrame.LayoutOrder = 3
 
-local dtpLocLabel = Instance.new("TextLabel", dtpLocFrame)
-dtpLocLabel.Size = UDim2.new(1, 0, 1, 0)
-dtpLocLabel.BackgroundTransparency = 1
-dtpLocLabel.Text = "📍 LOKASI DANGER TP"
-dtpLocLabel.Font = Enum.Font.GothamBold
-dtpLocLabel.TextSize = 11
-dtpLocLabel.TextColor3 = C.accent
-dtpLocLabel.TextXAlignment = Enum.TextXAlignment.Left
+local locLabel = Instance.new("TextLabel", locLabelFrame)
+locLabel.Size = UDim2.new(1, 0, 1, 0)
+locLabel.BackgroundTransparency = 1
+locLabel.Text = "📍 PILIH LOKASI TP (12 TUJUAN)"
+locLabel.Font = Enum.Font.GothamBold
+locLabel.TextSize = 11
+locLabel.TextColor3 = C.accent
+locLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Daftar lokasi
+-- DAFTAR 12 LOKASI LENGKAP
 local dangerLocations = {
-    {name = "🏪 Dealer NPC",    pos = Vector3.new(510.76, 3.59, 600.79)},
-    {name = "🍬 MS NPC",        pos = Vector3.new(510.06, 4.48, 600.55)},
-    {name = "🏠 Apart 1",       pos = Vector3.new(1137.99, 9.93, 449.75)},
-    {name = "🏠 Apart 2",       pos = Vector3.new(1139.17, 9.93, 420.56)},
-    {name = "🏠 Apart 3",       pos = Vector3.new(984.86, 9.93, 247.28)},
-    {name = "🏠 Apart 4",       pos = Vector3.new(988.31, 9.93, 221.66)},
-    {name = "🏠 Apart 5",       pos = Vector3.new(923.95, 9.93, 42.20)},
-    {name = "🏠 Apart 6",       pos = Vector3.new(895.72, 9.93, 41.93)},
-    {name = "🎰 Casino",        pos = Vector3.new(1166.33, 3.36, -29.77)},
-    {name = "⛽ GS UJUNG",      pos = Vector3.new(-466.53, 3.86, 357.66)},
-    {name = "⛽ GS MID",        pos = Vector3.new(218.43, 3.74, -176.98)},
-    {name = "🚔 Penjara",       pos = Vector3.new(551.35, 3.66, -564.90)},
+    {name = "🏪 01. Dealer NPC",        pos = Vector3.new(510.76, 3.59, 600.79)},
+    {name = "🍬 02. MS NPC",            pos = Vector3.new(510.06, 4.48, 600.55)},
+    {name = "🏠 03. Apart 1",           pos = Vector3.new(1137.99, 9.93, 449.75)},
+    {name = "🏠 04. Apart 2",           pos = Vector3.new(1139.17, 9.93, 420.56)},
+    {name = "🏠 05. Apart 3",           pos = Vector3.new(984.86, 9.93, 247.28)},
+    {name = "🏠 06. Apart 4",           pos = Vector3.new(988.31, 9.93, 221.66)},
+    {name = "🏠 07. Apart 5",           pos = Vector3.new(923.95, 9.93, 42.20)},
+    {name = "🏠 08. Apart 6",           pos = Vector3.new(895.72, 9.93, 41.93)},
+    {name = "🎰 09. Casino",            pos = Vector3.new(1166.33, 3.36, -29.77)},
+    {name = "⛽ 10. GS UJUNG",          pos = Vector3.new(-466.53, 3.86, 357.66)},
+    {name = "⛽ 11. GS MID",            pos = Vector3.new(218.43, 3.74, -176.98)},
+    {name = "🚔 12. Penjara",           pos = Vector3.new(551.35, 3.66, -564.90)},
 }
 
 local isDangerTPBusy = false
@@ -797,12 +752,12 @@ local function dangerTeleport(targetPos, targetName)
     end
     
     updateHealthBar()
-    dtpStatusLabel.Text = string.format("💉 Health: %.1f%% → TP 100ms", (hum.Health / maxHealth) * 100)
+    dtpStatusLabel.Text = string.format("💉 Health: %.1f%% → TP dalam 100ms", (hum.Health / maxHealth) * 100)
     dtpStatusLabel.TextColor3 = C.orange
     
     task.wait(0.1)
     
-    dtpStatusLabel.Text = "🌀 Teleport ke " .. (targetName or "tujuan") .. "..."
+    dtpStatusLabel.Text = "🌀 Teleport ke " .. targetName .. "..."
     dtpStatusLabel.TextColor3 = C.blue
     
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -814,20 +769,20 @@ local function dangerTeleport(targetPos, targetName)
     dtpStatusLabel.Text = "✅ Selesai!"
     dtpStatusLabel.TextColor3 = C.green
     task.wait(0.5)
-    dtpStatusLabel.Text = "✅ SIAP — Pilih lokasi"
+    dtpStatusLabel.Text = "✅ SIAP — Pilih lokasi di bawah"
     dtpStatusLabel.TextColor3 = C.green
     
     isDangerTPBusy = false
 end
 
--- Buat tombol lokasi DTP
+-- Buat tombol untuk setiap lokasi
 local btnOrder = 4
 for _, loc in ipairs(dangerLocations) do
     local btnFrame = Instance.new("Frame", dtpContent)
     btnFrame.Size = UDim2.new(1, 0, 0, 42)
     btnFrame.BackgroundColor3 = C.card
     btnFrame.LayoutOrder = btnOrder
-    btnOrder += 1
+    btnOrder = btnOrder + 1
     Instance.new("UICorner", btnFrame).CornerRadius = UDim.new(0, 8)
     
     local nameLbl = Instance.new("TextLabel", btnFrame)
@@ -867,7 +822,7 @@ end
 
 -- Warning footer
 local warnFrame = Instance.new("Frame", dtpContent)
-warnFrame.Size = UDim2.new(1, 0, 0, 45)
+warnFrame.Size = UDim2.new(1, 0, 0, 50)
 warnFrame.BackgroundColor3 = Color3.fromRGB(20, 8, 8)
 warnFrame.LayoutOrder = btnOrder
 Instance.new("UICorner", warnFrame).CornerRadius = UDim.new(0, 8)
@@ -876,7 +831,7 @@ local warnText = Instance.new("TextLabel", warnFrame)
 warnText.Size = UDim2.new(1, -16, 1, 0)
 warnText.Position = UDim2.new(0, 8, 0, 0)
 warnText.BackgroundTransparency = 1
-warnText.Text = "⚠️ PERINGATAN: Anda akan melukai diri sendiri! Risiko mati jika koneksi lag. Gunakan dengan bijak."
+warnText.Text = "⚠️ PERINGATAN: Anda akan melukai diri sendiri!\nRisiko mati jika koneksi lag. Gunakan dengan bijak."
 warnText.Font = Enum.Font.Gotham
 warnText.TextSize = 9
 warnText.TextColor3 = Color3.fromRGB(255, 100, 100)
@@ -891,21 +846,20 @@ task.spawn(function()
     end
 end)
 
--- Layout updater
-local function updateCanvas()
+-- Update canvas size when content changes
+local function updateCanvas(content)
     task.wait(0.1)
-    for _, content in pairs(contents) do
-        local totalHeight = 0
-        for _, child in ipairs(content:GetChildren()) do
-            if child:IsA("Frame") and child.Visible then
-                totalHeight = totalHeight + child.Size.Y.Offset + 8
-            end
+    local totalH = 0
+    for _, child in ipairs(content:GetChildren()) do
+        if child:IsA("Frame") and child.Visible then
+            totalH = totalH + child.Size.Y.Offset + 8
         end
-        content.CanvasSize = UDim2.new(0, 0, 0, totalHeight + 20)
     end
+    content.CanvasSize = UDim2.new(0, 0, 0, totalH + 20)
 end
 
-task.spawn(updateCanvas)
+updateCanvas(fullyContent)
+updateCanvas(dtpContent)
 
 -- Drag handler
 local dragStart, startPos
@@ -927,4 +881,4 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
-print("✅ NV SCRIPT LOADED — Fully NV + Danger TP")
+print("✅ NV SCRIPT LOADED — Fully NV + Danger TP dengan 12 Lokasi")

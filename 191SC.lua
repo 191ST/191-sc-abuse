@@ -395,7 +395,6 @@ Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 closeBtn.MouseButton1Click:Connect(function()
 	running = false
 	autoSellEnabled = false
-	fullyNVRunning = false
 	notify("Elixir", "Script dihentikan.", "error")
 	task.wait(0.4)
 	gui:Destroy()
@@ -1922,12 +1921,10 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ============================================================
--- FULLY NV PAGE (HALAMAN BARU)
+-- FULLY NV PAGE
 -- ============================================================
 local fullyNVPage = pages["FULLY NV"]
-fullyNVPage.Name = "FULLY NV"
 
--- Koordinat NPC
 local NPC_BUY_POS = Vector3.new(510.061, 4.476, 600.548)
 local NPC_SELL_POS = Vector3.new(510.061, 4.476, 600.548)
 
@@ -2180,10 +2177,10 @@ local function fullyNVLoop()
     setFullyNVStatus("⏹️ FULLY NV STOP", C.red)
 end
 
--- UI FULLY NV
+-- BUILD UI FULLY NV
 local fullyScroll = Instance.new("ScrollingFrame", fullyNVPage)
 fullyScroll.Size = UDim2.new(1, 0, 1, 0)
-fullyScroll.CanvasSize = UDim2.new(0, 0, 0, 580)
+fullyScroll.CanvasSize = UDim2.new(0, 0, 0, 520)
 fullyScroll.BackgroundTransparency = 1
 fullyScroll.ScrollBarThickness = 3
 
@@ -2275,7 +2272,7 @@ kiriBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Slider jumlah beli
-local getBuyAmount = stepperRow(fullyScroll, 280, "Jumlah Set Bahan per Loop", 1, 50, 5, "x")
+local getBuyAmount = stepperRow(fullyScroll, 260, "Jumlah Set Bahan per Loop", 1, 50, 5, "x")
 
 -- Status
 local statusCardNV = card(fullyScroll, 50, 5)
@@ -2317,6 +2314,17 @@ stopBtn.MouseButton1Click:Connect(function()
     startBtn.Visible = true
     stopBtn.Visible = false
     setFullyNVStatus("⏹️ FULLY NV STOP", C.orange)
+end)
+
+-- Statistik
+local statCooked = makeStatusRow(fullyScroll, "Total MS Dimasak", 8)
+local statSold = makeStatusRow(fullyScroll, "Total MS Terjual", 9)
+
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        if statCooked then statCooked.Text = tostring(fullyTotalCooked) end
+        if statSold then statSold.Text = tostring(fullyTotalSold) end
+    end)
 end)
 
 -- ============================================================

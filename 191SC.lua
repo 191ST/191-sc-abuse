@@ -1,11 +1,10 @@
 -- ============================================================
--- FULLY NV - TWEEN 2 TAHAP (TURUN → GERAK → NAIK)
+-- FULLY NV - BODY VELOCITY (TURUN 5, SPEED 1.0, NAIK 5)
 -- ============================================================
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 repeat task.wait() until player.Character
@@ -14,7 +13,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local buyRemote = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("StorePurchase")
 local npcPos = Vector3.new(510.762817, 3.58721066, 600.791504)
 
--- KORDINAT APART CASINO (sama seperti sebelumnya)
+-- KORDINAT APART CASINO
 local apartData = {
     [1] = {
         name = "Apart Casino 1",
@@ -68,50 +67,7 @@ local selectedPot = "kanan"
 local targetMS = 5
 local basePlate = nil
 
--- ============================================================
--- TWEEN 2 TAHAP (TURUN → GERAK → NAIK)
--- ============================================================
-local function ketarikKeTarget(targetPos)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return false end
-
-    -- Matikan kontrol karakter sementara
-    hum.AutoRotate = false
-    hum.PlatformStand = true
-
-    -- 1. TURUN 7 STUDS (0.2 detik)
-    local downPos = CFrame.new(hrp.Position.X, hrp.Position.Y - 7, hrp.Position.Z)
-    local downTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = downPos })
-    downTween:Play()
-    downTween.Completed:Wait()
-    task.wait(0.05)
-
-    -- 2. GERAK HORIZONTAL KE TARGET (DENGAN SPEED 0.3)
-    local distance = (targetPos - hrp.Position).Magnitude
-    local duration = math.max(distance / 0.3, 2) -- minimal 2 detik
-    local targetCF = CFrame.new(targetPos.X, hrp.Position.Y, targetPos.Z)
-    local moveTween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = targetCF })
-    moveTween:Play()
-    moveTween.Completed:Wait()
-    task.wait(0.05)
-
-    -- 3. NAIK 7 STUDS (0.2 detik)
-    local upPos = CFrame.new(targetPos)
-    local upTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), { CFrame = upPos })
-    upTween:Play()
-    upTween.Completed:Wait()
-
-    -- Kembalikan kontrol
-    hum.AutoRotate = true
-    hum.PlatformStand = false
-    return true
-end
-
--- ============================================================
--- BASE PLATE (OPSIONAL)
--- ============================================================
+-- BASE PLATE
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
@@ -180,9 +136,7 @@ local function removeBasePlate()
     end
 end
 
--- ============================================================
--- HELPER (COUNT, EQUIP, COOK, SELL)
--- ============================================================
+-- HELPER
 local function countItem(name)
     local total = 0
     for _, v in pairs(player.Backpack:GetChildren()) do
@@ -257,6 +211,65 @@ local function jualSemua()
     end
 end
 
+-- ============================================================
+-- KETARIK DENGAN BODY VELOCITY (TURUN 5, SPEED 1.0)
+-- ============================================================
+local function ketarikKeTarget(targetPos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return false end
+
+    -- Matikan collision karakter sementara (biar gak nabrak)
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+
+    -- 1. TURUN 5 STUDS
+    local startPos = hrp.Position
+    hrp.CFrame = CFrame.new(startPos.X, startPos.Y - 5, startPos.Z)
+    task.wait(0.1)
+
+    -- 2. BODY VELOCITY UNTUK GERAK HORIZONTAL (SPEED 1.0)
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(100000, 0, 100000)
+    bv.Parent = hrp
+
+    local direction = (targetPos - hrp.Position).Unit
+    bv.Velocity = direction * 1.0
+
+    -- Tunggu sampai jarak < 3
+    repeat
+        task.wait(0.05)
+        if not fullyRunning then
+            bv:Destroy()
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+            return false
+        end
+    until (hrp.Position - targetPos).Magnitude < 3
+
+    bv:Destroy()
+    task.wait(0.1)
+
+    -- 3. NAIK 5 STUDS
+    hrp.CFrame = CFrame.new(targetPos)
+    task.wait(0.1)
+
+    -- Nyalakan collision kembali
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = true
+        end
+    end
+    return true
+end
+
 local function getStagePos(stage, pot)
     if stage.pos then return stage.pos
     elseif stage[pot] then return stage[pot]
@@ -264,9 +277,7 @@ local function getStagePos(stage, pot)
     return nil
 end
 
--- ============================================================
 -- MAIN LOOP
--- ============================================================
 local function jalankanFully(statusFunc)
     fullyRunning = true
     local apartId = selectedApart
@@ -354,7 +365,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN 2 TAHAP"
+titleText.Text = "FULLY NV - TURUN 5 (FINAL)"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -391,7 +402,7 @@ local infoLbl = Instance.new("TextLabel", infoCard)
 infoLbl.Size = UDim2.new(1, -10, 1, 0)
 infoLbl.Position = UDim2.new(0, 5, 0, 0)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "TWEEN 2 TAHAP: TURUN (0.2s) → GERAK (SPEED 0.3) → NAIK (0.2s)"
+infoLbl.Text = "TURUN 5 STUDS → BODY VELOCITY SPEED 1.0 → NAIK 5 STUDS"
 infoLbl.TextColor3 = Color3.fromRGB(200, 200, 255)
 infoLbl.Font = Enum.Font.GothamBold
 infoLbl.TextSize = 11
@@ -614,7 +625,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 Memulai Fully NV (Tween 2 tahap, speed 0.3)...")
+    setStatus("🚀 Memulai Fully NV (turun 5, speed 1.0)...")
     task.spawn(function()
         jalankanFully(setStatus)
     end)
@@ -625,4 +636,4 @@ stopBtn.MouseButton1Click:Connect(function()
     setStatus("⏹ Dihentikan")
 end)
 
-print("✅ FULLY NV TWEEN 2 TAHAP SIAP! Gerak: Turun → Horizontal (pelan) → Naik")
+print("✅ FULLY NV FINAL SIAP! Turun 5 studs → BodyVelocity speed 1.0 → Naik 5 studs")

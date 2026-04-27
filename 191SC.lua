@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TURUN BERTAHAP + STABIL 0.5
+-- FULLY NV - SPEED 1.0 + TURUN CEPAT SMOOTH
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -64,33 +64,37 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local SPEED = 0.5
+local SPEED = 1.0
 
 -- ============================================================
--- TURUN/NAIK BERTAHAP (HALUS, ANTI BLINK)
+-- TURUN/NAIK CEPAT TAPI SMOOTH (6 LANGKAH, 0.3 DETIK)
 -- ============================================================
-local function turunBertahap(studs, steps)
+local function turunCepatSmooth(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+    local steps = 6
     local perStep = studs / steps
+    local delay = 0.05
     for i = 1, steps do
         hrp.CFrame = hrp.CFrame * CFrame.new(0, -perStep, 0)
-        task.wait(0.05)
+        task.wait(delay)
     end
 end
 
-local function naikBertahap(studs, steps)
+local function naikCepatSmooth(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
+    local steps = 6
     local perStep = studs / steps
+    local delay = 0.05
     for i = 1, steps do
         hrp.CFrame = hrp.CFrame * CFrame.new(0, perStep, 0)
-        task.wait(0.05)
+        task.wait(delay)
     end
 end
 
 -- ============================================================
--- KETARIK STABIL 0.5 (TANPA BLINK)
+-- KETARIK SPEED 1.0 (TURUN CEPAT SMOOTH)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -104,13 +108,13 @@ local function ketarikKeTarget(targetPos)
         hum.AutoRotate = false
     end
 
-    -- TURUN BERTAHAP (6 studs dalam 6 langkah)
-    turunBertahap(6, 6)
+    -- TURUN CEPAT SMOOTH (6 studs dalam 0.3 detik)
+    turunCepatSmooth(6)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
-        naikBertahap(6, 6)
+        naikCepatSmooth(6)
         if hum then
             hum.PlatformStand = oldPlatform or false
             hum.AutoRotate = true
@@ -118,9 +122,9 @@ local function ketarikKeTarget(targetPos)
         return true
     end
 
-    -- SPEED KONSTAN 0.5
+    -- SPEED KONSTAN 1.0
     local duration = distance / SPEED
-    local steps = math.max(math.floor(duration * 30), 20)
+    local steps = math.max(math.floor(duration * 30), 15)
     local delay = duration / steps
     local startPos = hrp.Position
 
@@ -140,8 +144,8 @@ local function ketarikKeTarget(targetPos)
 
     hrp.CFrame = CFrame.new(targetPos)
 
-    -- NAIK BERTAHAP (6 studs dalam 6 langkah)
-    naikBertahap(6, 6)
+    -- NAIK CEPAT SMOOTH
+    naikCepatSmooth(6)
 
     if hum then
         hum.PlatformStand = oldPlatform or false
@@ -191,21 +195,21 @@ local function spamE(times)
 end
 
 -- ============================================================
--- COOK DENGAN TIMING (TURUN/NAIK BERTAHAP)
+-- COOK DENGAN TIMING
 -- ============================================================
 local function cookWithTiming()
     if not fullyRunning then return false end
     
     -- WATER
     if equip("Water") then
-        naikBertahap(6, 6)  -- NAIK PELAN
+        naikCepatSmooth(6)
         holdE(0.7)
         local startTime = tick()
         local remaining = 20
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                turunBertahap(6, 6)  -- TURUN PELAN
+                turunCepatSmooth(6)
                 break
             end
             task.wait(0.1)
@@ -215,7 +219,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- SUGAR (TETAP DI BAWAH)
+    -- SUGAR
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -223,7 +227,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- GELATIN (TETAP DI BAWAH)
+    -- GELATIN
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -231,23 +235,23 @@ local function cookWithTiming()
         return false
     end
     
-    -- NAIK PELAN SETELAH GELATIN
-    naikBertahap(6, 6)
+    -- NAIK SETELAH GELATIN
+    naikCepatSmooth(6)
     
-    -- TUNGGU 45 DETIK COOK TIME
+    -- TUNGGU 45 DETIK
     local cookStart = tick()
     local remaining = 45
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            turunBertahap(6, 6)  -- TURUN PELAN
+            turunCepatSmooth(6)
             break
         end
         task.wait(0.1)
     end
     task.wait(math.max(0, remaining))
     
-    -- EMPTY BAG (TETAP DI BAWAH)
+    -- EMPTY BAG
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -435,10 +439,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TURUN BERTAHAP"
+titleText.Text = "FULLY NV - SPEED 1.0"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
-titleText.TextSize = 13
+titleText.TextSize = 14
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -581,7 +585,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (turunan bertahap, speed 0.5)")
+    setStatus("🚀 START (speed 1.0, turun cepat smooth)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -625,4 +629,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV SIAP! Turun bertahap, speed 0.5 stabil")
+print("✅ FULLY NV SIAP! Speed 1.0, turun 6 studs dalam 0.3 detik (smooth)")

@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - TWEEN SPEED 2.0 + TURUN 6 INSTAN
+-- FULLY NV - TWEEN SMOOTH + GUI DRAGABLE (SPEED 1.5)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -65,23 +65,31 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local SPEED = 2.0
+local SPEED = 1.5
 
 -- ============================================================
--- TURUN/NAIK INSTAN
+-- TURUN/NAIK HALUS (4 LANGKAH)
 -- ============================================================
-local function turunInstan(studs)
+local function turunHalus(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0) end
+    if not hrp then return end
+    for i = 1, 4 do
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs/4, 0)
+        task.wait(0.05)
+    end
 end
 
-local function naikInstan(studs)
+local function naikHalus(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0) end
+    if not hrp then return end
+    for i = 1, 4 do
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, studs/4, 0)
+        task.wait(0.05)
+    end
 end
 
 -- ============================================================
--- TWEEN KE TARGET (SPEED 2.0)
+-- TWEEN KE TARGET
 -- ============================================================
 local function tweenKeTarget(targetPos)
     local char = player.Character
@@ -90,67 +98,54 @@ local function tweenKeTarget(targetPos)
 
     local hum = char:FindFirstChildOfClass("Humanoid")
     local oldPlatform = hum and hum.PlatformStand
-    local oldRotate = hum and hum.AutoRotate
     if hum then
         hum.PlatformStand = true
         hum.AutoRotate = false
     end
 
-    -- TURUN INSTAN 6 STUDS
-    turunInstan(6)
+    turunHalus(6)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
-        naikInstan(6)
+        naikHalus(6)
         if hum then
             hum.PlatformStand = oldPlatform or false
-            hum.AutoRotate = oldRotate or true
+            hum.AutoRotate = true
         end
         return true
     end
 
     local duration = distance / SPEED
-    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
+    duration = math.max(duration, 1)
+    local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), { CFrame = CFrame.new(targetPos) })
     tween:Play()
     tween.Completed:Wait()
 
-    naikInstan(6)
+    naikHalus(6)
 
     if hum then
         hum.PlatformStand = oldPlatform or false
-        hum.AutoRotate = oldRotate or true
+        hum.AutoRotate = true
     end
     return true
 end
 
 -- ============================================================
--- COOK TIMING (SESUAI PERMINTAAN LO)
+-- COOK TIMING
 -- ============================================================
-local function blinkTurun()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0) end
-end
-
-local function blinkNaik()
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, 6, 0) end
-end
-
 local function cookWithTiming()
     if not fullyRunning then return false end
     
-    -- WATER (20 DETIK)
     if equip("Water") then
-        blinkNaik()
+        naikHalus(6)
         holdE(0.7)
         local startTime = tick()
         local remaining = 20
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                blinkTurun()
+                turunHalus(6)
                 break
             end
             task.wait(0.1)
@@ -160,7 +155,6 @@ local function cookWithTiming()
         return false
     end
     
-    -- SUGAR (TETAP DI BAWAH)
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -168,7 +162,6 @@ local function cookWithTiming()
         return false
     end
     
-    -- GELATIN (TETAP DI BAWAH)
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -176,23 +169,20 @@ local function cookWithTiming()
         return false
     end
     
-    -- NAIK SETELAH GELATIN
-    blinkNaik()
+    naikHalus(6)
     
-    -- TUNGGU 45 DETIK
     local cookStart = tick()
     local remaining = 45
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            blinkTurun()
+            turunHalus(6)
             break
         end
         task.wait(0.1)
     end
     task.wait(math.max(0, remaining))
     
-    -- EMPTY BAG (TETAP DI BAWAH)
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -243,9 +233,6 @@ local function spamE(times)
     end
 end
 
--- ============================================================
--- BELI & JUAL
--- ============================================================
 local function beliBahan(jumlah)
     for i = 1, jumlah do
         if not fullyRunning then return false end
@@ -394,7 +381,7 @@ local function jalankanFully(statusFunc)
 end
 
 -- ============================================================
--- GUI
+-- GUI (DRAGABLE)
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FullyNV_GUI"
@@ -402,8 +389,8 @@ screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 550)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -275)
+mainFrame.Size = UDim2.new(0, 400, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -420,7 +407,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - TWEEN 2.0"
+titleText.Text = "FULLY NV - TWEEN SMOOTH"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -441,12 +428,12 @@ local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, -20, 1, -50)
 scroll.Position = UDim2.new(0, 10, 0, 50)
 scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 400)
 scroll.ScrollBarThickness = 4
 
-local layoutList = Instance.new("UIListLayout", scroll)
-layoutList.Padding = UDim.new(0, 10)
-layoutList.SortOrder = Enum.SortOrder.LayoutOrder
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 10)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local function addCard(parent, h)
     local c = Instance.new("Frame", parent)
@@ -533,8 +520,8 @@ for i = 1, 4 do
 end
 
 -- Status
-local statusCardUI = addCard(scroll, 50)
-local statusTextUI = addLabel(statusCardUI, "Belum dimulai", Color3.fromRGB(145, 138, 175), 11)
+local statusCard = addCard(scroll, 50)
+local statusTextUI = addLabel(statusCard, "Belum dimulai", Color3.fromRGB(145, 138, 175), 11)
 statusTextUI.TextXAlignment = Enum.TextXAlignment.Center
 
 -- Start/Stop
@@ -566,7 +553,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (tween 2.0, turun 6 instan)")
+    setStatus("🚀 START (smooth tween)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -610,4 +597,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV TWEEN 2.0 SIAP! Turun 6 → Tween → Naik 6")
+print("✅ FULLY NV GUI SIAP! Speed 1.5, turun/naik halus")

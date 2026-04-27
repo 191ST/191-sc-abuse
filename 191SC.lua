@@ -1,10 +1,11 @@
 -- ============================================================
--- FULLY NV - KETARIK (SPEED 1.0) + MIRING 10° + TURUN 6 CEPAT
+-- FULLY NV - TWEEN SPEED 2.0 + TURUN 6 INSTAN
 -- ============================================================
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 repeat task.wait() until player.Character
@@ -64,64 +65,25 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local SPEED = 1.0
+local SPEED = 2.0
 
 -- ============================================================
--- TURUN 6 STUDS CEPAT (0.2 DETIK)
+-- TURUN/NAIK INSTAN
 -- ============================================================
-local function turunCepat(studs)
+local function turunInstan(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local steps = 4
-    local perStep = studs / steps
-    for i = 1, steps do
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, -perStep, 0)
-        task.wait(0.05)
-    end
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0) end
 end
 
-local function naikCepat(studs)
+local function naikInstan(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local steps = 4
-    local perStep = studs / steps
-    for i = 1, steps do
-        hrp.CFrame = hrp.CFrame * CFrame.new(0, perStep, 0)
-        task.wait(0.05)
-    end
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0) end
 end
 
 -- ============================================================
--- MIRING SEDIKIT (10°) SELAMA GERAK
+-- TWEEN KE TARGET (SPEED 2.0)
 -- ============================================================
-local function miringkan(derajat)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hrp and hum then
-        hum.PlatformStand = true
-        hum.AutoRotate = false
-        local currentPos = hrp.Position
-        hrp.CFrame = CFrame.new(currentPos) * CFrame.Angles(math.rad(derajat), 0, 0)
-    end
-end
-
-local function normalisasi()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hrp and hum then
-        local currentPos = hrp.Position
-        hrp.CFrame = CFrame.new(currentPos)
-        hum.PlatformStand = false
-        hum.AutoRotate = true
-    end
-end
-
--- ============================================================
--- KETARIK (LERP, SPEED 1.0) + MIRING
--- ============================================================
-local function ketarikKeTarget(targetPos)
+local function tweenKeTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
@@ -129,18 +91,18 @@ local function ketarikKeTarget(targetPos)
     local hum = char:FindFirstChildOfClass("Humanoid")
     local oldPlatform = hum and hum.PlatformStand
     local oldRotate = hum and hum.AutoRotate
+    if hum then
+        hum.PlatformStand = true
+        hum.AutoRotate = false
+    end
 
-    -- TURUN CEPAT 6 STUDS
-    turunCepat(6)
-    
-    -- MIRINGKAN 10°
-    miringkan(10)
+    -- TURUN INSTAN 6 STUDS
+    turunInstan(6)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
-        normalisasi()
-        naikCepat(6)
+        naikInstan(6)
         if hum then
             hum.PlatformStand = oldPlatform or false
             hum.AutoRotate = oldRotate or true
@@ -148,32 +110,13 @@ local function ketarikKeTarget(targetPos)
         return true
     end
 
-    -- LERP MANUAL DENGAN SPEED 1.0
     local duration = distance / SPEED
-    local steps = math.max(math.floor(duration * 30), 15)
-    local delay = duration / steps
-    local startPos = hrp.Position
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(hrp, tweenInfo, { CFrame = CFrame.new(targetPos) })
+    tween:Play()
+    tween.Completed:Wait()
 
-    for i = 1, steps do
-        if not fullyRunning then
-            normalisasi()
-            if hum then
-                hum.PlatformStand = oldPlatform or false
-                hum.AutoRotate = oldRotate or true
-            end
-            return false
-        end
-        local alpha = i / steps
-        local newPos = startPos + (targetPos - startPos) * alpha
-        hrp.CFrame = CFrame.new(newPos.X, newPos.Y, newPos.Z)
-        task.wait(delay)
-    end
-
-    hrp.CFrame = CFrame.new(targetPos)
-
-    -- NORMALISASI & NAIK
-    normalisasi()
-    naikCepat(6)
+    naikInstan(6)
 
     if hum then
         hum.PlatformStand = oldPlatform or false
@@ -183,21 +126,31 @@ local function ketarikKeTarget(targetPos)
 end
 
 -- ============================================================
--- COOK TIMING (PAKAI TURUN/NAIK CEPAT + MIRING)
+-- COOK TIMING (SESUAI PERMINTAAN LO)
 -- ============================================================
+local function blinkTurun()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -6, 0) end
+end
+
+local function blinkNaik()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, 6, 0) end
+end
+
 local function cookWithTiming()
     if not fullyRunning then return false end
     
-    -- WATER
+    -- WATER (20 DETIK)
     if equip("Water") then
+        blinkNaik()
         holdE(0.7)
         local startTime = tick()
         local remaining = 20
         while remaining > 0 and fullyRunning do
             remaining = 20 - (tick() - startTime)
             if remaining <= 2 and remaining > 0 then
-                turunCepat(6)
-                miringkan(10)
+                blinkTurun()
                 break
             end
             task.wait(0.1)
@@ -207,7 +160,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- SUGAR (DI BAWAH, MIRING)
+    -- SUGAR (TETAP DI BAWAH)
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -215,7 +168,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- GELATIN (DI BAWAH, MIRING)
+    -- GELATIN (TETAP DI BAWAH)
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -223,9 +176,8 @@ local function cookWithTiming()
         return false
     end
     
-    -- NORMALISASI & NAIK
-    normalisasi()
-    naikCepat(6)
+    -- NAIK SETELAH GELATIN
+    blinkNaik()
     
     -- TUNGGU 45 DETIK
     local cookStart = tick()
@@ -233,15 +185,14 @@ local function cookWithTiming()
     while remaining > 0 and fullyRunning do
         remaining = 45 - (tick() - cookStart)
         if remaining <= 2 and remaining > 0 then
-            turunCepat(6)
-            miringkan(10)
+            blinkTurun()
             break
         end
         task.wait(0.1)
     end
     task.wait(math.max(0, remaining))
     
-    -- EMPTY BAG (DI BAWAH, MIRING)
+    -- EMPTY BAG (TETAP DI BAWAH)
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -407,18 +358,18 @@ local function jalankanFully(statusFunc)
     
     while fullyRunning do
         statusFunc("🏃 Beli bahan...")
-        ketarikKeTarget(npcPos)
+        tweenKeTarget(npcPos)
         
         if not beliBahan(targetMS) then break end
         
         statusFunc("🏃 Ke apart...")
-        ketarikKeTarget(apartPos)
+        tweenKeTarget(apartPos)
         
         for i, stagePos in ipairs(stages) do
             if not fullyRunning then break end
             
             statusFunc("📍 Stage " .. i)
-            ketarikKeTarget(stagePos)
+            tweenKeTarget(stagePos)
             spamE(3)
             task.wait(0.3)
             
@@ -431,7 +382,7 @@ local function jalankanFully(statusFunc)
         end
         
         statusFunc("💰 Jual MS...")
-        ketarikKeTarget(npcPos)
+        tweenKeTarget(npcPos)
         jualSemua()
         
         statusFunc("🔄 Ulang loop...")
@@ -469,7 +420,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - KETARIK + MIRING"
+titleText.Text = "FULLY NV - TWEEN 2.0"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -615,7 +566,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (ketarik speed 1.0, miring 10°)")
+    setStatus("🚀 START (tween 2.0, turun 6 instan)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -659,4 +610,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV KETARIK SIAP! Speed 1.0, miring 10°, turun 6 studs cepat")
+print("✅ FULLY NV TWEEN 2.0 SIAP! Turun 6 → Tween → Naik 6")

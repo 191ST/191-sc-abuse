@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - STABIL 0.4 (TANPA PERUBAHAN KECEPATAN)
+-- FULLY NV - SPEED 0.5 STABIL (TANPA BLINK, TANPA STUCK)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -64,23 +64,29 @@ local fullyRunning = false
 local selectedApart = 1
 local targetMS = 5
 local basePlate = nil
-local TWEEN_SPEED = 0.4  -- STABIL, JANGAN DIUBAH
+local SPEED = 0.5  -- STABIL, TIDAK BERUBAH
 
 -- ============================================================
--- BLINK TURUN / NAIK
+-- FUNGSI BLINK (HATI-HATI, PASTIKAN TIDAK STUCK)
 -- ============================================================
 local function blinkTurun(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0) end
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, -studs, 0)
+        task.wait(0.05)
+    end
 end
 
 local function blinkNaik(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0) end
+    if hrp then
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, studs, 0)
+        task.wait(0.05)
+    end
 end
 
 -- ============================================================
--- KETARIK STABIL 0.4 (PAKE LOOP DENGAN DELAY KONSTAN)
+-- KETARIK DENGAN SPEED 0.5 STABIL (TANPA PERUBAHAN)
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -95,8 +101,7 @@ local function ketarikKeTarget(targetPos)
     end
 
     -- TURUN 6 STUDS
-    hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 6, hrp.Position.Z)
-    task.wait(0.05)
+    blinkTurun(6)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
@@ -108,12 +113,9 @@ local function ketarikKeTarget(targetPos)
         return true
     end
 
-    -- HITUNG STEPS BERDASARKAN SPEED 0.4
-    -- Speed 0.4 = 0.4 stud per detik
-    -- Butuh waktu = distance / 0.4
-    -- Steps = waktu * 20 (agar halus)
-    local duration = distance / TWEEN_SPEED
-    local steps = math.max(math.floor(duration * 20), 10)
+    -- SPEED KONSTAN: waktu = jarak / 0.5
+    local duration = distance / SPEED
+    local steps = math.max(math.floor(duration * 30), 20)  -- 30 langkah per detik, minimal 20 langkah
     local delay = duration / steps
     local startPos = hrp.Position
 
@@ -141,7 +143,7 @@ local function ketarikKeTarget(targetPos)
 end
 
 -- ============================================================
--- HELPER (EQUIP, HOLD, SPAM, COUNT)
+-- HELPER FUNCTIONS
 -- ============================================================
 local function countItem(name)
     local total = 0
@@ -181,7 +183,7 @@ local function spamE(times)
 end
 
 -- ============================================================
--- COOK DENGAN TIMING (SESUAI PERMINTAAN LO)
+-- COOK DENGAN TIMING (TURUN/NAIK SESUAI PERMINTAAN)
 -- ============================================================
 local function cookWithTiming()
     if not fullyRunning then return false end
@@ -205,7 +207,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- SUGAR (TETAP DI BAWAH)
+    -- SUGAR
     if equip("Sugar Block Bag") then
         holdE(0.7)
         task.wait(0.5)
@@ -213,7 +215,7 @@ local function cookWithTiming()
         return false
     end
     
-    -- GELATIN (TETAP DI BAWAH)
+    -- GELATIN
     if equip("Gelatin") then
         holdE(0.7)
         task.wait(0.5)
@@ -224,7 +226,7 @@ local function cookWithTiming()
     -- NAIK SETELAH GELATIN
     blinkNaik(6)
     
-    -- TUNGGU 45 DETIK COOK TIME
+    -- TUNGGU 45 DETIK
     local cookStart = tick()
     local remaining = 45
     while remaining > 0 and fullyRunning do
@@ -237,7 +239,7 @@ local function cookWithTiming()
     end
     task.wait(math.max(0, remaining))
     
-    -- EMPTY BAG (TETAP DI BAWAH)
+    -- EMPTY BAG
     if equip("Empty Bag") then
         holdE(0.7)
         task.wait(1)
@@ -249,7 +251,7 @@ local function cookWithTiming()
 end
 
 -- ============================================================
--- BELI & JUAL
+-- BELI BAHAN
 -- ============================================================
 local function beliBahan(jumlah)
     for i = 1, jumlah do
@@ -262,6 +264,9 @@ local function beliBahan(jumlah)
     return true
 end
 
+-- ============================================================
+-- JUAL SEMUA MS
+-- ============================================================
 local function jualSemua()
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
@@ -277,59 +282,7 @@ local function jualSemua()
 end
 
 -- ============================================================
--- MAIN LOOP
--- ============================================================
-local function jalankanFully(statusFunc)
-    fullyRunning = true
-    local stages = apartData[selectedApart]
-    if not stages then
-        statusFunc("❌ Apart tidak ditemukan!")
-        fullyRunning = false
-        return
-    end
-    
-    local apartPos = stages[1]
-    
-    while fullyRunning do
-        statusFunc("🏃 Beli bahan...")
-        ketarikKeTarget(npcPos)
-        
-        if not beliBahan(targetMS) then break end
-        
-        statusFunc("🏃 Ke apart...")
-        ketarikKeTarget(apartPos)
-        
-        for i, stagePos in ipairs(stages) do
-            if not fullyRunning then break end
-            
-            statusFunc("📍 Stage " .. i)
-            ketarikKeTarget(stagePos)
-            spamE(3)
-            task.wait(0.3)
-            
-            -- Cook di stage 5 & 6
-            if i == 5 or i == 6 then
-                statusFunc("🍳 Memasak...")
-                if not cookWithTiming() then break end
-                statusFunc("✅ Selesai masak")
-                task.wait(1)
-            end
-        end
-        
-        statusFunc("💰 Jual MS...")
-        ketarikKeTarget(npcPos)
-        jualSemua()
-        
-        statusFunc("🔄 Ulang loop...")
-        task.wait(1)
-    end
-    
-    fullyRunning = false
-    statusFunc("⏹ Dihentikan")
-end
-
--- ============================================================
--- BASE PLATE
+-- BASE PLATE (OPSIONAL)
 -- ============================================================
 local function getGroundLevel(pos)
     local params = RaycastParams.new()
@@ -400,6 +353,57 @@ local function removeBasePlate()
 end
 
 -- ============================================================
+-- MAIN LOOP FULLY NV
+-- ============================================================
+local function jalankanFully(statusFunc)
+    fullyRunning = true
+    local stages = apartData[selectedApart]
+    if not stages then
+        statusFunc("❌ Apart tidak ditemukan!")
+        fullyRunning = false
+        return
+    end
+    
+    local apartPos = stages[1]
+    
+    while fullyRunning do
+        statusFunc("🏃 Beli bahan...")
+        ketarikKeTarget(npcPos)
+        
+        if not beliBahan(targetMS) then break end
+        
+        statusFunc("🏃 Ke apart...")
+        ketarikKeTarget(apartPos)
+        
+        for i, stagePos in ipairs(stages) do
+            if not fullyRunning then break end
+            
+            statusFunc("📍 Stage " .. i)
+            ketarikKeTarget(stagePos)
+            spamE(3)
+            task.wait(0.3)
+            
+            if i == 5 or i == 6 then
+                statusFunc("🍳 Memasak...")
+                if not cookWithTiming() then break end
+                statusFunc("✅ Selesai masak")
+                task.wait(1)
+            end
+        end
+        
+        statusFunc("💰 Jual MS...")
+        ketarikKeTarget(npcPos)
+        jualSemua()
+        
+        statusFunc("🔄 Ulang loop...")
+        task.wait(1)
+    end
+    
+    fullyRunning = false
+    statusFunc("⏹ Dihentikan")
+end
+
+-- ============================================================
 -- GUI
 -- ============================================================
 local screenGui = Instance.new("ScreenGui")
@@ -426,7 +430,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - STABIL 0.4"
+titleText.Text = "FULLY NV - SPEED 0.5 STABIL"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -572,7 +576,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START")
+    setStatus("🚀 START (speed 0.5)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -616,4 +620,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV STABIL 0.4 SIAP")
+print("✅ FULLY NV SPEED 0.5 STABIL SIAP!")

@@ -1,5 +1,5 @@
 -- ============================================================
--- FULLY NV - SPEED 1.0 + TURUN CEPAT SMOOTH
+-- FULLY NV - SMOOTHHH LIKE SLAY (TURUN 6 STUDS, 0.6 DETIK)
 -- ============================================================
 
 local Players = game:GetService("Players")
@@ -67,34 +67,32 @@ local basePlate = nil
 local SPEED = 1.0
 
 -- ============================================================
--- TURUN/NAIK CEPAT TAPI SMOOTH (6 LANGKAH, 0.3 DETIK)
+-- TURUN/NAIK SMOOTH (12 LANGKAH, 0.05 DETIK/LANGKAH = 0.6 DETIK)
 -- ============================================================
-local function turunCepatSmooth(studs)
+local function turunSmooth(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    local steps = 6
+    local steps = 12
     local perStep = studs / steps
-    local delay = 0.05
     for i = 1, steps do
         hrp.CFrame = hrp.CFrame * CFrame.new(0, -perStep, 0)
-        task.wait(delay)
+        task.wait(0.05)
     end
 end
 
-local function naikCepatSmooth(studs)
+local function naikSmooth(studs)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    local steps = 6
+    local steps = 12
     local perStep = studs / steps
-    local delay = 0.05
     for i = 1, steps do
         hrp.CFrame = hrp.CFrame * CFrame.new(0, perStep, 0)
-        task.wait(delay)
+        task.wait(0.05)
     end
 end
 
 -- ============================================================
--- KETARIK SPEED 1.0 (TURUN CEPAT SMOOTH)
+-- KETARIK SPEED 1.0 + SMOOTH TURUN/NAIK
 -- ============================================================
 local function ketarikKeTarget(targetPos)
     local char = player.Character
@@ -108,13 +106,13 @@ local function ketarikKeTarget(targetPos)
         hum.AutoRotate = false
     end
 
-    -- TURUN CEPAT SMOOTH (6 studs dalam 0.3 detik)
-    turunCepatSmooth(6)
+    -- TURUN SMOOTH (6 studs, 12 langkah, 0.6 detik)
+    turunSmooth(6)
 
     local distance = (targetPos - hrp.Position).Magnitude
     if distance < 2 then
         hrp.CFrame = CFrame.new(targetPos)
-        naikCepatSmooth(6)
+        naikSmooth(6)
         if hum then
             hum.PlatformStand = oldPlatform or false
             hum.AutoRotate = true
@@ -144,8 +142,8 @@ local function ketarikKeTarget(targetPos)
 
     hrp.CFrame = CFrame.new(targetPos)
 
-    -- NAIK CEPAT SMOOTH
-    naikCepatSmooth(6)
+    -- NAIK SMOOTH
+    naikSmooth(6)
 
     if hum then
         hum.PlatformStand = oldPlatform or false
@@ -155,7 +153,75 @@ local function ketarikKeTarget(targetPos)
 end
 
 -- ============================================================
--- HELPER FUNCTIONS
+-- COOK DENGAN TIMING (SMOOTH TURUN/NAIK)
+-- ============================================================
+local function cookWithTiming()
+    if not fullyRunning then return false end
+    
+    -- WATER
+    if equip("Water") then
+        naikSmooth(6)
+        holdE(0.7)
+        local startTime = tick()
+        local remaining = 20
+        while remaining > 0 and fullyRunning do
+            remaining = 20 - (tick() - startTime)
+            if remaining <= 2 and remaining > 0 then
+                turunSmooth(6)
+                break
+            end
+            task.wait(0.1)
+        end
+        task.wait(math.max(0, remaining))
+    else
+        return false
+    end
+    
+    -- SUGAR (TETAP DI BAWAH)
+    if equip("Sugar Block Bag") then
+        holdE(0.7)
+        task.wait(0.5)
+    else
+        return false
+    end
+    
+    -- GELATIN (TETAP DI BAWAH)
+    if equip("Gelatin") then
+        holdE(0.7)
+        task.wait(0.5)
+    else
+        return false
+    end
+    
+    -- NAIK SMOOTH SETELAH GELATIN
+    naikSmooth(6)
+    
+    -- TUNGGU 45 DETIK
+    local cookStart = tick()
+    local remaining = 45
+    while remaining > 0 and fullyRunning do
+        remaining = 45 - (tick() - cookStart)
+        if remaining <= 2 and remaining > 0 then
+            turunSmooth(6)
+            break
+        end
+        task.wait(0.1)
+    end
+    task.wait(math.max(0, remaining))
+    
+    -- EMPTY BAG (TETAP DI BAWAH)
+    if equip("Empty Bag") then
+        holdE(0.7)
+        task.wait(1)
+    else
+        return false
+    end
+    
+    return true
+end
+
+-- ============================================================
+-- HELPER FUNCTIONS (COUNT, EQUIP, HOLD, SPAM)
 -- ============================================================
 local function countItem(name)
     local total = 0
@@ -192,74 +258,6 @@ local function spamE(times)
         vim:SendKeyEvent(false, "E", false, game)
         task.wait(0.05)
     end
-end
-
--- ============================================================
--- COOK DENGAN TIMING
--- ============================================================
-local function cookWithTiming()
-    if not fullyRunning then return false end
-    
-    -- WATER
-    if equip("Water") then
-        naikCepatSmooth(6)
-        holdE(0.7)
-        local startTime = tick()
-        local remaining = 20
-        while remaining > 0 and fullyRunning do
-            remaining = 20 - (tick() - startTime)
-            if remaining <= 2 and remaining > 0 then
-                turunCepatSmooth(6)
-                break
-            end
-            task.wait(0.1)
-        end
-        task.wait(math.max(0, remaining))
-    else
-        return false
-    end
-    
-    -- SUGAR
-    if equip("Sugar Block Bag") then
-        holdE(0.7)
-        task.wait(0.5)
-    else
-        return false
-    end
-    
-    -- GELATIN
-    if equip("Gelatin") then
-        holdE(0.7)
-        task.wait(0.5)
-    else
-        return false
-    end
-    
-    -- NAIK SETELAH GELATIN
-    naikCepatSmooth(6)
-    
-    -- TUNGGU 45 DETIK
-    local cookStart = tick()
-    local remaining = 45
-    while remaining > 0 and fullyRunning do
-        remaining = 45 - (tick() - cookStart)
-        if remaining <= 2 and remaining > 0 then
-            turunCepatSmooth(6)
-            break
-        end
-        task.wait(0.1)
-    end
-    task.wait(math.max(0, remaining))
-    
-    -- EMPTY BAG
-    if equip("Empty Bag") then
-        holdE(0.7)
-        task.wait(1)
-    else
-        return false
-    end
-    
-    return true
 end
 
 -- ============================================================
@@ -439,7 +437,7 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local titleText = Instance.new("TextLabel", titleBar)
 titleText.Size = UDim2.new(1, 0, 1, 0)
 titleText.BackgroundTransparency = 1
-titleText.Text = "FULLY NV - SPEED 1.0"
+titleText.Text = "FULLY NV - SMOOTH LIKE SLAY"
 titleText.TextColor3 = Color3.new(1,1,1)
 titleText.Font = Enum.Font.GothamBold
 titleText.TextSize = 14
@@ -585,7 +583,7 @@ end
 
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
-    setStatus("🚀 START (speed 1.0, turun cepat smooth)")
+    setStatus("🚀 START (smooth turun 0.6 detik, speed 1.0)")
     task.spawn(function() jalankanFully(setStatus) end)
 end)
 
@@ -629,4 +627,4 @@ removeBaseBtn.TextSize = 11
 Instance.new("UICorner", removeBaseBtn).CornerRadius = UDim.new(0, 6)
 removeBaseBtn.MouseButton1Click:Connect(removeBasePlate)
 
-print("✅ FULLY NV SIAP! Speed 1.0, turun 6 studs dalam 0.3 detik (smooth)")
+print("✅ FULLY NV SMOOTH SIAP! Turun 6 studs dalam 0.6 detik, speed 1.0")

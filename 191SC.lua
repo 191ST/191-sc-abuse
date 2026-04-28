@@ -42,19 +42,16 @@ local function spamE(times)
 end
 
 -- ========== RAGDOLL TELEPORT ==========
--- Turunkan health → tunggu detect ragdoll → LANGSUNG TP → lalu tunggu 10 detik
 local function ragdollTeleport(targetPos)
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
 
-    -- Turunkan health ke 3%
     hum.Health = 3
-    task.wait(0.05) -- kasih waktu sedikit buat game proses damage
+    task.wait(0.05)
 
-    -- Tunggu sampai karakter benar-benar dalam state Ragdoll
     local ragdollDetected = false
-    for _ = 1, 100 do -- maks 5 detik
+    for _ = 1, 100 do
         char = player.Character
         hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum and hum:GetState() == Enum.HumanoidStateType.Ragdoll then
@@ -68,13 +65,11 @@ local function ragdollTeleport(targetPos)
         if statusLabel then statusLabel.Text = "⚠️ Gagal detect ragdoll, tetap lanjut..." end
     end
 
-    -- LANGSUNG TELEPORT (tanpa jeda tambahan)
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
     end
 
-    -- Tunggu 10 detik setelah teleport (recovery time)
     for i = 10, 1, -1 do
         if not fullyRunning then return false end
         if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik setelah ragdoll..." end
@@ -300,15 +295,15 @@ local function fullyNVLoop()
     end
 end
 
--- ========== GUI (SEDERHANA TAPI LENGKAP) ==========
+-- ========== GUI (DIPERBESAR) ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "FULLY_NV"
 gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 380, 0, 460)
-mainFrame.Position = UDim2.new(0.5, -190, 0.5, -230)
+mainFrame.Size = UDim2.new(0, 400, 0, 520)  -- lebih tinggi
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -260)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
@@ -349,7 +344,7 @@ scroll.Size = UDim2.new(1, 0, 1, -40)
 scroll.Position = UDim2.new(0, 0, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
-scroll.CanvasSize = UDim2.new(0, 0, 0, 440)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 560)  -- canvas lebih panjang
 
 local pad = Instance.new("UIPadding", scroll)
 pad.PaddingLeft = UDim.new(0, 12)

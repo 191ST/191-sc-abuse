@@ -1,4 +1,4 @@
--- FULLY NV FINAL (DETECT RAGDOLL → TP → TUNGGU 10 DETIK → INTERACT)
+-- FULLY NV (RAGDOLL → INSTANT TP → TUNGGU 10 DETIK → INTERACT)
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
@@ -41,39 +41,40 @@ local function spamE(times)
     task.wait(0.3)
 end
 
--- ========== RAGDOLL TELEPORT (turunkan health, detect ragdoll, langsung TP, lalu tunggu 10 detik) ==========
+-- ========== RAGDOLL TELEPORT ==========
+-- Turunkan health → tunggu detect ragdoll → LANGSUNG TP → lalu tunggu 10 detik
 local function ragdollTeleport(targetPos)
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
 
-    -- Turunkan health ke 3% (biarkan game yang membuat ragdoll)
+    -- Turunkan health ke 3%
     hum.Health = 3
-    task.wait(0.2)
+    task.wait(0.05) -- kasih waktu sedikit buat game proses damage
 
     -- Tunggu sampai karakter benar-benar dalam state Ragdoll
     local ragdollDetected = false
-    for _ = 1, 50 do -- max 5 detik
+    for _ = 1, 100 do -- maks 5 detik
         char = player.Character
         hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum and hum:GetState() == Enum.HumanoidStateType.Ragdoll then
             ragdollDetected = true
             break
         end
-        task.wait(0.1)
+        task.wait(0.05)
     end
 
     if not ragdollDetected then
         if statusLabel then statusLabel.Text = "⚠️ Gagal detect ragdoll, tetap lanjut..." end
     end
 
-    -- Segera teleport setelah ragdoll terdeteksi
+    -- LANGSUNG TELEPORT (tanpa jeda tambahan)
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
     end
 
-    -- Tunggu 10 detik setelah ragdoll (recovery time)
+    -- Tunggu 10 detik setelah teleport (recovery time)
     for i = 10, 1, -1 do
         if not fullyRunning then return false end
         if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik setelah ragdoll..." end
@@ -108,7 +109,7 @@ local function moveWithBlink(targetCFrame)
     return true
 end
 
--- ========== KOORDINAT LENGKAP (DENGAN PILIHAN KANAN/KIRI) ==========
+-- ========== KOORDINAT LENGKAP ==========
 local apartCoords = {
     ["APART CASINO 1"] = {
         tahap1 = CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00),
@@ -151,7 +152,6 @@ local apartCoords = {
     },
 }
 
--- ========== POSISI NPC DAN APART ==========
 local NPC_BUY_POS = Vector3.new(510.061, 4.476, 600.548)
 local NPC_SELL_POS = Vector3.new(510.061, 4.476, 600.548)
 local APART_ENTRY_POS = {
@@ -161,7 +161,7 @@ local APART_ENTRY_POS = {
     ["APART CASINO 4"] = Vector3.new(988.311, 9.932, 221.664),
 }
 
--- ========== PROSES MASAK DI APART ==========
+-- ========== PROSES MASAK ==========
 local function cookAtApartment(selectedApart, selectedPot)
     local coords = apartCoords[selectedApart]
     if not coords then return false end
@@ -181,37 +181,35 @@ local function cookAtApartment(selectedApart, selectedPot)
         table.insert(stages, {name = "Tahap 7", cf = coords.tahap7})
     end
 
-    -- Gerak ke setiap tahap pakai TWEEN + BLINK
     for _, stage in ipairs(stages) do
         if not fullyRunning then return false end
         if statusLabel then statusLabel.Text = "→ " .. stage.name end
         moveWithBlink(stage.cf)
-        spamE(10) -- spam 10 kali agar pasti interact
+        spamE(10)
         task.wait(0.5)
     end
 
-    -- Proses memasak
-    if statusLabel then statusLabel.Text = "💧 Memasak Water (20 detik)..." end
+    if statusLabel then statusLabel.Text = "💧 Water (20 detik)..." end
     equip("Water")
     spamE(10)
     task.wait(20)
     if not fullyRunning then return false end
 
-    if statusLabel then statusLabel.Text = "🧂 Memasak Sugar (1 detik)..." end
+    if statusLabel then statusLabel.Text = "🧂 Sugar..." end
     equip("Sugar Block Bag")
     spamE(10)
     task.wait(1)
 
-    if statusLabel then statusLabel.Text = "🟡 Memasak Gelatin (1 detik)..." end
+    if statusLabel then statusLabel.Text = "🟡 Gelatin..." end
     equip("Gelatin")
     spamE(10)
     task.wait(1)
 
-    if statusLabel then statusLabel.Text = "🔥 Memasak (45 detik)..." end
+    if statusLabel then statusLabel.Text = "🔥 Cooking 45 detik..." end
     task.wait(45)
     if not fullyRunning then return false end
 
-    if statusLabel then statusLabel.Text = "🎒 Mengambil Marshmallow..." end
+    if statusLabel then statusLabel.Text = "🎒 Take Marshmallow..." end
     equip("Empty Bag")
     spamE(10)
     task.wait(1.5)
@@ -219,9 +217,9 @@ local function cookAtApartment(selectedApart, selectedPot)
     return true
 end
 
--- ========== BELI BAHAN ==========
+-- ========== BELI & JUAL ==========
 local function buyIngredients(amount)
-    if statusLabel then statusLabel.Text = "🛒 Membeli " .. amount .. " set bahan..." end
+    if statusLabel then statusLabel.Text = "🛒 Membeli " .. amount .. " set..." end
     for i = 1, amount do
         if not fullyRunning then return false end
         pcall(function()
@@ -235,13 +233,11 @@ local function buyIngredients(amount)
             task.wait(0.5)
         end)
     end
-    if statusLabel then statusLabel.Text = "✅ Selesai beli " .. amount .. " set" end
     return true
 end
 
--- ========== JUAL SEMUA MARSHMALLOW ==========
 local function sellAllMS()
-    if statusLabel then statusLabel.Text = "💰 Menjual Marshmallow..." end
+    if statusLabel then statusLabel.Text = "💰 Menjual..." end
     local sold = 0
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
@@ -256,7 +252,6 @@ local function sellAllMS()
             end
         end
     end
-    if statusLabel then statusLabel.Text = "✅ Terjual " .. sold .. " Marshmallow" end
     return true
 end
 
@@ -273,22 +268,16 @@ local stopBtn = nil
 
 local function fullyNVLoop()
     while fullyRunning do
-        -- 1. Ragdoll teleport ke NPC beli
-        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Beli (ragdoll)..." end
+        if statusLabel then statusLabel.Text = "🚀 Ragdoll → NPC Beli" end
         if not ragdollTeleport(NPC_BUY_POS) then break end
-
-        -- 2. Beli bahan sesuai jumlah
         if not buyIngredients(buyAmount) then break end
 
-        -- 3. Ragdoll teleport ke apart casino
-        local apartPos = APART_ENTRY_POS[selectedApart]
-        if statusLabel then statusLabel.Text = "🚀 Teleport ke " .. selectedApart .. " (ragdoll)..." end
-        if not ragdollTeleport(apartPos) then break end
+        if statusLabel then statusLabel.Text = "🚀 Ragdoll → " .. selectedApart end
+        if not ragdollTeleport(APART_ENTRY_POS[selectedApart]) then break end
 
-        -- 4. Masak sebanyak buyAmount kali
         for i = 1, buyAmount do
             if not fullyRunning then break end
-            if statusLabel then statusLabel.Text = "🔥 Memasak batch " .. i .. "/" .. buyAmount end
+            if statusLabel then statusLabel.Text = "🔥 Masak " .. i .. "/" .. buyAmount end
             if cookAtApartment(selectedApart, selectedPot) then
                 totalCooked = totalCooked + 1
             else
@@ -296,52 +285,47 @@ local function fullyNVLoop()
             end
         end
 
-        -- 5. Ragdoll teleport ke NPC jual
-        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Jual (ragdoll)..." end
+        if statusLabel then statusLabel.Text = "🚀 Ragdoll → NPC Jual" end
         if not ragdollTeleport(NPC_SELL_POS) then break end
-
-        -- 6. Jual semua Marshmallow
         if not sellAllMS() then break end
 
-        if statusLabel then statusLabel.Text = "🔄 Loop selesai, mengulang..." end
+        if statusLabel then statusLabel.Text = "🔄 Loop selesai, ulang..." end
         task.wait(1)
     end
     fullyRunning = false
-    if statusLabel then statusLabel.Text = "⏹️ FULLY NV STOP" end
+    if statusLabel then statusLabel.Text = "⏹️ STOP" end
     if startBtn and stopBtn then
         startBtn.Visible = true
         stopBtn.Visible = false
     end
 end
 
--- ========== GUI ==========
+-- ========== GUI (SEDERHANA TAPI LENGKAP) ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "FULLY_NV"
 gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 400, 0, 480)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -240)
+mainFrame.Size = UDim2.new(0, 380, 0, 460)
+mainFrame.Position = UDim2.new(0.5, -190, 0.5, -230)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 Instance.new("UIStroke", mainFrame).Color = Color3.fromRGB(100, 55, 190)
 Instance.new("UIStroke", mainFrame).Thickness = 1
 
--- Title bar
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 28, 45)
-titleBar.BorderSizePixel = 0
 Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 
 local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
-title.Text = "FULLY NV - AUTO APART CASINO"
+title.Text = "FULLY NV"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 14
+title.TextSize = 16
 title.TextColor3 = Color3.fromRGB(220, 215, 245)
 title.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -365,7 +349,7 @@ scroll.Size = UDim2.new(1, 0, 1, -40)
 scroll.Position = UDim2.new(0, 0, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
-scroll.CanvasSize = UDim2.new(0, 0, 0, 520)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 440)
 
 local pad = Instance.new("UIPadding", scroll)
 pad.PaddingLeft = UDim.new(0, 12)
@@ -377,9 +361,9 @@ local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Pilih Apart
+-- Apart
 local apartFrame = Instance.new("Frame", scroll)
-apartFrame.Size = UDim2.new(1, 0, 0, 90)
+apartFrame.Size = UDim2.new(1, 0, 0, 80)
 apartFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
 Instance.new("UICorner", apartFrame).CornerRadius = UDim.new(0, 8)
 
@@ -387,7 +371,7 @@ local apartLabel = Instance.new("TextLabel", apartFrame)
 apartLabel.Size = UDim2.new(1, 0, 0, 25)
 apartLabel.Position = UDim2.new(0, 8, 0, 5)
 apartLabel.BackgroundTransparency = 1
-apartLabel.Text = "Pilih Apart Casino:"
+apartLabel.Text = "Apart Casino:"
 apartLabel.Font = Enum.Font.GothamBold
 apartLabel.TextSize = 12
 apartLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
@@ -395,7 +379,7 @@ apartLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local apartDropdown = Instance.new("TextButton", apartFrame)
 apartDropdown.Size = UDim2.new(0.9, 0, 0, 35)
-apartDropdown.Position = UDim2.new(0.05, 0, 0, 40)
+apartDropdown.Position = UDim2.new(0.05, 0, 0, 35)
 apartDropdown.BackgroundColor3 = Color3.fromRGB(48, 88, 200)
 apartDropdown.Text = "Pilih Apart"
 apartDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -407,13 +391,13 @@ local apartList = {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART 
 apartDropdown.MouseButton1Click:Connect(function()
     local menu = Instance.new("Frame", scroll)
     menu.Size = UDim2.new(0.8, 0, 0, 120)
-    menu.Position = UDim2.new(0.1, 0, 0, 130)
+    menu.Position = UDim2.new(0.1, 0, 0, 110)
     menu.BackgroundColor3 = Color3.fromRGB(25, 23, 40)
     Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 8)
     for i, name in ipairs(apartList) do
         local btn = Instance.new("TextButton", menu)
         btn.Size = UDim2.new(1, 0, 0, 28)
-        btn.Position = UDim2.new(0, 0, 0, (i - 1) * 30)
+        btn.Position = UDim2.new(0, 0, 0, (i-1)*30)
         btn.BackgroundTransparency = 1
         btn.Text = name
         btn.TextColor3 = Color3.fromRGB(220, 215, 245)
@@ -428,9 +412,9 @@ apartDropdown.MouseButton1Click:Connect(function()
     task.delay(5, function() pcall(function() menu:Destroy() end) end)
 end)
 
--- Pilih Pot
+-- Pot
 local potFrame = Instance.new("Frame", scroll)
-potFrame.Size = UDim2.new(1, 0, 0, 90)
+potFrame.Size = UDim2.new(1, 0, 0, 80)
 potFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
 Instance.new("UICorner", potFrame).CornerRadius = UDim.new(0, 8)
 
@@ -438,7 +422,7 @@ local potLabel = Instance.new("TextLabel", potFrame)
 potLabel.Size = UDim2.new(1, 0, 0, 25)
 potLabel.Position = UDim2.new(0, 8, 0, 5)
 potLabel.BackgroundTransparency = 1
-potLabel.Text = "Pilih Pot:"
+potLabel.Text = "Pot:"
 potLabel.Font = Enum.Font.GothamBold
 potLabel.TextSize = 12
 potLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
@@ -446,9 +430,9 @@ potLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local potKanan = Instance.new("TextButton", potFrame)
 potKanan.Size = UDim2.new(0.4, -5, 0, 35)
-potKanan.Position = UDim2.new(0.05, 0, 0, 40)
+potKanan.Position = UDim2.new(0.05, 0, 0, 35)
 potKanan.BackgroundColor3 = Color3.fromRGB(48, 88, 200)
-potKanan.Text = "POT KANAN"
+potKanan.Text = "KANAN"
 potKanan.TextColor3 = Color3.fromRGB(255, 255, 255)
 potKanan.Font = Enum.Font.GothamBold
 potKanan.TextSize = 12
@@ -456,9 +440,9 @@ Instance.new("UICorner", potKanan).CornerRadius = UDim.new(0, 6)
 
 local potKiri = Instance.new("TextButton", potFrame)
 potKiri.Size = UDim2.new(0.4, -5, 0, 35)
-potKiri.Position = UDim2.new(0.55, 0, 0, 40)
+potKiri.Position = UDim2.new(0.55, 0, 0, 35)
 potKiri.BackgroundColor3 = Color3.fromRGB(25, 23, 40)
-potKiri.Text = "POT KIRI"
+potKiri.Text = "KIRI"
 potKiri.TextColor3 = Color3.fromRGB(220, 215, 245)
 potKiri.Font = Enum.Font.GothamBold
 potKiri.TextSize = 12
@@ -471,7 +455,6 @@ potKanan.MouseButton1Click:Connect(function()
     potKanan.TextColor3 = Color3.fromRGB(255, 255, 255)
     potKiri.TextColor3 = Color3.fromRGB(220, 215, 245)
 end)
-
 potKiri.MouseButton1Click:Connect(function()
     selectedPot = "KIRI"
     TweenService:Create(potKiri, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(48, 88, 200)}):Play()
@@ -480,7 +463,7 @@ potKiri.MouseButton1Click:Connect(function()
     potKanan.TextColor3 = Color3.fromRGB(220, 215, 245)
 end)
 
--- Slider Jumlah Beli
+-- Slider
 local sliderFrame = Instance.new("Frame", scroll)
 sliderFrame.Size = UDim2.new(1, 0, 0, 60)
 sliderFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
@@ -490,7 +473,7 @@ local sliderLabel = Instance.new("TextLabel", sliderFrame)
 sliderLabel.Size = UDim2.new(1, 0, 0, 25)
 sliderLabel.Position = UDim2.new(0, 8, 0, 5)
 sliderLabel.BackgroundTransparency = 1
-sliderLabel.Text = "Jumlah Set Bahan per Loop:"
+sliderLabel.Text = "Jumlah Set per Loop:"
 sliderLabel.Font = Enum.Font.GothamBold
 sliderLabel.TextSize = 12
 sliderLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
@@ -567,7 +550,7 @@ local cookedLabel = Instance.new("TextLabel", statFrame)
 cookedLabel.Size = UDim2.new(0.5, 0, 0, 25)
 cookedLabel.Position = UDim2.new(0, 8, 0, 5)
 cookedLabel.BackgroundTransparency = 1
-cookedLabel.Text = "Total MS Dimasak:"
+cookedLabel.Text = "Total Dimasak:"
 cookedLabel.Font = Enum.Font.Gotham
 cookedLabel.TextSize = 11
 cookedLabel.TextColor3 = Color3.fromRGB(145, 138, 175)
@@ -587,7 +570,7 @@ local soldLabel = Instance.new("TextLabel", statFrame)
 soldLabel.Size = UDim2.new(0.5, 0, 0, 25)
 soldLabel.Position = UDim2.new(0, 8, 0, 30)
 soldLabel.BackgroundTransparency = 1
-soldLabel.Text = "Total MS Terjual:"
+soldLabel.Text = "Total Terjual:"
 soldLabel.Font = Enum.Font.Gotham
 soldLabel.TextSize = 11
 soldLabel.TextColor3 = Color3.fromRGB(145, 138, 175)
@@ -603,7 +586,7 @@ soldValue.TextSize = 14
 soldValue.TextColor3 = Color3.fromRGB(52, 210, 110)
 soldValue.TextXAlignment = Enum.TextXAlignment.Right
 
--- Tombol Start/Stop
+-- Tombol
 local btnFrame = Instance.new("Frame", scroll)
 btnFrame.Size = UDim2.new(1, 0, 0, 50)
 btnFrame.BackgroundTransparency = 1
@@ -632,12 +615,12 @@ stopBtn.Visible = false
 startBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
     if not selectedApart then
-        statusLabel.Text = "❌ Pilih apart casino dulu!"
+        statusLabel.Text = "❌ Pilih apart casino!"
         statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
         return
     end
     if not selectedPot then
-        statusLabel.Text = "❌ Pilih pot kanan/kiri dulu!"
+        statusLabel.Text = "❌ Pilih pot (KANAN/KIRI)!"
         statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
         return
     end
@@ -668,5 +651,5 @@ task.spawn(function()
     end
 end)
 
-print("[FULLY NV] GUI siap! Pilih apart dan pot, lalu klik START.")
-print("[INFO] Ragdoll: health 3% → detect ragdoll → langsung TP → tunggu 10 detik → baru interaksi")
+print("[FULLY NV] READY. Pilih apart & pot, lalu START.")
+print("[INFO] Ragdoll: health 3% → detect ragdoll → INSTANT TP → tunggu 10 detik → interact.")

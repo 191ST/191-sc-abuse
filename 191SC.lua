@@ -1,13 +1,59 @@
--- FULLY NV STANDALONE (COASTIFIED UI) - FIXED START/STOP
+-- FULLY NV STANDALONE (COASTIFIED UI) - FIXED + DEBUG
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
-local buyRemote = game:GetService("ReplicatedStorage").RemoteEvents.StorePurchase
+
+-- ========== CARI REMOTE YANG BENAR ==========
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local buyRemote = nil
+
+-- Coba cari remote yang benar
+local function findBuyRemote()
+    -- Cek di ReplicatedStorage.RemoteEvents
+    local remoteEvents = ReplicatedStorage:FindFirstChild("RemoteEvents")
+    if remoteEvents then
+        buyRemote = remoteEvents:FindFirstChild("StorePurchase")
+        if buyRemote then return true end
+    end
+    
+    -- Cek langsung di ReplicatedStorage
+    buyRemote = ReplicatedStorage:FindFirstChild("StorePurchase")
+    if buyRemote then return true end
+    
+    -- Cek di workspace
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("RemoteEvent") and (v.Name == "StorePurchase" or v.Name:lower():find("store")) then
+            buyRemote = v
+            return true
+        end
+    end
+    
+    -- Cek di game.Players.LocalPlayer.PlayerGui
+    for _, v in pairs(player.PlayerGui:GetDescendants()) do
+        if v:IsA("RemoteEvent") and (v.Name == "StorePurchase" or v.Name:lower():find("store")) then
+            buyRemote = v
+            return true
+        end
+    end
+    
+    return false
+end
+
+if not findBuyRemote() then
+    warn("⚠️ Tidak bisa menemukan remote StorePurchase! Script tidak akan bisa beli.")
+end
+
+-- ========== DEBUG PRINT ==========
+print("🔍 Remote StorePurchase ditemukan:", buyRemote ~= nil)
+if buyRemote then
+    print("📡 Nama remote:", buyRemote.Name)
+    print("📡 Parent remote:", buyRemote.Parent and buyRemote.Parent.Name or "nil")
+end
 
 -- ========== VARIABEL ==========
 local fullyRunning = false
 local selectedApart = nil
-local selectedPot = "KANAN"  -- default
+local selectedPot = "KANAN"
 local targetMS = 5
 local totalCooked = 0
 local totalSold = 0
@@ -25,7 +71,7 @@ local APART_POS = {
     ["APART CASINO 4"] = Vector3.new(988.311, 9.932, 221.664),
 }
 
--- Koordinat masak (lengkap semua apart)
+-- Koordinat masak
 local apartCoords = {
     ["APART CASINO 1"] = {
         CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00),
@@ -163,7 +209,6 @@ local function cookAtApartment()
         end
     end
     
-    -- Proses masak
     if statusLabel then statusLabel:SetText("💧 Water 20 detik...") end
     equip("Water")
     spamE(10)
@@ -193,42 +238,58 @@ local function cookAtApartment()
     return true
 end
 
--- ========== BELI & JUAL ==========
+-- ========== BELI BAHAN (DEBUD) ==========
 local function buyIngredients(amount)
+    if not buyRemote then
+        if statusLabel then statusLabel:SetText("❌ Remote tidak ditemukan!") end
+        return false
+    end
+    
     if statusLabel then statusLabel:SetText("🛒 Beli " .. amount .. " set") end
     for i = 1, amount do
         if not fullyRunning then return false end
         pcall(function()
-            buyRemote:FireServer("Water", 1) task.wait(0.4)
-            buyRemote:FireServer("Sugar Block Bag", 1) task.wait(0.4)
-            buyRemote:FireServer("Gelatin", 1) task.wait(0.4)
-            buyRemote:FireServer("Empty Bag", 1) task.wait(0.5)
+            buyRemote:FireServer("Water", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Sugar Block Bag", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Gelatin", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Empty Bag", 1)
+            task.wait(0.5)
         end)
     end
     return true
 end
 
+-- ========== JUAL SEMUA ==========
 local function sellAll()
     if statusLabel then statusLabel:SetText("💰 Menjual...") end
-    local sold = 0
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
         while fullyRunning and countItem(bag) > 0 do
-            if equip(bag) then spamE(10) task.wait(0.8) sold = sold + 1 totalSold = totalSold + 1 else break end
+            if equip(bag) then spamE(10) task.wait(0.8) totalSold = totalSold + 1 else break end
         end
     end
     return true
 end
 
--- ========== LOOP UTAMA ==========
+-- ========== LOOP UTAMA (DENGAN DEBUG) ==========
 local function mainLoop()
+    print("🔄 Loop dimulai!")
     while fullyRunning do
         if statusLabel then statusLabel:SetText("🚀 Ke NPC Beli") end
         teleportWithPlate(NPC_BUY)
-        if not buyIngredients(targetMS) then break end
+        task.wait(1)
+        
+        if not buyIngredients(targetMS) then 
+            print("❌ Gagal beli bahan")
+            break 
+        end
         
         if statusLabel then statusLabel:SetText("🚀 Ke " .. selectedApart) end
         teleportWithPlate(APART_POS[selectedApart])
+        task.wait(1)
         
         for i = 1, targetMS do
             if not fullyRunning then break end
@@ -238,6 +299,8 @@ local function mainLoop()
         
         if statusLabel then statusLabel:SetText("🚀 Ke NPC Jual") end
         teleportWithPlate(NPC_SELL)
+        task.wait(1)
+        
         if not sellAll() then break end
         
         if statusLabel then statusLabel:SetText("🔄 Loop selesai") end
@@ -245,8 +308,7 @@ local function mainLoop()
     end
     fullyRunning = false
     if statusLabel then statusLabel:SetText("⏹️ STOPPED") end
-    startBtn.Visible = true
-    stopBtn.Visible = false
+    print("🛑 Loop berhenti")
 end
 
 -- ========== LOAD UI COASTIFIED ==========
@@ -254,24 +316,24 @@ local Lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/laagginq/
 local Window = Lib:Window("FULLY NV", "Auto Apart Casino", Enum.KeyCode.RightShift)
 local Tab = Window:Tab("FULLY NV")
 
--- Variabel UI
 local statusLabel = nil
-local startBtn = nil
-local stopBtn = nil
 
 -- Dropdown Pilih Apart
 Tab:Dropdown("Pilih Apart", {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}, function(value)
     selectedApart = value
+    print("📌 Apart dipilih:", value)
 end)
 
--- Pilih Pot (KANAN / KIRI)
+-- Dropdown Pilih Pot
 Tab:Dropdown("Pilih Pot", {"KANAN", "KIRI"}, function(value)
     selectedPot = value
+    print("📌 Pot dipilih:", value)
 end)
 
 -- Slider Jumlah MS
 Tab:Slider("Target MS per Loop", 1, 50, 5, function(value)
     targetMS = value
+    print("📌 Target MS:", value)
 end)
 
 -- Status label
@@ -282,38 +344,41 @@ local cookedStat = Tab:Label("Total Dimasak: 0")
 local soldStat = Tab:Label("Total Terjual: 0")
 local bahanStat = Tab:Label("Bahan: -")
 
--- Tombol Start/Stop (menggunakan Button biasa, status disimpan di variabel terpisah)
-local startButton
-local stopButton
-
-startButton = Tab:Button("▶ START FULLY NV", function()
-    if fullyRunning then return end
+-- Tombol START
+Tab:Button("▶ START FULLY NV", function()
+    print("🟢 START ditekan!")
+    if fullyRunning then 
+        print("⚠️ Sudah running")
+        return 
+    end
     if not selectedApart then
         statusLabel:SetText("❌ Pilih apart casino dulu!")
+        print("❌ Apart belum dipilih")
         return
     end
     if not selectedPot then
         statusLabel:SetText("❌ Pilih pot dulu!")
+        print("❌ Pot belum dipilih")
         return
     end
     
+    print("✅ Membuat baseplate...")
     createBasePlate()
+    
+    print("✅ Memulai loop...")
     fullyRunning = true
     statusLabel:SetText("✅ RUNNING")
-    startButton.Visible = false
-    if stopButton then stopButton.Visible = true end
     task.spawn(mainLoop)
 end)
 
-stopButton = Tab:Button("■ STOP FULLY NV", function()
+-- Tombol STOP
+Tab:Button("■ STOP FULLY NV", function()
+    print("🔴 STOP ditekan!")
     fullyRunning = false
     statusLabel:SetText("⏹️ STOPPED")
-    startButton.Visible = true
-    stopButton.Visible = false
 end)
-stopButton.Visible = false
 
--- Update statistik setiap detik
+-- Update statistik
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -330,4 +395,4 @@ task.spawn(function()
 end)
 
 print("✅ FULLY NV READY. Tekan RightShift untuk buka menu.")
-print("✅ Pilih apart, pilih pot, atur target MS, lalu klik START.")
+print("✅ Cek output executor untuk debug.")

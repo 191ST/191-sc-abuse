@@ -1,4 +1,4 @@
--- FULLY NV LENGKAP (GUI + FITUR MASUK APART + MASAK + JUAL)
+-- FULLY NV LENGKAP (GUI PASTI MUNCUL)
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
@@ -114,7 +114,7 @@ local function blinkTo(targetPos)
     end
 end
 
--- ========== TELEPORT DENGAN BASEPLATE (TURUN 5 STUDS DULU) ==========
+-- ========== TELEPORT DENGAN BASEPLATE ==========
 local function teleportWithPlate(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -144,7 +144,7 @@ local function createBasePlate()
     print("✅ Baseplate dibuat di Y = " .. (hrp.Position.Y - 5))
 end
 
--- ========== PROSES MASAK DI APART (SLOW TWEEN + BLINK IF STUCK) ==========
+-- ========== PROSES MASAK DI APART ==========
 local function moveToStage(targetCF)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -184,7 +184,6 @@ local function cookAtApartment()
         end
     end
     
-    -- Proses memasak
     if statusLabel then statusLabel.Text = "💧 Water (20 detik)..." end
     equip("Water")
     spamE(10)
@@ -215,7 +214,7 @@ local function cookAtApartment()
     return true
 end
 
--- ========== BELI BAHAN ==========
+-- ========== BELI & JUAL ==========
 local function buyIngredients(amount)
     if statusLabel then statusLabel.Text = "🛒 Membeli " .. amount .. " set..." end
     for i = 1, amount do
@@ -234,7 +233,6 @@ local function buyIngredients(amount)
     return true
 end
 
--- ========== JUAL SEMUA MARSHMALLOW ==========
 local function sellAllMS()
     if statusLabel then statusLabel.Text = "💰 Menjual Marshmallow..." end
     local sold = 0
@@ -292,11 +290,20 @@ local function mainLoop()
     print("🛑 FULLY NV LOOP STOPPED")
 end
 
--- ========== GUI SEDERHANA (FRAME BIASA) ==========
+-- ========== GUI ==========
+-- Coba parent ke CoreGui dulu (lebih aman)
+local guiParent = game:GetService("CoreGui")
+if not guiParent then
+    guiParent = player:WaitForChild("PlayerGui")
+end
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "FullyNV"
-gui.Parent = player:WaitForChild("PlayerGui")
+gui.Parent = guiParent
 gui.ResetOnSpawn = false
+
+-- Delay kecil biar GUI kebentuk
+task.wait(0.1)
 
 local mainFrame = Instance.new("Frame", gui)
 mainFrame.Size = UDim2.new(0, 400, 0, 520)
@@ -635,6 +642,14 @@ stopBtn.MouseButton1Click:Connect(function()
     stopBtn.Visible = false
 end)
 
+-- Update statistik
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if cookedValue then cookedValue.Text = tostring(totalCooked) end
+        if soldValue then soldValue.Text = tostring(totalSold) end
+    end
+end)
+
 print("✅ FULLY NV LOADED!")
-print("✅ Tekan RightShift untuk drag (atau klik dan drag title bar)")
-print("✅ Pilih apart, pilih pot, atur target, klik START")
+print("✅ Cek layar, GUI harus muncul")

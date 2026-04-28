@@ -1,11 +1,11 @@
--- FULLY NV (GUI SENDIRI - PASTI JALAN)
+-- FULLY NV LENGKAP (GUI + FITUR MASUK APART + MASAK + JUAL)
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local buyRemote = game:GetService("ReplicatedStorage").RemoteEvents.StorePurchase
 
--- ========== VARIABEL ==========
+-- ========== VARIABEL GLOBAL ==========
 local fullyRunning = false
 local selectedApart = nil
 local selectedPot = "KANAN"
@@ -13,10 +13,15 @@ local targetMS = 5
 local totalCooked = 0
 local totalSold = 0
 local basePlate = nil
+local statusLabel = nil
+local cookedValue = nil
+local soldValue = nil
 
--- Koordinat
+-- Koordinat NPC
 local NPC_BUY = Vector3.new(510.061, 4.476, 600.548)
 local NPC_SELL = Vector3.new(510.061, 4.476, 600.548)
+
+-- Koordinat masuk apart
 local APART_POS = {
     ["APART CASINO 1"] = Vector3.new(1137.992, 9.932, 449.753),
     ["APART CASINO 2"] = Vector3.new(1139.174, 9.932, 420.556),
@@ -24,7 +29,7 @@ local APART_POS = {
     ["APART CASINO 4"] = Vector3.new(988.311, 9.932, 221.664),
 }
 
--- Koordinat masak
+-- Koordinat masak lengkap (dengan pilihan kanan/kiri)
 local apartCoords = {
     ["APART CASINO 1"] = {
         CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00),
@@ -88,10 +93,11 @@ local function spamE(times)
     end
 end
 
+-- ========== TELEPORT BLINK ==========
 local function blinkTo(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
+    if not hrp then return
     
     local maxDist = 5
     while fullyRunning and (hrp.Position - targetPos).Magnitude > maxDist do
@@ -100,25 +106,30 @@ local function blinkTo(targetPos)
         task.wait(1)
         char = player.Character
         hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then break end
+        if not hrp then break
     end
-    if hrp then hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0)) end
+    if hrp then
+        hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+        hrp.AssemblyLinearVelocity = Vector3.zero
+    end
 end
 
+-- ========== TELEPORT DENGAN BASEPLATE (TURUN 5 STUDS DULU) ==========
 local function teleportWithPlate(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
+    if not hrp then return
     hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 5, hrp.Position.Z)
     task.wait(0.5)
     blinkTo(targetPos)
 end
 
+-- ========== BASEPLATE ==========
 local function createBasePlate()
     if basePlate then basePlate:Destroy() end
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
+    if not hrp then return
     
     local plate = Instance.new("Part")
     plate.Size = Vector3.new(1000, 1, 1000)
@@ -130,14 +141,33 @@ local function createBasePlate()
     plate.Name = "FullyNV_BasePlate"
     plate.Parent = workspace
     basePlate = plate
+    print("✅ Baseplate dibuat di Y = " .. (hrp.Position.Y - 5))
+end
+
+-- ========== PROSES MASAK DI APART (SLOW TWEEN + BLINK IF STUCK) ==========
+local function moveToStage(targetCF)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false
+    
+    local tween = TweenService:Create(hrp, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = targetCF})
+    tween:Play()
+    tween.Completed:Wait()
+    
+    task.wait(0.3)
+    if hrp and (hrp.Position - targetCF.Position).Magnitude > 3 then
+        hrp.CFrame = targetCF
+        task.wait(0.2)
+    end
+    return true
 end
 
 local function cookAtApartment()
     local coords = apartCoords[selectedApart]
-    if not coords then return false end
+    if not coords then return false
     
     for _, stage in ipairs(coords) do
-        if not fullyRunning then return false end
+        if not fullyRunning then return false
         
         local targetCF = nil
         if type(stage) == "table" then
@@ -147,22 +177,19 @@ local function cookAtApartment()
         end
         
         if targetCF then
-            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local tween = TweenService:Create(hrp, TweenInfo.new(2, Enum.EasingStyle.Linear), {CFrame = targetCF})
-                tween:Play()
-                tween.Completed:Wait()
-            end
+            if statusLabel then statusLabel.Text = "→ Gerak ke tahap..." end
+            moveToStage(targetCF)
             spamE(10)
             task.wait(0.5)
         end
     end
     
-    if statusLabel then statusLabel.Text = "💧 Water 20 detik..." end
+    -- Proses memasak
+    if statusLabel then statusLabel.Text = "💧 Water (20 detik)..." end
     equip("Water")
     spamE(10)
     task.wait(20)
-    if not fullyRunning then return false end
+    if not fullyRunning then return false
     
     if statusLabel then statusLabel.Text = "🧂 Sugar..." end
     equip("Sugar Block Bag")
@@ -174,80 +201,107 @@ local function cookAtApartment()
     spamE(10)
     task.wait(1)
     
-    if statusLabel then statusLabel.Text = "🔥 Cooking 45 detik..." end
+    if statusLabel then statusLabel.Text = "🔥 Cooking (45 detik)..." end
     task.wait(45)
-    if not fullyRunning then return false end
+    if not fullyRunning then return false
     
-    if statusLabel then statusLabel.Text = "🎒 Take..." end
+    if statusLabel then statusLabel.Text = "🎒 Take Marshmallow..." end
     equip("Empty Bag")
     spamE(10)
     task.wait(1.5)
     
     totalCooked = totalCooked + 1
+    if cookedValue then cookedValue.Text = tostring(totalCooked) end
     return true
 end
 
+-- ========== BELI BAHAN ==========
 local function buyIngredients(amount)
-    if statusLabel then statusLabel.Text = "🛒 Beli " .. amount .. " set" end
+    if statusLabel then statusLabel.Text = "🛒 Membeli " .. amount .. " set..." end
     for i = 1, amount do
-        if not fullyRunning then return false end
+        if not fullyRunning then return false
         pcall(function()
-            buyRemote:FireServer("Water", 1) task.wait(0.4)
-            buyRemote:FireServer("Sugar Block Bag", 1) task.wait(0.4)
-            buyRemote:FireServer("Gelatin", 1) task.wait(0.4)
-            buyRemote:FireServer("Empty Bag", 1) task.wait(0.5)
+            buyRemote:FireServer("Water", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Sugar Block Bag", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Gelatin", 1)
+            task.wait(0.4)
+            buyRemote:FireServer("Empty Bag", 1)
+            task.wait(0.5)
         end)
     end
     return true
 end
 
-local function sellAll()
-    if statusLabel then statusLabel.Text = "💰 Menjual..." end
+-- ========== JUAL SEMUA MARSHMALLOW ==========
+local function sellAllMS()
+    if statusLabel then statusLabel.Text = "💰 Menjual Marshmallow..." end
+    local sold = 0
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
         while fullyRunning and countItem(bag) > 0 do
-            if equip(bag) then spamE(10) task.wait(0.8) totalSold = totalSold + 1 else break end
+            if equip(bag) then
+                spamE(10)
+                task.wait(0.8)
+                sold = sold + 1
+                totalSold = totalSold + 1
+                if soldValue then soldValue.Text = tostring(totalSold) end
+            else
+                break
+            end
         end
     end
     return true
 end
 
+-- ========== LOOP UTAMA ==========
 local function mainLoop()
+    print("🚀 FULLY NV LOOP STARTED")
     while fullyRunning do
-        if statusLabel then statusLabel.Text = "🚀 Ke NPC Beli" end
+        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Beli..." end
         teleportWithPlate(NPC_BUY)
-        if not buyIngredients(targetMS) then break end
+        task.wait(1)
         
-        if statusLabel then statusLabel.Text = "🚀 Ke " .. selectedApart end
+        if not buyIngredients(targetMS) then
+            print("❌ Gagal beli bahan")
+            break
+        end
+        
+        if statusLabel then statusLabel.Text = "🚀 Teleport ke " .. selectedApart .. "..." end
         teleportWithPlate(APART_POS[selectedApart])
+        task.wait(1)
         
         for i = 1, targetMS do
             if not fullyRunning then break end
-            if statusLabel then statusLabel.Text = "🔥 Masak " .. i .. "/" .. targetMS end
-            if not cookAtApartment() then break end
+            if statusLabel then statusLabel.Text = "🔥 Memasak " .. i .. "/" .. targetMS end
+            if not cookAtApartment() then break
         end
         
-        if statusLabel then statusLabel.Text = "🚀 Ke NPC Jual" end
+        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Jual..." end
         teleportWithPlate(NPC_SELL)
-        if not sellAll() then break end
+        task.wait(1)
         
-        if statusLabel then statusLabel.Text = "🔄 Loop selesai" end
+        if not sellAllMS() then break
+        
+        if statusLabel then statusLabel.Text = "🔄 Loop selesai, ulangi..." end
         task.wait(1)
     end
     fullyRunning = false
-    if statusLabel then statusLabel.Text = "⏹️ STOPPED" end
+    if statusLabel then statusLabel.Text = "⏹️ FULLY NV STOPPED"
+    print("🛑 FULLY NV LOOP STOPPED")
 end
 
--- ========== GUI SENDIRI ==========
+-- ========== GUI SEDERHANA (FRAME BIASA) ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "FullyNV"
 gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 380, 0, 480)
-mainFrame.Position = UDim2.new(0.5, -190, 0.5, -240)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 23, 40)
+mainFrame.Size = UDim2.new(0, 400, 0, 520)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -260)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 35)
 mainFrame.BorderSizePixel = 0
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 Instance.new("UIStroke", mainFrame).Color = Color3.fromRGB(130, 60, 240)
@@ -256,7 +310,7 @@ Instance.new("UIStroke", mainFrame).Thickness = 1
 -- Title bar
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
-titleBar.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 28, 48)
 titleBar.BorderSizePixel = 0
 Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 
@@ -284,13 +338,13 @@ closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
--- Scroll
+-- Scroll area
 local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, 0, 1, -40)
 scroll.Position = UDim2.new(0, 0, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
-scroll.CanvasSize = UDim2.new(0, 0, 0, 460)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 480)
 
 local pad = Instance.new("UIPadding", scroll)
 pad.PaddingLeft = UDim.new(0, 12)
@@ -301,9 +355,9 @@ local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ===== Pilih Apart =====
+-- ===== Pilih Apart (Dropdown) =====
 local apartFrame = Instance.new("Frame", scroll)
-apartFrame.Size = UDim2.new(1, 0, 0, 70)
+apartFrame.Size = UDim2.new(1, 0, 0, 80)
 apartFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
 Instance.new("UICorner", apartFrame).CornerRadius = UDim.new(0, 8)
 
@@ -317,26 +371,23 @@ apartLabel.TextSize = 12
 apartLabel.TextColor3 = Color3.fromRGB(220, 215, 245)
 apartLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local apartValue = Instance.new("TextLabel", apartFrame)
-apartValue.Size = UDim2.new(0.8, 0, 0, 30)
-apartValue.Position = UDim2.new(0.1, 0, 0, 32)
-apartValue.BackgroundColor3 = Color3.fromRGB(48, 88, 200)
-apartValue.Text = "Pilih Apart"
-apartValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-apartValue.Font = Enum.Font.GothamBold
-apartValue.TextSize = 12
-apartValue.TextXAlignment = Enum.TextXAlignment.Center
-Instance.new("UICorner", apartValue).CornerRadius = UDim.new(0, 6)
+local apartButton = Instance.new("TextButton", apartFrame)
+apartButton.Size = UDim2.new(0.9, 0, 0, 35)
+apartButton.Position = UDim2.new(0.05, 0, 0, 35)
+apartButton.BackgroundColor3 = Color3.fromRGB(48, 88, 200)
+apartButton.Text = "Pilih Apart"
+apartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+apartButton.Font = Enum.Font.GothamBold
+apartButton.TextSize = 12
+Instance.new("UICorner", apartButton).CornerRadius = UDim.new(0, 6)
 
-local apartNames = {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}
-local apartMenuVisible = false
 local apartMenu = nil
-
-apartValue.MouseButton1Click:Connect(function()
+local apartNames = {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}
+apartButton.MouseButton1Click:Connect(function()
     if apartMenu then apartMenu:Destroy() apartMenu = nil return end
     apartMenu = Instance.new("Frame", scroll)
     apartMenu.Size = UDim2.new(0.8, 0, 0, 120)
-    apartMenu.Position = UDim2.new(0.1, 0, 0, 110)
+    apartMenu.Position = UDim2.new(0.1, 0, 0, 120)
     apartMenu.BackgroundColor3 = Color3.fromRGB(25, 23, 40)
     Instance.new("UICorner", apartMenu).CornerRadius = UDim.new(0, 8)
     for i, name in ipairs(apartNames) do
@@ -350,7 +401,7 @@ apartValue.MouseButton1Click:Connect(function()
         btn.TextSize = 11
         btn.MouseButton1Click:Connect(function()
             selectedApart = name
-            apartValue.Text = name
+            apartButton.Text = name
             apartMenu:Destroy()
             apartMenu = nil
         end)
@@ -468,11 +519,11 @@ end)
 
 -- ===== Status =====
 local statusFrame = Instance.new("Frame", scroll)
-statusFrame.Size = UDim2.new(1, 0, 0, 45)
+statusFrame.Size = UDim2.new(1, 0, 0, 50)
 statusFrame.BackgroundColor3 = Color3.fromRGB(25, 23, 40)
 Instance.new("UICorner", statusFrame).CornerRadius = UDim.new(0, 8)
 
-local statusLabel = Instance.new("TextLabel", statusFrame)
+statusLabel = Instance.new("TextLabel", statusFrame)
 statusLabel.Size = UDim2.new(1, -10, 1, 0)
 statusLabel.Position = UDim2.new(0, 5, 0, 0)
 statusLabel.BackgroundTransparency = 1
@@ -498,15 +549,15 @@ cookedL.TextSize = 11
 cookedL.TextColor3 = Color3.fromRGB(150, 140, 180)
 cookedL.TextXAlignment = Enum.TextXAlignment.Left
 
-local cookedV = Instance.new("TextLabel", statFrame)
-cookedV.Size = UDim2.new(0.4, 0, 0, 25)
-cookedV.Position = UDim2.new(0.6, 0, 0, 5)
-cookedV.BackgroundTransparency = 1
-cookedV.Text = "0"
-cookedV.Font = Enum.Font.GothamBold
-cookedV.TextSize = 14
-cookedV.TextColor3 = Color3.fromRGB(100, 190, 255)
-cookedV.TextXAlignment = Enum.TextXAlignment.Right
+cookedValue = Instance.new("TextLabel", statFrame)
+cookedValue.Size = UDim2.new(0.4, 0, 0, 25)
+cookedValue.Position = UDim2.new(0.6, 0, 0, 5)
+cookedValue.BackgroundTransparency = 1
+cookedValue.Text = "0"
+cookedValue.Font = Enum.Font.GothamBold
+cookedValue.TextSize = 14
+cookedValue.TextColor3 = Color3.fromRGB(100, 190, 255)
+cookedValue.TextXAlignment = Enum.TextXAlignment.Right
 
 local soldL = Instance.new("TextLabel", statFrame)
 soldL.Size = UDim2.new(0.6, 0, 0, 25)
@@ -518,15 +569,15 @@ soldL.TextSize = 11
 soldL.TextColor3 = Color3.fromRGB(150, 140, 180)
 soldL.TextXAlignment = Enum.TextXAlignment.Left
 
-local soldV = Instance.new("TextLabel", statFrame)
-soldV.Size = UDim2.new(0.4, 0, 0, 25)
-soldV.Position = UDim2.new(0.6, 0, 0, 35)
-soldV.BackgroundTransparency = 1
-soldV.Text = "0"
-soldV.Font = Enum.Font.GothamBold
-soldV.TextSize = 14
-soldV.TextColor3 = Color3.fromRGB(52, 210, 110)
-soldV.TextXAlignment = Enum.TextXAlignment.Right
+soldValue = Instance.new("TextLabel", statFrame)
+soldValue.Size = UDim2.new(0.4, 0, 0, 25)
+soldValue.Position = UDim2.new(0.6, 0, 0, 35)
+soldValue.BackgroundTransparency = 1
+soldValue.Text = "0"
+soldValue.Font = Enum.Font.GothamBold
+soldValue.TextSize = 14
+soldValue.TextColor3 = Color3.fromRGB(52, 210, 110)
+soldValue.TextXAlignment = Enum.TextXAlignment.Right
 
 -- ===== Tombol Start/Stop =====
 local btnFrame = Instance.new("Frame", scroll)
@@ -584,16 +635,6 @@ stopBtn.MouseButton1Click:Connect(function()
     stopBtn.Visible = false
 end)
 
--- Update statistik
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        pcall(function()
-            cookedV.Text = tostring(totalCooked)
-            soldV.Text = tostring(totalSold)
-        end)
-    end
-end)
-
-print("✅ FULLY NV GUI LOADED! Tekan RightShift untuk buka menu (jika perlu drag)")
-print("✅ Pilih apart, pilih pot, atur target MS, klik START")
+print("✅ FULLY NV LOADED!")
+print("✅ Tekan RightShift untuk drag (atau klik dan drag title bar)")
+print("✅ Pilih apart, pilih pot, atur target, klik START")

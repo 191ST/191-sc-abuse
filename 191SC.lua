@@ -1,4 +1,4 @@
--- FULLY NV STANDALONE (COASTIFIED UI)
+-- FULLY NV STANDALONE (COASTIFIED UI) - FIXED START/STOP
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
@@ -7,7 +7,7 @@ local buyRemote = game:GetService("ReplicatedStorage").RemoteEvents.StorePurchas
 -- ========== VARIABEL ==========
 local fullyRunning = false
 local selectedApart = nil
-local selectedPot = nil
+local selectedPot = "KANAN"  -- default
 local targetMS = 5
 local totalCooked = 0
 local totalSold = 0
@@ -164,27 +164,27 @@ local function cookAtApartment()
     end
     
     -- Proses masak
-    if statusLabel then statusLabel.Text = "💧 Water 20 detik..." end
+    if statusLabel then statusLabel:SetText("💧 Water 20 detik...") end
     equip("Water")
     spamE(10)
     task.wait(20)
     if not fullyRunning then return false end
     
-    if statusLabel then statusLabel.Text = "🧂 Sugar..." end
+    if statusLabel then statusLabel:SetText("🧂 Sugar...") end
     equip("Sugar Block Bag")
     spamE(10)
     task.wait(1)
     
-    if statusLabel then statusLabel.Text = "🟡 Gelatin..." end
+    if statusLabel then statusLabel:SetText("🟡 Gelatin...") end
     equip("Gelatin")
     spamE(10)
     task.wait(1)
     
-    if statusLabel then statusLabel.Text = "🔥 Cooking 45 detik..." end
+    if statusLabel then statusLabel:SetText("🔥 Cooking 45 detik...") end
     task.wait(45)
     if not fullyRunning then return false end
     
-    if statusLabel then statusLabel.Text = "🎒 Take..." end
+    if statusLabel then statusLabel:SetText("🎒 Take...") end
     equip("Empty Bag")
     spamE(10)
     task.wait(1.5)
@@ -195,7 +195,7 @@ end
 
 -- ========== BELI & JUAL ==========
 local function buyIngredients(amount)
-    if statusLabel then statusLabel.Text = "🛒 Beli " .. amount .. " set" end
+    if statusLabel then statusLabel:SetText("🛒 Beli " .. amount .. " set") end
     for i = 1, amount do
         if not fullyRunning then return false end
         pcall(function()
@@ -209,11 +209,12 @@ local function buyIngredients(amount)
 end
 
 local function sellAll()
-    if statusLabel then statusLabel.Text = "💰 Menjual..." end
+    if statusLabel then statusLabel:SetText("💰 Menjual...") end
+    local sold = 0
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
         while fullyRunning and countItem(bag) > 0 do
-            if equip(bag) then spamE(10) task.wait(0.8) totalSold = totalSold + 1 else break end
+            if equip(bag) then spamE(10) task.wait(0.8) sold = sold + 1 totalSold = totalSold + 1 else break end
         end
     end
     return true
@@ -222,30 +223,30 @@ end
 -- ========== LOOP UTAMA ==========
 local function mainLoop()
     while fullyRunning do
-        if statusLabel then statusLabel.Text = "🚀 Ke NPC Beli" end
+        if statusLabel then statusLabel:SetText("🚀 Ke NPC Beli") end
         teleportWithPlate(NPC_BUY)
         if not buyIngredients(targetMS) then break end
         
-        if statusLabel then statusLabel.Text = "🚀 Ke " .. selectedApart end
+        if statusLabel then statusLabel:SetText("🚀 Ke " .. selectedApart) end
         teleportWithPlate(APART_POS[selectedApart])
         
         for i = 1, targetMS do
             if not fullyRunning then break end
-            if statusLabel then statusLabel.Text = "🔥 Masak " .. i .. "/" .. targetMS end
+            if statusLabel then statusLabel:SetText("🔥 Masak " .. i .. "/" .. targetMS) end
             if not cookAtApartment() then break end
         end
         
-        if statusLabel then statusLabel.Text = "🚀 Ke NPC Jual" end
+        if statusLabel then statusLabel:SetText("🚀 Ke NPC Jual") end
         teleportWithPlate(NPC_SELL)
         if not sellAll() then break end
         
-        if statusLabel then statusLabel.Text = "🔄 Loop selesai" end
+        if statusLabel then statusLabel:SetText("🔄 Loop selesai") end
         task.wait(1)
     end
     fullyRunning = false
-    if statusLabel then statusLabel.Text = "⏹️ STOP" end
-    if startBtn then startBtn.Visible = true end
-    if stopBtn then stopBtn.Visible = false end
+    if statusLabel then statusLabel:SetText("⏹️ STOPPED") end
+    startBtn.Visible = true
+    stopBtn.Visible = false
 end
 
 -- ========== LOAD UI COASTIFIED ==========
@@ -258,26 +259,18 @@ local statusLabel = nil
 local startBtn = nil
 local stopBtn = nil
 
--- Dropdown Pilih Apart (pakai button + popup)
-local selectedApartText = "Pilih Apart"
-local apartDropdown = Tab:Dropdown("Pilih Apart", {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}, function(value)
+-- Dropdown Pilih Apart
+Tab:Dropdown("Pilih Apart", {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}, function(value)
     selectedApart = value
-    selectedApartText = value
 end)
 
--- Pilih Pot (KANAN / KIRI) pakai button toggle
-local potValue = "KANAN"
-Tab:Button("POT KANAN", function()
-    potValue = "KANAN"
-    selectedPot = "KANAN"
-end)
-Tab:Button("POT KIRI", function()
-    potValue = "KIRI"
-    selectedPot = "KIRI"
+-- Pilih Pot (KANAN / KIRI)
+Tab:Dropdown("Pilih Pot", {"KANAN", "KIRI"}, function(value)
+    selectedPot = value
 end)
 
 -- Slider Jumlah MS
-local msSlider = Tab:Slider("Target MS per Loop", 1, 50, 5, function(value)
+Tab:Slider("Target MS per Loop", 1, 50, 5, function(value)
     targetMS = value
 end)
 
@@ -289,33 +282,36 @@ local cookedStat = Tab:Label("Total Dimasak: 0")
 local soldStat = Tab:Label("Total Terjual: 0")
 local bahanStat = Tab:Label("Bahan: -")
 
--- Tombol Start/Stop
-startBtn = Tab:Button("▶ START FULLY NV", function()
+-- Tombol Start/Stop (menggunakan Button biasa, status disimpan di variabel terpisah)
+local startButton
+local stopButton
+
+startButton = Tab:Button("▶ START FULLY NV", function()
     if fullyRunning then return end
     if not selectedApart then
         statusLabel:SetText("❌ Pilih apart casino dulu!")
         return
     end
     if not selectedPot then
-        statusLabel:SetText("❌ Pilih pot (KANAN/KIRI) dulu!")
+        statusLabel:SetText("❌ Pilih pot dulu!")
         return
     end
     
     createBasePlate()
     fullyRunning = true
     statusLabel:SetText("✅ RUNNING")
-    startBtn.Visible = false
-    if stopBtn then stopBtn.Visible = true end
+    startButton.Visible = false
+    if stopButton then stopButton.Visible = true end
     task.spawn(mainLoop)
 end)
 
-stopBtn = Tab:Button("■ STOP FULLY NV", function()
+stopButton = Tab:Button("■ STOP FULLY NV", function()
     fullyRunning = false
     statusLabel:SetText("⏹️ STOPPED")
-    startBtn.Visible = true
-    stopBtn.Visible = false
+    startButton.Visible = true
+    stopButton.Visible = false
 end)
-stopBtn.Visible = false
+stopButton.Visible = false
 
 -- Update statistik setiap detik
 task.spawn(function()
@@ -333,5 +329,5 @@ task.spawn(function()
     end
 end)
 
-print("✅ FULLY NV READY. Pilih apart & pot, lalu START.")
-print("✅ Tekan RightShift untuk buka/tutup menu.")
+print("✅ FULLY NV READY. Tekan RightShift untuk buka menu.")
+print("✅ Pilih apart, pilih pot, atur target MS, lalu klik START.")

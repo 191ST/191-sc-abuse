@@ -1,16 +1,13 @@
--- ============================================
--- FULLY NV SEDERHANA (TWEEN + BLINK + PILIH APART + POT)
--- ============================================
+-- FULLY NV FINAL (DETECT RAGDOLL → TP → TUNGGU 10 DETIK → INTERACT)
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
 
 local buyRemote = game:GetService("ReplicatedStorage").RemoteEvents.StorePurchase
 
--- ========== FUNGSI DASAR ==========
+-- ========== UTILITY ==========
 local function equip(name)
     local char = player.Character
     local tool = player.Backpack:FindFirstChild(name) or char:FindFirstChild(name)
@@ -34,31 +31,55 @@ local function countItem(name)
 end
 
 local function spamE(times)
-    times = times or 3
+    times = times or 10
     for i = 1, times do
         vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
         task.wait(0.1)
         vim:SendKeyEvent(false, Enum.KeyCode.E, false, game)
         task.wait(0.05)
     end
+    task.wait(0.3)
 end
 
--- ========== TELEPORT RAGDOLL (darah 1% + tunggu 6 detik) ==========
+-- ========== RAGDOLL TELEPORT (turunkan health, detect ragdoll, langsung TP, lalu tunggu 10 detik) ==========
 local function ragdollTeleport(targetPos)
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
-    hum.Health = 1
+
+    -- Turunkan health ke 3% (biarkan game yang membuat ragdoll)
+    hum.Health = 3
     task.wait(0.2)
-    local hrp = char:FindFirstChild("HumanoidRootPart")
+
+    -- Tunggu sampai karakter benar-benar dalam state Ragdoll
+    local ragdollDetected = false
+    for _ = 1, 50 do -- max 5 detik
+        char = player.Character
+        hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum:GetState() == Enum.HumanoidStateType.Ragdoll then
+            ragdollDetected = true
+            break
+        end
+        task.wait(0.1)
+    end
+
+    if not ragdollDetected then
+        if statusLabel then statusLabel.Text = "⚠️ Gagal detect ragdoll, tetap lanjut..." end
+    end
+
+    -- Segera teleport setelah ragdoll terdeteksi
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
     end
-    for i = 6, 1, -1 do
+
+    -- Tunggu 10 detik setelah ragdoll (recovery time)
+    for i = 10, 1, -1 do
         if not fullyRunning then return false end
-        if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik sebelum interaksi..." end
+        if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik setelah ragdoll..." end
         task.wait(1)
     end
+
     return true
 end
 
@@ -87,7 +108,7 @@ local function moveWithBlink(targetCFrame)
     return true
 end
 
--- ========== KOORDINAT (LENGKAP DENGAN PILIHAN KANAN/KIRI) ==========
+-- ========== KOORDINAT LENGKAP (DENGAN PILIHAN KANAN/KIRI) ==========
 local apartCoords = {
     ["APART CASINO 1"] = {
         tahap1 = CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00),
@@ -145,7 +166,6 @@ local function cookAtApartment(selectedApart, selectedPot)
     local coords = apartCoords[selectedApart]
     if not coords then return false end
 
-    -- Tentukan koordinat berdasarkan pilihan pot
     local tahap5 = (selectedPot == "KANAN") and coords.tahap5_kanan or coords.tahap5_kiri
     local tahap6 = (selectedPot == "KANAN") and coords.tahap6_kanan or coords.tahap6_kiri
 
@@ -166,22 +186,25 @@ local function cookAtApartment(selectedApart, selectedPot)
         if not fullyRunning then return false end
         if statusLabel then statusLabel.Text = "→ " .. stage.name end
         moveWithBlink(stage.cf)
-        spamE(3)
+        spamE(10) -- spam 10 kali agar pasti interact
         task.wait(0.5)
     end
 
     -- Proses memasak
     if statusLabel then statusLabel.Text = "💧 Memasak Water (20 detik)..." end
-    spamE(3)
+    equip("Water")
+    spamE(10)
     task.wait(20)
     if not fullyRunning then return false end
 
     if statusLabel then statusLabel.Text = "🧂 Memasak Sugar (1 detik)..." end
-    spamE(3)
+    equip("Sugar Block Bag")
+    spamE(10)
     task.wait(1)
 
     if statusLabel then statusLabel.Text = "🟡 Memasak Gelatin (1 detik)..." end
-    spamE(3)
+    equip("Gelatin")
+    spamE(10)
     task.wait(1)
 
     if statusLabel then statusLabel.Text = "🔥 Memasak (45 detik)..." end
@@ -189,7 +212,8 @@ local function cookAtApartment(selectedApart, selectedPot)
     if not fullyRunning then return false end
 
     if statusLabel then statusLabel.Text = "🎒 Mengambil Marshmallow..." end
-    spamE(3)
+    equip("Empty Bag")
+    spamE(10)
     task.wait(1.5)
 
     return true
@@ -223,7 +247,7 @@ local function sellAllMS()
     for _, bag in pairs(bags) do
         while fullyRunning and countItem(bag) > 0 do
             if equip(bag) then
-                spamE(2)
+                spamE(10)
                 task.wait(0.8)
                 sold = sold + 1
                 totalSold = totalSold + 1
@@ -244,11 +268,13 @@ local buyAmount = 5
 local totalCooked = 0
 local totalSold = 0
 local statusLabel = nil
+local startBtn = nil
+local stopBtn = nil
 
 local function fullyNVLoop()
     while fullyRunning do
         -- 1. Ragdoll teleport ke NPC beli
-        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Beli..." end
+        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Beli (ragdoll)..." end
         if not ragdollTeleport(NPC_BUY_POS) then break end
 
         -- 2. Beli bahan sesuai jumlah
@@ -256,7 +282,7 @@ local function fullyNVLoop()
 
         -- 3. Ragdoll teleport ke apart casino
         local apartPos = APART_ENTRY_POS[selectedApart]
-        if statusLabel then statusLabel.Text = "🚀 Teleport ke " .. selectedApart .. "..." end
+        if statusLabel then statusLabel.Text = "🚀 Teleport ke " .. selectedApart .. " (ragdoll)..." end
         if not ragdollTeleport(apartPos) then break end
 
         -- 4. Masak sebanyak buyAmount kali
@@ -271,7 +297,7 @@ local function fullyNVLoop()
         end
 
         -- 5. Ragdoll teleport ke NPC jual
-        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Jual..." end
+        if statusLabel then statusLabel.Text = "🚀 Teleport ke NPC Jual (ragdoll)..." end
         if not ragdollTeleport(NPC_SELL_POS) then break end
 
         -- 6. Jual semua Marshmallow
@@ -282,8 +308,10 @@ local function fullyNVLoop()
     end
     fullyRunning = false
     if statusLabel then statusLabel.Text = "⏹️ FULLY NV STOP" end
-    if startBtn then startBtn.Visible = true end
-    if stopBtn then stopBtn.Visible = false end
+    if startBtn and stopBtn then
+        startBtn.Visible = true
+        stopBtn.Visible = false
+    end
 end
 
 -- ========== GUI ==========
@@ -298,9 +326,8 @@ mainFrame.Position = UDim2.new(0.5, -200, 0.5, -240)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
-local stroke = Instance.new("UIStroke", mainFrame)
-stroke.Color = Color3.fromRGB(100, 55, 190)
-stroke.Thickness = 1
+Instance.new("UIStroke", mainFrame).Color = Color3.fromRGB(100, 55, 190)
+Instance.new("UIStroke", mainFrame).Thickness = 1
 
 -- Title bar
 local titleBar = Instance.new("Frame", mainFrame)
@@ -333,7 +360,6 @@ closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
--- Scroll area
 local scroll = Instance.new("ScrollingFrame", mainFrame)
 scroll.Size = UDim2.new(1, 0, 1, -40)
 scroll.Position = UDim2.new(0, 0, 0, 40)
@@ -341,17 +367,17 @@ scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
 scroll.CanvasSize = UDim2.new(0, 0, 0, 520)
 
-local padding = Instance.new("UIPadding", scroll)
-padding.PaddingLeft = UDim.new(0, 12)
-padding.PaddingRight = UDim.new(0, 12)
-padding.PaddingTop = UDim.new(0, 12)
-padding.PaddingBottom = UDim.new(0, 12)
+local pad = Instance.new("UIPadding", scroll)
+pad.PaddingLeft = UDim.new(0, 12)
+pad.PaddingRight = UDim.new(0, 12)
+pad.PaddingTop = UDim.new(0, 12)
+pad.PaddingBottom = UDim.new(0, 12)
 
 local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 10)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ========== Pilih Apart ==========
+-- Pilih Apart
 local apartFrame = Instance.new("Frame", scroll)
 apartFrame.Size = UDim2.new(1, 0, 0, 90)
 apartFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
@@ -402,7 +428,7 @@ apartDropdown.MouseButton1Click:Connect(function()
     task.delay(5, function() pcall(function() menu:Destroy() end) end)
 end)
 
--- ========== Pilih Pot ==========
+-- Pilih Pot
 local potFrame = Instance.new("Frame", scroll)
 potFrame.Size = UDim2.new(1, 0, 0, 90)
 potFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
@@ -454,7 +480,7 @@ potKiri.MouseButton1Click:Connect(function()
     potKanan.TextColor3 = Color3.fromRGB(220, 215, 245)
 end)
 
--- ========== Slider Jumlah Beli ==========
+-- Slider Jumlah Beli
 local sliderFrame = Instance.new("Frame", scroll)
 sliderFrame.Size = UDim2.new(1, 0, 0, 60)
 sliderFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
@@ -514,7 +540,7 @@ plusBtn.MouseButton1Click:Connect(function()
     buyAmount = currentBuy
 end)
 
--- ========== Status ==========
+-- Status
 local statusFrame = Instance.new("Frame", scroll)
 statusFrame.Size = UDim2.new(1, 0, 0, 50)
 statusFrame.BackgroundColor3 = Color3.fromRGB(25, 23, 40)
@@ -531,7 +557,7 @@ statusLabel.TextColor3 = Color3.fromRGB(145, 138, 175)
 statusLabel.TextXAlignment = Enum.TextXAlignment.Center
 statusLabel.TextWrapped = true
 
--- ========== Statistik ==========
+-- Statistik
 local statFrame = Instance.new("Frame", scroll)
 statFrame.Size = UDim2.new(1, 0, 0, 60)
 statFrame.BackgroundColor3 = Color3.fromRGB(35, 33, 50)
@@ -577,12 +603,12 @@ soldValue.TextSize = 14
 soldValue.TextColor3 = Color3.fromRGB(52, 210, 110)
 soldValue.TextXAlignment = Enum.TextXAlignment.Right
 
--- ========== Tombol Start/Stop ==========
+-- Tombol Start/Stop
 local btnFrame = Instance.new("Frame", scroll)
 btnFrame.Size = UDim2.new(1, 0, 0, 50)
 btnFrame.BackgroundTransparency = 1
 
-local startBtn = Instance.new("TextButton", btnFrame)
+startBtn = Instance.new("TextButton", btnFrame)
 startBtn.Size = UDim2.new(0.8, 0, 0, 36)
 startBtn.Position = UDim2.new(0.1, 0, 0, 5)
 startBtn.BackgroundColor3 = Color3.fromRGB(48, 88, 200)
@@ -592,7 +618,7 @@ startBtn.TextSize = 14
 startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 8)
 
-local stopBtn = Instance.new("TextButton", btnFrame)
+stopBtn = Instance.new("TextButton", btnFrame)
 stopBtn.Size = UDim2.new(0.8, 0, 0, 36)
 stopBtn.Position = UDim2.new(0.1, 0, 0, 5)
 stopBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 50)
@@ -643,3 +669,4 @@ task.spawn(function()
 end)
 
 print("[FULLY NV] GUI siap! Pilih apart dan pot, lalu klik START.")
+print("[INFO] Ragdoll: health 3% → detect ragdoll → langsung TP → tunggu 10 detik → baru interaksi")

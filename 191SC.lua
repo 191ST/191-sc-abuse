@@ -1,4 +1,4 @@
--- FULLY NV (RAGDOLL → INSTANT TP → TUNGGU 10 DETIK → INTERACT)
+-- FULLY NV (RAGDOLL SEKALI → LANGSUNG TP → TUNGGU 10 DETIK)
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
@@ -41,15 +41,17 @@ local function spamE(times)
     task.wait(0.3)
 end
 
--- ========== RAGDOLL TELEPORT ==========
+-- ========== RAGDOLL TELEPORT (SEKALI TURUNKAN HEALTH, DETECT RAGDOLL, LANGSUNG TP) ==========
 local function ragdollTeleport(targetPos)
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
 
+    -- Turunkan health ke 3% SEKALI (biar game yang proses ragdoll)
     hum.Health = 3
     task.wait(0.05)
 
+    -- Tunggu sampai karakter benar-benar dalam state Ragdoll
     local ragdollDetected = false
     for _ = 1, 100 do
         char = player.Character
@@ -65,14 +67,16 @@ local function ragdollTeleport(targetPos)
         if statusLabel then statusLabel.Text = "⚠️ Gagal detect ragdoll, tetap lanjut..." end
     end
 
+    -- LANGSUNG TELEPORT
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
     end
 
+    -- Tunggu 10 detik (biarkan health regen natural selama ini)
     for i = 10, 1, -1 do
         if not fullyRunning then return false end
-        if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik setelah ragdoll..." end
+        if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik (regen health)..." end
         task.wait(1)
     end
 
@@ -295,14 +299,14 @@ local function fullyNVLoop()
     end
 end
 
--- ========== GUI (DIPERBESAR) ==========
+-- ========== GUI ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "FULLY_NV"
 gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 400, 0, 520)  -- lebih tinggi
+mainFrame.Size = UDim2.new(0, 400, 0, 520)
 mainFrame.Position = UDim2.new(0.5, -200, 0.5, -260)
 mainFrame.BackgroundColor3 = Color3.fromRGB(18, 16, 30)
 mainFrame.BorderSizePixel = 0
@@ -344,7 +348,7 @@ scroll.Size = UDim2.new(1, 0, 1, -40)
 scroll.Position = UDim2.new(0, 0, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
-scroll.CanvasSize = UDim2.new(0, 0, 0, 560)  -- canvas lebih panjang
+scroll.CanvasSize = UDim2.new(0, 0, 0, 560)
 
 local pad = Instance.new("UIPadding", scroll)
 pad.PaddingLeft = UDim.new(0, 12)
@@ -647,4 +651,4 @@ task.spawn(function()
 end)
 
 print("[FULLY NV] READY. Pilih apart & pot, lalu START.")
-print("[INFO] Ragdoll: health 3% → detect ragdoll → INSTANT TP → tunggu 10 detik → interact.")
+print("[INFO] Ragdoll: health 3% SEKALI → detect ragdoll → INSTANT TP → tunggu 10 detik (regen natural).")

@@ -1,4 +1,4 @@
--- FULLY NV (RAGDOLL SEKALI → LANGSUNG TP → TUNGGU 10 DETIK)
+-- FULLY NV (FIX: RAGDOLL INSTAN TP, HEALTH REGEN NATURAL)
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
@@ -41,42 +41,35 @@ local function spamE(times)
     task.wait(0.3)
 end
 
--- ========== RAGDOLL TELEPORT (SEKALI TURUNKAN HEALTH, DETECT RAGDOLL, LANGSUNG TP) ==========
+-- ========== RAGDOLL TELEPORT (HEALTH 3% SEKALI → DETECT RAGDOLL → LANGSUNG TP) ==========
 local function ragdollTeleport(targetPos)
     local char = player.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
 
-    -- Turunkan health ke 3% SEKALI (biar game yang proses ragdoll)
+    -- Turunkan health ke 3% SEKALI (biar game yang trigger ragdoll)
     hum.Health = 3
-    task.wait(0.05)
 
-    -- Tunggu sampai karakter benar-benar dalam state Ragdoll
-    local ragdollDetected = false
-    for _ = 1, 100 do
-        char = player.Character
-        hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum and hum:GetState() == Enum.HumanoidStateType.Ragdoll then
-            ragdollDetected = true
-            break
-        end
-        task.wait(0.05)
+    -- TUNGGU BENTAR SETELAH HEALTH DI TURUNKAN, BIAR GAME PROSES HIT/DAMAGE
+    task.wait(0.1)
+
+    -- DETEKSI RAGDOLL (jika tidak ragdoll, tetap TP saja)
+    local isRagdoll = (hum and hum:GetState() == Enum.HumanoidStateType.Ragdoll) or false
+
+    if not isRagdoll then
+        if statusLabel then statusLabel.Text = "⚠️ Tidak ragdoll, tetap lanjut TP..." end
     end
 
-    if not ragdollDetected then
-        if statusLabel then statusLabel.Text = "⚠️ Gagal detect ragdoll, tetap lanjut..." end
-    end
-
-    -- LANGSUNG TELEPORT
+    -- LANGSUNG TELEPORT TANPA LOOP
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 2, 0))
     end
 
-    -- Tunggu 10 detik (biarkan health regen natural selama ini)
+    -- TUNGGU 10 DETIK (biarkan health regen natural, tidak disentuh lagi)
     for i = 10, 1, -1 do
         if not fullyRunning then return false end
-        if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik (regen health)..." end
+        if statusLabel then statusLabel.Text = "Tunggu " .. i .. " detik (regen health natural)..." end
         task.wait(1)
     end
 
@@ -108,7 +101,7 @@ local function moveWithBlink(targetCFrame)
     return true
 end
 
--- ========== KOORDINAT LENGKAP ==========
+-- ========== KOORDINAT ==========
 local apartCoords = {
     ["APART CASINO 1"] = {
         tahap1 = CFrame.new(1196.51, 3.71, -241.13) * CFrame.Angles(-0.00, -0.05, 0.00),
@@ -651,4 +644,4 @@ task.spawn(function()
 end)
 
 print("[FULLY NV] READY. Pilih apart & pot, lalu START.")
-print("[INFO] Ragdoll: health 3% SEKALI → detect ragdoll → INSTANT TP → tunggu 10 detik (regen natural).")
+print("[INFO] HEALTH 3% SEKALI → RAGDOLL INSTAN TP → TUNGGU 10 DETIK (HEALTH REGEN NATURAL)")

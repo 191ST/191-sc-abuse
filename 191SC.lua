@@ -10,6 +10,7 @@ local selectedRoadPart = nil
 local plateSize = 500
 local plateColor = Color3.fromRGB(255, 0, 0)
 local plateTransparent = false
+local depthOffset = 10  -- <<< DIUBAH JADI 10 STUDS DI BAWAH
 
 -- ========== FUNGSI MENCARI ROAD PART ==========
 local ROAD_KEYWORDS = {
@@ -70,7 +71,7 @@ local function createBasePlateFromRoad()
     -- Resize
     clone.Size = Vector3.new(plateSize, 1, plateSize)
     
-    -- Posisi di bawah tanah (5 studs di bawah player)
+    -- Posisi di bawah tanah (10 studs di bawah player)
     local player = game.Players.LocalPlayer
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -80,7 +81,7 @@ local function createBasePlateFromRoad()
         return false
     end
     
-    local targetY = hrp.Position.Y - 5
+    local targetY = hrp.Position.Y - depthOffset  -- 10 studs kebawah
     clone.CFrame = CFrame.new(hrp.Position.X, targetY, hrp.Position.Z)
     
     -- Properties
@@ -95,7 +96,7 @@ local function createBasePlateFromRoad()
     basePlatePart = clone
     
     print("✅ Baseplate berhasil dibuat!")
-    print("Posisi Y = " .. targetY)
+    print("Posisi Y = " .. targetY .. " (" .. depthOffset .. " studs di bawah player)")
     print("Ukuran = " .. plateSize .. " x 1 x " .. plateSize)
     return true
 end
@@ -141,10 +142,8 @@ Tab:Button("BASEPLATE TRIGGER", function()
 end)
 
 -- Dropdown pilih road part (opsional)
-local roadPartsList = {}
 local dropdownOptions, roadPartsRef = updateDropdownList()
 local dropdown = Tab:Dropdown("Pilih Road Part (Opsional)", dropdownOptions, function(value)
-    -- Cari part yang sesuai
     local allRoads = getAllRoadParts()
     for i, part in ipairs(allRoads) do
         local name = part.Name
@@ -173,6 +172,21 @@ Tab:Slider("Ukuran Base Plate", 50, 2000, 500, function(value)
     end
 end)
 
+-- Slider kedalaman (opsional: bisa diatur manual)
+Tab:Slider("Kedalaman (studs di bawah player)", 1, 50, 10, function(value)
+    depthOffset = value
+    if basePlatePart then
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local newY = hrp.Position.Y - depthOffset
+            basePlatePart.CFrame = CFrame.new(basePlatePart.Position.X, newY, basePlatePart.Position.Z)
+            print("Baseplate dipindah ke Y = " .. newY)
+        end
+    end
+end)
+
 -- Colorpicker
 Tab:Colorpicker("Warna Base Plate", Color3.fromRGB(255, 0, 0), function(color)
     plateColor = color
@@ -194,7 +208,7 @@ Tab:Label(" ")
 Tab:Label("📌 INFORMASI:")
 Tab:Label("• Baseplate akan di-clone dari road part yang dipilih")
 Tab:Label("• Jika tidak memilih, akan menggunakan road part pertama")
-Tab:Label("• Posisi: 5 studs DI BAWAH player")
+Tab:Label("• Posisi: " .. depthOffset .. " studs DI BAWAH player (bisa diatur)")
 Tab:Label("• Material: Neon, bisa diubah warna & transparansi")
 Tab:Label(" ")
 Tab:Label("⚠️ Pastikan ada road part di map!")
@@ -207,11 +221,11 @@ task.spawn(function()
         if #newOptions ~= #dropdownOptions then
             dropdownOptions = newOptions
             roadPartsRef = newRefs
-            -- Update dropdown (library mungkin support, tapi kita rebuild sederhana)
             print("📡 Road part list di-refresh (" .. #newOptions .. " ditemukan)")
         end
     end
 end)
 
 print("✅ UI Loaded. Tekan RightShift untuk membuka menu.")
+print("✅ Baseplate akan dibuat " .. depthOffset .. " studs DI BAWAH player.")
 print("✅ Klik 'BASEPLATE TRIGGER' untuk membuat baseplate dari clone road.")

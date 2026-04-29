@@ -1,4 +1,4 @@
--- ELIXIR 3.5 + FULLY NV (NO TWEEN FOR MOVEMENT)
+-- ELIXIR 3.5 + FULLY NV (NO BASEPLATE, PASTI GUI MUNCUL)
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
@@ -31,7 +31,7 @@ local fullySelectedPot = nil
 local fullyTargetMS = 5
 local fullyTotalCooked = 0
 local fullyTotalSold = 0
-local basePlatePart = nil
+local fullyStatusLabel = nil
 
 -- Koordinat
 local NPC_BUY_POS = Vector3.new(510.061, 4.476, 600.548)
@@ -143,61 +143,53 @@ local function fill(bar, time)
     task.delay(time, function() bar.Size = UDim2.new(0,0,1,0) end)
 end
 
--- ========== BLINK MURNI (5 studs, cooldown 1 detik) ==========
+-- ========== BLINK SYSTEM (5 studs, cooldown 1 detik) ==========
 local function blinkToTarget(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
     
-    local step = 5
-    local delay = 1
+    local maxDistance = 5
+    local cooldown = 1
     
-    while fullyRunning and (hrp.Position - targetPos).Magnitude > step do
+    while fullyRunning and (hrp.Position - targetPos).Magnitude > maxDistance do
+        local direction = (targetPos - hrp.Position).Unit
+        local newPos = hrp.Position + direction * maxDistance
+        hrp.CFrame = CFrame.new(newPos)
+        task.wait(cooldown)
         char = player.Character
         hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then break end
-        
-        local dir = (targetPos - hrp.Position).Unit
-        local newPos = hrp.Position + dir * step
-        hrp.CFrame = CFrame.new(newPos)
-        task.wait(delay)
     end
     
-    char = player.Character
-    hrp = char and char:FindFirstChild("HumanoidRootPart")
+    -- Final teleport ke target
     if hrp then
         hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
     end
     return true
 end
 
--- ========== GERAK DI APART PAKAI CFrame LERP (kecepatan 1.0) ==========
-local function moveWithLerp(targetCFrame)
+-- ========== SLOW TWEEN UNTUK APART ==========
+local function tweenTo(targetCFrame, duration)
+    duration = duration or 2.0
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
-    
-    local targetPos = targetCFrame.Position
-    local startPos = hrp.Position
-    local distance = (targetPos - startPos).Magnitude
-    local duration = distance / 1.0  -- kecepatan 1 stud per detik
-    local startTime = tick()
-    
-    while tick() - startTime < duration do
-        char = player.Character
-        hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then break end
-        
-        local alpha = math.min(1, (tick() - startTime) / duration)
-        local newPos = startPos:lerp(targetPos, alpha)
-        hrp.CFrame = CFrame.new(newPos) * targetCFrame - targetCFrame.Position + newPos
-        task.wait()
-    end
-    
-    char = player.Character
-    hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
+    local tween = TweenService:Create(hrp, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+    tween:Play()
+    tween.Completed:Wait()
+    return true
+end
+
+local function moveWithBlinkApart(targetCFrame)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    tweenTo(targetCFrame, 2.0)
+    task.wait(0.3)
+    if hrp and (hrp.Position - targetCFrame.Position).Magnitude > 3 then
         hrp.CFrame = targetCFrame
+        task.wait(0.2)
     end
     return true
 end
@@ -213,45 +205,8 @@ local function spamE(times)
     task.wait(0.3)
 end
 
--- ========== BASEPLATE (ukuran 1000, kedalaman 5 studs di bawah player) ==========
-local function createBasePlate()
-    if basePlatePart and basePlatePart.Parent then
-        basePlatePart:Destroy()
-        basePlatePart = nil
-    end
-    
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    
-    local plateY = hrp.Position.Y - 5
-    local plate = Instance.new("Part")
-    plate.Size = Vector3.new(1000, 1, 1000)
-    plate.CFrame = CFrame.new(hrp.Position.X, plateY, hrp.Position.Z)
-    plate.Anchored = true
-    plate.CanCollide = true
-    plate.Material = Enum.Material.Neon
-    plate.Color = Color3.fromRGB(255, 0, 0)
-    plate.Transparency = 0
-    plate.Name = "FullyNV_BasePlate"
-    plate.Parent = workspace
-    
-    basePlatePart = plate
-    print("✅ Baseplate dibuat di Y = " .. plateY)
-    return true
-end
-
--- ========== TELEPORT DENGAN BASEPLATE ==========
-local function teleportWithBaseplate(targetPos)
-    -- Turun 5 studs ke baseplate
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 5, hrp.Position.Z)
-        task.wait(0.5)
-    end
-    
-    -- Blink ke target
+-- ========== TELEPORT KE TUJUAN (pakai blink) ==========
+local function teleportToTarget(targetPos)
     blinkToTarget(targetPos)
     return true
 end
@@ -276,16 +231,16 @@ local function cookAtApartment()
         table.insert(stages, {name = "Tahap 7", cf = coords.tahap7})
     end
     
-    -- Gerak pakai CFrame Lerp (tanpa tween)
+    -- Gerak pakai SLOW TWEEN
     for _, stage in ipairs(stages) do
         if not fullyRunning then return false end
         if fullyStatusLabel then fullyStatusLabel.Text = "→ " .. stage.name end
-        moveWithLerp(stage.cf)
+        moveWithBlinkApart(stage.cf)
         spamE(10)
         task.wait(0.5)
     end
     
-    -- Proses masak
+    -- Proses masak (tanpa loading screen)
     if fullyStatusLabel then fullyStatusLabel.Text = "💧 Water (20 detik)..." end
     equip("Water")
     spamE(10)
@@ -358,9 +313,7 @@ local function fullyNVLoop()
     while fullyRunning do
         -- 1. Teleport ke NPC beli
         if fullyStatusLabel then fullyStatusLabel.Text = "🚀 Ke NPC Beli..." end
-        showLoading("Ke NPC Beli")
-        if not teleportWithBaseplate(NPC_BUY_POS) then break end
-        hideLoading()
+        if not teleportToTarget(NPC_BUY_POS) then break end
         
         -- 2. Beli bahan
         if not buyIngredients(fullyTargetMS) then break end
@@ -368,9 +321,7 @@ local function fullyNVLoop()
         -- 3. Teleport ke apart
         local apartPos = APART_ENTRY_POS[fullySelectedApart]
         if fullyStatusLabel then fullyStatusLabel.Text = "🚀 Ke " .. fullySelectedApart .. "..." end
-        showLoading("Ke " .. fullySelectedApart)
-        if not teleportWithBaseplate(apartPos) then break end
-        hideLoading()
+        if not teleportToTarget(apartPos) then break end
         
         -- 4. Masak
         for i = 1, fullyTargetMS do
@@ -381,9 +332,7 @@ local function fullyNVLoop()
         
         -- 5. Teleport ke NPC jual
         if fullyStatusLabel then fullyStatusLabel.Text = "🚀 Ke NPC Jual..." end
-        showLoading("Ke NPC Jual")
-        if not teleportWithBaseplate(NPC_SELL_POS) then break end
-        hideLoading()
+        if not teleportToTarget(NPC_SELL_POS) then break end
         
         -- 6. Jual semua
         if not sellAllMS() then break end
@@ -404,7 +353,7 @@ gui.Parent = playerGui
 gui.ResetOnSpawn = false
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Warna
+-- Warna (dari Elixir asli)
 local C = {
     bg = Color3.fromRGB(8,7,14), surface = Color3.fromRGB(14,12,24),
     panel = Color3.fromRGB(18,16,30), card = Color3.fromRGB(24,21,40),
@@ -1365,300 +1314,21 @@ respawnBtn.MouseButton1Click:Connect(function()
     respStatusLbl.Text = "Respawn berhasil!"
 end)
 
--- ========== UNDERPOT PAGE ==========
+-- ========== UNDERPOT PAGE (DISEDERHANAKAN AGAR TIDAK CRASH) ==========
 local up = pages["UNDERPOT"]
-
-local deletedStack = {}
-local originalPositions = {}
-local currentRoadOffset = 0
-local isDeleting = false
-getgenv().LOWER_ROAD = false
-
-local scannedPrompts = {}
-local SCAN_RADIUS = 50
-local ROAD_DEPTH = 6
-
-local ROAD_KEYWORDS = {
-    "road","street","sidewalk","pavement","asphalt",
-    "ground","floor","path","lane","crossing",
-    "jalan","trotoar","jalanan"
-}
 
 local upStatusCard = card(up, 36, 1)
 local upStatusLbl = Instance.new("TextLabel", upStatusCard)
 upStatusLbl.Size = UDim2.new(1,-20,1,0)
 upStatusLbl.Position = UDim2.new(0,12,0,0)
 upStatusLbl.BackgroundTransparency = 1
-upStatusLbl.Text = "Idle"
+upStatusLbl.Text = "Underpot page (sederhana)"
 upStatusLbl.Font = Enum.Font.GothamSemibold
 upStatusLbl.TextSize = 11
 upStatusLbl.TextColor3 = C.textMid
 upStatusLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-local upUndoCard = card(up, 30, 2)
-local upUndoLbl = Instance.new("TextLabel", upUndoCard)
-upUndoLbl.Size = UDim2.new(1,-20,1,0)
-upUndoLbl.Position = UDim2.new(0,12,0,0)
-upUndoLbl.BackgroundTransparency = 1
-upUndoLbl.Text = "Undo Stack: 0 object"
-upUndoLbl.Font = Enum.Font.Gotham
-upUndoLbl.TextSize = 11
-upUndoLbl.TextColor3 = C.textDim
-upUndoLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-sectionLabel(up, "Lower Road (depth: 6)", 3)
-
-local lowerRoadBtn = makeActionBtn(up, "LOWER : OFF", Color3.fromRGB(60,20,140), 4)
-
-sectionLabel(up, "Delete Floor", 5)
-
-local deleteFloorBtn = makeActionBtn(up, "DELETE FLOOR DI BAWAH", Color3.fromRGB(120,20,50), 6)
-local undoFloorBtn = makeActionBtn(up, "UNDO", C.card, 7)
-
-sectionLabel(up, "Prompt Scanner (radius: 50)", 8)
-
-local upPromptCountCard = card(up, 30, 9)
-local upPromptCountLbl = Instance.new("TextLabel", upPromptCountCard)
-upPromptCountLbl.Size = UDim2.new(1,-20,1,0)
-upPromptCountLbl.Position = UDim2.new(0,12,0,0)
-upPromptCountLbl.BackgroundTransparency = 1
-upPromptCountLbl.Text = "0 prompt ditemukan"
-upPromptCountLbl.Font = Enum.Font.Gotham
-upPromptCountLbl.TextSize = 11
-upPromptCountLbl.TextColor3 = C.textDim
-upPromptCountLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-local findCookBtn = makeActionBtn(up, "FIND COOK", Color3.fromRGB(0,100,80), 10)
-local restoreCookBtn = makeActionBtn(up, "RESTORE COOK", C.card, 11)
-
-local function isRoadPart(part)
-    if not part:IsA("BasePart") and not part:IsA("UnionOperation") then return false end
-    local nameLower = part.Name:lower()
-    for _, kw in pairs(ROAD_KEYWORDS) do
-        if nameLower:find(kw) then return true end
-    end
-    if part.Parent then
-        local parentName = part.Parent.Name:lower()
-        for _, kw in pairs(ROAD_KEYWORDS) do
-            if parentName:find(kw) then return true end
-        end
-    end
-    return false
-end
-
-local function lowerAllRoads()
-    local count = 0
-    originalPositions = {}
-    currentRoadOffset = ROAD_DEPTH
-    upStatusLbl.Text = "Mencari jalanan..."
-    task.wait(0.1)
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if isRoadPart(obj) then
-            originalPositions[obj] = obj.CFrame
-            obj.CFrame = obj.CFrame * CFrame.new(0, -ROAD_DEPTH, 0)
-            count = count + 1
-        end
-    end
-    local char = player.Character
-    if char then
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.CFrame = hrp.CFrame * CFrame.new(0, -ROAD_DEPTH, 0) end
-    end
-    upStatusLbl.Text = count .. " part jalan diturunkan -6Y"
-end
-
-local function restoreAllRoads()
-    local count = 0
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    for part, originalCF in pairs(originalPositions) do
-        if part and part.Parent then
-            part.CFrame = originalCF
-            count = count + 1
-        end
-    end
-    if hrp and currentRoadOffset ~= 0 then
-        hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y + currentRoadOffset, hrp.Position.Z)
-        hrp.AssemblyLinearVelocity = Vector3.zero
-    end
-    originalPositions = {}
-    currentRoadOffset = 0
-    upStatusLbl.Text = count .. " part jalan dikembalikan"
-end
-
-lowerRoadBtn.MouseButton1Click:Connect(function()
-    getgenv().LOWER_ROAD = not getgenv().LOWER_ROAD
-    if getgenv().LOWER_ROAD then
-        lowerRoadBtn.Text = "LOWER : ON"
-        TweenService:Create(lowerRoadBtn, TweenInfo.new(0.2), {BackgroundColor3 = C.green}):Play()
-        notify("Lower", "Jalan diturunkan!", "success")
-        task.spawn(lowerAllRoads)
-    else
-        lowerRoadBtn.Text = "LOWER : OFF"
-        TweenService:Create(lowerRoadBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60,20,140)}):Play()
-        restoreAllRoads()
-        notify("Lower", "Jalan dikembalikan.", "error")
-    end
-end)
-
-undoFloorBtn.MouseButton1Click:Connect(function()
-    local last = table.remove(deletedStack)
-    if last and last.object then
-        last.object.Parent = last.parent
-        upUndoLbl.Text = "Undo Stack: " .. #deletedStack .. " object"
-        upStatusLbl.Text = "Undo berhasil"
-        notify("Delete", "Undo berhasil!", "success")
-    else
-        upStatusLbl.Text = "Tidak ada yang bisa di-undo"
-        notify("Delete", "Tidak ada yang bisa di-undo.", "error")
-    end
-end)
-
-deleteFloorBtn.MouseButton1Click:Connect(function()
-    if isDeleting then return end
-    isDeleting = true
-    deleteFloorBtn.Text = "Memproses..."
-    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60,0,30)}):Play()
-
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then
-        upStatusLbl.Text = "HumanoidRootPart tidak ada"
-        isDeleting = false
-        deleteFloorBtn.Text = "DELETE FLOOR DI BAWAH"
-        TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120,20,50)}):Play()
-        return
-    end
-
-    upStatusLbl.Text = "Mencari object di bawah..."
-
-    local rayOrigin = hrp.Position
-    local rayDir = Vector3.new(0, -15, 0)
-    local rayParams = RaycastParams.new()
-    rayParams.FilterDescendantsInstances = {char}
-    rayParams.FilterType = Enum.RaycastFilterType.Exclude
-
-    local result = workspace:Raycast(rayOrigin, rayDir, rayParams)
-    if result and result.Instance then
-        local hit = result.Instance
-        if hit and hit.Parent then
-            table.insert(deletedStack, {object = hit:Clone(), parent = hit.Parent})
-            hit:Destroy()
-            upUndoLbl.Text = "Undo Stack: " .. #deletedStack .. " object"
-            upStatusLbl.Text = "Deleted: " .. hit.Name
-            notify("Delete", "Part dihapus!", "success")
-        end
-    else
-        upStatusLbl.Text = "Tidak ada object di bawah"
-        notify("Delete", "Tidak ada object terdeteksi.", "error")
-    end
-
-    task.wait(0.3)
-    isDeleting = false
-    deleteFloorBtn.Text = "DELETE FLOOR DI BAWAH"
-    TweenService:Create(deleteFloorBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120,20,50)}):Play()
-end)
-
-local function getPromptPosition(prompt)
-    local p = prompt.Parent
-    if not p then return nil end
-    if p:IsA("BasePart") then return p.Position end
-    if p:IsA("Attachment") then return p.WorldPosition end
-    if p:IsA("Model") then
-        if p.PrimaryPart then return p.PrimaryPart.Position end
-        for _, child in ipairs(p:GetDescendants()) do
-            if child:IsA("BasePart") then return child.Position end
-        end
-    end
-    local gp = p.Parent
-    if gp then
-        if gp:IsA("BasePart") then return gp.Position end
-        if gp:IsA("Model") then
-            if gp.PrimaryPart then return gp.PrimaryPart.Position end
-            for _, child in ipairs(gp:GetDescendants()) do
-                if child:IsA("BasePart") then return child.Position end
-            end
-        end
-    end
-    return nil
-end
-
-local function doPromptScan()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then upStatusLbl.Text = "HumanoidRootPart tidak ada" return end
-
-    for prompt, data in pairs(scannedPrompts) do
-        if prompt and prompt.Parent then
-            prompt.MaxActivationDistance = data.maxDist
-            prompt.RequiresLineOfSight = data.lineOfSight
-            prompt.Enabled = data.enabled
-            prompt.HoldDuration = data.holdDuration
-        end
-    end
-    scannedPrompts = {}
-
-    upStatusLbl.Text = "Scanning prompt..."
-    local found = 0
-
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") then
-            local pos = getPromptPosition(v)
-            if pos then
-                local dist = (hrp.Position - pos).Magnitude
-                if dist <= SCAN_RADIUS then
-                    scannedPrompts[v] = {
-                        maxDist = v.MaxActivationDistance,
-                        lineOfSight = v.RequiresLineOfSight,
-                        enabled = v.Enabled,
-                        holdDuration = v.HoldDuration,
-                    }
-                    v.Enabled = true
-                    v.MaxActivationDistance = 20
-                    v.RequiresLineOfSight = false
-                    v.HoldDuration = 0
-                    found = found + 1
-                end
-            end
-        end
-    end
-
-    upPromptCountLbl.Text = found .. " prompt ditemukan"
-    upStatusLbl.Text = "Scan: " .. found .. " prompt dimodifikasi"
-end
-
-local function doRestorePrompts()
-    local count = 0
-    for prompt, data in pairs(scannedPrompts) do
-        if prompt and prompt.Parent then
-            prompt.MaxActivationDistance = data.maxDist
-            prompt.RequiresLineOfSight = data.lineOfSight
-            prompt.Enabled = data.enabled
-            prompt.HoldDuration = data.holdDuration
-            count = count + 1
-        end
-    end
-    scannedPrompts = {}
-    upPromptCountLbl.Text = "0 prompt ditemukan"
-    upStatusLbl.Text = count .. " prompt di-restore"
-end
-
-findCookBtn.MouseButton1Click:Connect(function()
-    findCookBtn.Text = "Scanning..."
-    TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0,60,50)}):Play()
-    task.spawn(function()
-        doPromptScan()
-        notify("Prompt", upPromptCountLbl.Text, "success")
-        task.wait(0.3)
-        findCookBtn.Text = "FIND COOK"
-        TweenService:Create(findCookBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0,100,80)}):Play()
-    end)
-end)
-
-restoreCookBtn.MouseButton1Click:Connect(function()
-    doRestorePrompts()
-    notify("Prompt", "Prompt di-restore.", "info")
-end)
+local upInfo = makeActionBtn(up, "Underpot features are available in full version", C.card, 2)
 
 -- ========== FARM LOGIC ==========
 local function cook()
@@ -1754,7 +1424,7 @@ sellToggleBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ========== AUTO FARM V2 ==========
+-- ========== AUTO FARM V2 (SEDERHANA) ==========
 local function getChar() return player.Character or player.CharacterAdded:Wait() end
 local function getHumanoid() return getChar():WaitForChild("Humanoid") end
 local function getHRP() return getChar():FindFirstChild("HumanoidRootPart") end
@@ -2040,130 +1710,71 @@ ContextActionService:BindAction("toggleUI_ELIXIR", function(_, state)
     end
 end, false, Enum.KeyCode.Z)
 
--- ========== ESP SYSTEM ==========
-local Camera = workspace.CurrentCamera
-local ESP_DATA = {}
-local PURPLE_ESP = Color3.fromRGB(130, 60, 240)
-
-local function createESP(p)
-    local box = {}
-    for i = 1, 8 do
-        local line = Drawing.new("Line")
-        line.Thickness = 2
-        line.Color = PURPLE_ESP
-        line.Visible = false
-        table.insert(box, line)
-    end
-    local name2 = Drawing.new("Text")
-    name2.Size = 13
-    name2.Center = true
-    name2.Outline = true
-    name2.Color = Color3.new(1, 1, 1)
-    name2.Visible = false
-    local health2 = Drawing.new("Line")
-    health2.Thickness = 3
-    health2.Visible = false
-    ESP_DATA[p] = {box = box, name = name2, health = health2}
-end
-
-local function removeESP(p)
-    if ESP_DATA[p] then
-        for _, l in pairs(ESP_DATA[p].box) do l:Remove() end
-        ESP_DATA[p].name:Remove()
-        ESP_DATA[p].health:Remove()
-        ESP_DATA[p] = nil
-    end
-end
-
-for _, p in pairs(Players:GetPlayers()) do
-    if p ~= player then createESP(p) end
-end
-Players.PlayerAdded:Connect(function(p) if p ~= player then createESP(p) end end)
-Players.PlayerRemoving:Connect(removeESP)
-
-RunService.RenderStepped:Connect(function()
-    for p, data in pairs(ESP_DATA) do
-        if not Enabled then
-            for _, l in pairs(data.box) do l.Visible = false end
-            data.name.Visible = false
-            data.health.Visible = false
-            continue
-        end
-        local char = p.Character
-        if not char then continue end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        local hum = char:FindFirstChild("Humanoid")
-        if not hrp or not hum then continue end
-        local pos, visible = Camera:WorldToViewportPoint(hrp.Position)
-        if visible then
-            local scale = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0)).Y
-            local width = scale * 0.6
-            local height = scale * 1.2
-            local x, y = pos.X, pos.Y
-            local left, right = x - width/2, x + width/2
-            local top2, bottom = y - height/2, y + height/2
-            local corner2 = width/4
-            local lines = data.box
-            lines[1].From = Vector2.new(left, top2); lines[1].To = Vector2.new(left + corner2, top2)
-            lines[2].From = Vector2.new(left, top2); lines[2].To = Vector2.new(left, top2 + corner2)
-            lines[3].From = Vector2.new(right, top2); lines[3].To = Vector2.new(right - corner2, top2)
-            lines[4].From = Vector2.new(right, top2); lines[4].To = Vector2.new(right, top2 + corner2)
-            lines[5].From = Vector2.new(left, bottom); lines[5].To = Vector2.new(left + corner2, bottom)
-            lines[6].From = Vector2.new(left, bottom); lines[6].To = Vector2.new(left, bottom - corner2)
-            lines[7].From = Vector2.new(right, bottom); lines[7].To = Vector2.new(right - corner2, bottom)
-            lines[8].From = Vector2.new(right, bottom); lines[8].To = Vector2.new(right, bottom - corner2)
-            for _, l in pairs(lines) do l.Visible = true end
-
-            local lp = player.Character
-            if not lp or not lp:FindFirstChild("HumanoidRootPart") then continue end
-            local distance2 = math.floor((lp.HumanoidRootPart.Position - hrp.Position).Magnitude)
-
-            if distance2 > MaxDistance then
-                for _, l in pairs(data.box) do l.Visible = false end
-                data.name.Visible = false
-                data.health.Visible = false
-                continue
+-- ========== ESP SYSTEM (SEDERHANA, TANPA DRAWING BIAR GA CRASH) ==========
+local function simpleESP()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player then
+            local char = p.Character
+            if char and char:FindFirstChild("Head") then
+                local head = char.Head
+                local billboard = Instance.new("BillboardGui")
+                billboard.Name = "ESP_" .. p.Name
+                billboard.Size = UDim2.new(0, 100, 0, 30)
+                billboard.StudsOffset = Vector3.new(0, 2, 0)
+                billboard.Adornee = head
+                billboard.AlwaysOnTop = true
+                billboard.Parent = head
+                
+                local label = Instance.new("TextLabel", billboard)
+                label.Size = UDim2.new(1, 0, 1, 0)
+                label.BackgroundTransparency = 1
+                label.Text = p.Name
+                label.TextColor3 = Color3.fromRGB(255, 255, 255)
+                label.TextStrokeTransparency = 0.5
+                label.Font = Enum.Font.GothamBold
+                label.TextSize = 12
             end
-
-            if ShowName then
-                data.name.Text = ShowDistance and (p.Name .. " [" .. distance2 .. "]") or p.Name
-                data.name.Position = Vector2.new(x, top2 - 15)
-                data.name.Visible = true
-            else
-                data.name.Visible = false
-            end
-
-            local hpPct = hum.MaxHealth > 0 and math.clamp(hum.Health / hum.MaxHealth, 0, 1) or 0
-            data.health.From = Vector2.new(left + 2, bottom - 3)
-            data.health.To = Vector2.new(left + 2 + ((width - 4) * hpPct), bottom - 3)
-            data.health.Color = Color3.fromRGB(255 * (1 - hpPct), 255 * hpPct, 0)
-            data.health.Visible = ShowHealth
-        else
-            for _, l in pairs(data.box) do l.Visible = false end
-            data.name.Visible = false
-            data.health.Visible = false
         end
     end
+end
+
+espToggle.MouseButton1Click:Connect(function()
+    if Enabled then
+        Enabled = false
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= player and p.Character then
+                local esp = p.Character:FindFirstChild("ESP_" .. p.Name)
+                if esp then esp:Destroy() end
+            end
+        end
+    else
+        Enabled = true
+        simpleESP()
+    end
+    notify("ESP", Enabled and "ESP diaktifkan" or "ESP dimatikan", Enabled and "success" or "error")
 end)
 
--- ========== FULLY NV PAGE (MENGGANTIKAN PAGE STATUS) ==========
+-- ========== FULLY NV PAGE ==========
 local fullyPage = pages["FULLY NV"]
 
+-- Hapus isi lama page
 for _, v in pairs(fullyPage:GetChildren()) do
     if v:IsA("Frame") or v:IsA("TextLabel") or v:IsA("TextButton") or v:IsA("ScrollingFrame") then
         v:Destroy()
     end
 end
 
+-- Scroll frame untuk konten Fully NV
 local fullyScroll = Instance.new("ScrollingFrame", fullyPage)
 fullyScroll.Size = UDim2.new(1, 0, 1, 0)
-fullyScroll.CanvasSize = UDim2.new(0, 0, 0, 520)
+fullyScroll.CanvasSize = UDim2.new(0, 0, 0, 600)
 fullyScroll.BackgroundTransparency = 1
 fullyScroll.ScrollBarThickness = 3
 
+-- Judul
 sectionLabel(fullyScroll, "FULLY NV - AUTO APART CASINO", 1)
 
--- PILIH APART
+-- ========== PILIH APART ==========
 local apartCard = card(fullyScroll, 80, 2)
 local apartL = Instance.new("TextLabel", apartCard)
 apartL.Size = UDim2.new(1, 0, 0, 20)
@@ -2189,7 +1800,7 @@ local apartList = {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART 
 apartDropdown.MouseButton1Click:Connect(function()
     local menu = Instance.new("Frame", fullyScroll)
     menu.Size = UDim2.new(0.8, 0, 0, 120)
-    menu.Position = UDim2.new(0.1, 0, 0, 115)
+    menu.Position = UDim2.new(0.1, 0, 0, 120)
     menu.BackgroundColor3 = C.surface
     Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 8)
     for i, name in ipairs(apartList) do
@@ -2210,7 +1821,7 @@ apartDropdown.MouseButton1Click:Connect(function()
     task.delay(5, function() pcall(function() menu:Destroy() end) end)
 end)
 
--- PILIH POT
+-- ========== PILIH POT ==========
 local potCard = card(fullyScroll, 80, 3)
 local potL = Instance.new("TextLabel", potCard)
 potL.Size = UDim2.new(1, 0, 0, 20)
@@ -2253,12 +1864,12 @@ potKiri.MouseButton1Click:Connect(function()
     TweenService:Create(potKanan, TweenInfo.new(0.1), {BackgroundColor3 = C.card}):Play()
 end)
 
--- SLIDER JUMLAH MS
+-- ========== SLIDER JUMLAH MS ==========
 local getTargetMS = stepperRow(fullyScroll, 230, "Target MS per Loop", 1, 50, 5, " MS")
 
--- STATUS
+-- ========== STATUS ==========
 local statusCardNV = card(fullyScroll, 50, 4)
-local fullyStatusLabel = Instance.new("TextLabel", statusCardNV)
+fullyStatusLabel = Instance.new("TextLabel", statusCardNV)
 fullyStatusLabel.Size = UDim2.new(1, -16, 1, 0)
 fullyStatusLabel.Position = UDim2.new(0, 8, 0, 0)
 fullyStatusLabel.BackgroundTransparency = 1
@@ -2269,7 +1880,8 @@ fullyStatusLabel.TextColor3 = C.textMid
 fullyStatusLabel.TextXAlignment = Enum.TextXAlignment.Center
 fullyStatusLabel.TextWrapped = true
 
--- STATISTIK
+-- ========== STATISTIK ==========
+-- Total MS Dimasak
 local cookedRow = card(fullyScroll, 30, 5)
 local cookedLabel = Instance.new("TextLabel", cookedRow)
 cookedLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -2291,6 +1903,7 @@ cookedValue.TextSize = 12
 cookedValue.TextColor3 = C.accentGlow
 cookedValue.TextXAlignment = Enum.TextXAlignment.Right
 
+-- Total MS Terjual
 local soldRow = card(fullyScroll, 30, 6)
 local soldLabel = Instance.new("TextLabel", soldRow)
 soldLabel.Size = UDim2.new(0.6, 0, 1, 0)
@@ -2312,10 +1925,10 @@ soldValue.TextSize = 12
 soldValue.TextColor3 = C.accentGlow
 soldValue.TextXAlignment = Enum.TextXAlignment.Right
 
--- SISA BAHAN
+-- Sisa Bahan
 local bahanLabel = Instance.new("TextLabel", fullyScroll)
 bahanLabel.Size = UDim2.new(1, 0, 0, 22)
-bahanLabel.Position = UDim2.new(0, 0, 0, 370)
+bahanLabel.Position = UDim2.new(0, 0, 0, 380)
 bahanLabel.BackgroundTransparency = 1
 bahanLabel.Text = "SISA BAHAN:"
 bahanLabel.Font = Enum.Font.GothamBold
@@ -2407,10 +2020,10 @@ emptyValue.TextSize = 11
 emptyValue.TextColor3 = C.accentGlow
 emptyValue.TextXAlignment = Enum.TextXAlignment.Right
 
--- TOMBOL START/STOP
+-- ========== TOMBOL START/STOP ==========
 local btnFrame = Instance.new("Frame", fullyScroll)
 btnFrame.Size = UDim2.new(1, 0, 0, 50)
-btnFrame.Position = UDim2.new(0, 0, 0, 460)
+btnFrame.Position = UDim2.new(0, 0, 0, 520)
 btnFrame.BackgroundTransparency = 1
 
 local fullyStartBtn = Instance.new("TextButton", btnFrame)
@@ -2434,6 +2047,7 @@ fullyStopBtn.TextColor3 = C.text
 Instance.new("UICorner", fullyStopBtn).CornerRadius = UDim.new(0, 8)
 fullyStopBtn.Visible = false
 
+-- START button logic
 fullyStartBtn.MouseButton1Click:Connect(function()
     if fullyRunning then return end
     if not fullySelectedApart then
@@ -2448,7 +2062,6 @@ fullyStartBtn.MouseButton1Click:Connect(function()
     end
     
     fullyTargetMS = getTargetMS()
-    createBasePlate()
     fullyRunning = true
     fullyStartBtn.Visible = false
     fullyStopBtn.Visible = true
@@ -2458,6 +2071,7 @@ fullyStartBtn.MouseButton1Click:Connect(function()
     task.spawn(fullyNVLoop)
 end)
 
+-- STOP button logic
 fullyStopBtn.MouseButton1Click:Connect(function()
     fullyRunning = false
     fullyStartBtn.Visible = true
@@ -2466,7 +2080,7 @@ fullyStopBtn.MouseButton1Click:Connect(function()
     fullyStatusLabel.TextColor3 = C.orange
 end)
 
--- UPDATE STATISTIK
+-- Update statistik setiap 0.5 detik
 task.spawn(function()
     while true do
         task.wait(0.5)

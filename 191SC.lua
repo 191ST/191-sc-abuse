@@ -1,4 +1,4 @@
--- FULLY NV FINAL (BASEPLATE ABU-ABU 6 STUDS, BLINK 5, COOLDOWN 1)
+-- FULLY NV FINAL (LENGKAP, BLINK 5 STUDS, COOLDOWN 1 DETIK, BASEPLATE DI ROAD)
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
@@ -15,7 +15,6 @@ local function equip(name)
         task.wait(0.3)
         return true
     end
-    return false
 end
 
 local function countItem(name)
@@ -40,61 +39,81 @@ local function spamE(times)
     task.wait(0.3)
 end
 
--- ========== BASEPLATE (ABU-ABU, 6 STUDS DI BAWAH PLAYER) ==========
+-- ========== BASEPLATE (posisi tetap berdasarkan road) ==========
 local basePlate = nil
+local roadY = nil
+
+local function findRoadY()
+    local keywords = {"road","street","sidewalk","pavement","asphalt","ground","floor","path","lane","crossing","jalan","trotoar","jalanan"}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            local name = obj.Name:lower()
+            for _, kw in pairs(keywords) do
+                if name:find(kw) then
+                    return obj.Position.Y
+                end
+            end
+            if obj.Parent and obj.Parent.Name:lower():find("road") then
+                return obj.Position.Y
+            end
+        end
+    end
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    return hrp and hrp.Position.Y - 6 or 0
+end
+
 local function createBasePlate()
     if basePlate then basePlate:Destroy() end
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local plateY = hrp.Position.Y - 6
+    roadY = findRoadY()
+    local plateY = roadY - 6
     local plate = Instance.new("Part")
     plate.Size = Vector3.new(1000, 1, 1000)
-    plate.CFrame = CFrame.new(hrp.Position.X, plateY, hrp.Position.Z)
+    plate.CFrame = CFrame.new(0, plateY, 0)
     plate.Anchored = true
     plate.CanCollide = true
     plate.Material = Enum.Material.SmoothPlastic
-    plate.Color = Color3.fromRGB(128, 128, 128)  -- abu-abu
+    plate.Color = Color3.fromRGB(128, 128, 128)
     plate.Transparency = 0
     plate.Name = "FullyNV_BasePlate"
     plate.Parent = workspace
     basePlate = plate
-    print("✅ Baseplate abu-abu dibuat di Y = " .. plateY)
+    print("✅ Baseplate abu-abu dibuat di Y = " .. plateY .. " (berdasarkan road)")
 end
 
--- ========== TELEPORT DENGAN TURUN 6 → BLINK BAWAH → SAMPAI → NAIK 6 ==========
-local function moveToTarget(targetPos)
+-- ========== BLINK (5 studs per step, COOLDOWN 1 DETIK) ==========
+local function moveByBlink(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
 
-    -- 1. TURUN 6 STUDS KE BAWAH (ke baseplate)
-    hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 6, hrp.Position.Z)
-    task.wait(0.2)
+    -- 1. TURUN KE BASEPLATE (Y = roadY - 6)
+    hrp.CFrame = CFrame.new(hrp.Position.X, roadY - 6, hrp.Position.Z)
+    task.wait(0.1)
 
-    -- 2. BLINK DI BAWAH (5 studs per step, cooldown 1 detik)
-    local targetXZ = Vector3.new(targetPos.X, hrp.Position.Y, targetPos.Z)
+    local targetXZ = Vector3.new(targetPos.X, roadY - 6, targetPos.Z)
+
+    -- 2. BLINK STEP by STEP (5 studs, cooldown 1 detik)
     while fullyActive and (hrp.Position - targetXZ).Magnitude > 5 do
         local dir = (targetXZ - hrp.Position).Unit
         local newPos = hrp.Position + dir * 5
         hrp.CFrame = CFrame.new(newPos)
-        task.wait(1)  -- cooldown 1 detik
+        task.wait(1)   -- COOLDOWN 1 DETIK
         char = player.Character
         hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then break end
     end
 
-    -- 3. LOMPAT TERAKHIR KE TARGET X,Z (masih di bawah)
-    if hrp then
+    -- 3. LANGKAH TERAKHIR (sisa jarak <= 5)
+    if hrp and fullyActive then
         hrp.CFrame = CFrame.new(targetXZ)
     end
 
-    -- 4. NAIK 6 STUDS KE ATAS (kembali ke permukaan target)
-    if hrp then
+    -- 4. NAIK KE PERMUKAAN (Y target + 2)
+    if hrp and fullyActive then
         hrp.CFrame = CFrame.new(hrp.Position.X, targetPos.Y + 2, hrp.Position.Z)
     end
-    task.wait(0.3)
-    return true
+    task.wait(0.2)
+    return fullyActive
 end
 
 -- ========== TWEEN UNTUK APART (slow tween 2 detik) ==========
@@ -245,11 +264,11 @@ local stopBtn = nil
 local function mainLoop()
     while fullyActive do
         if statusLabel then statusLabel.Text = "🚀 Ke NPC Beli..." end
-        if not moveToTarget(NPC_BUY) then break end
+        if not moveByBlink(NPC_BUY) then break end
         if not buyIngredients(targetMS) then break end
 
         if statusLabel then statusLabel.Text = "🚀 Ke " .. selectedApart .. "..." end
-        if not moveToTarget(APART_POS[selectedApart]) then break end
+        if not moveByBlink(APART_POS[selectedApart]) then break end
 
         for i = 1, targetMS do
             if not fullyActive then break end
@@ -258,7 +277,7 @@ local function mainLoop()
         end
 
         if statusLabel then statusLabel.Text = "🚀 Ke NPC Jual..." end
-        if not moveToTarget(NPC_SELL) then break end
+        if not moveByBlink(NPC_SELL) then break end
         if not sellAllMS() then break end
 
         if statusLabel then statusLabel.Text = "🔄 Loop selesai, ulang..." end
@@ -286,7 +305,6 @@ Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
-titleBar.BorderSizePixel = 0
 Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 
 local title = Instance.new("TextLabel", titleBar)
@@ -629,4 +647,4 @@ do
     end)
 end
 
-print("[FULLY NV] LOADED. Baseplate abu-abu 6 studs di bawah. Pilih apart & pot, lalu START.")
+print("[FULLY NV] LOADED. Baseplate abu-abu dari road. Pilih apart & pot, lalu START.")

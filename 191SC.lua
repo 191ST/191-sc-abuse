@@ -1,8 +1,7 @@
--- FULLY NV STANDALONE (FINAL) - PASTI JALAN, GUI MUNCUL
+-- FULLY NV FINAL (BASEPLATE ABU-ABU 6 STUDS, BLINK 5, COOLDOWN 1)
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 
 local buyRemote = game:GetService("ReplicatedStorage").RemoteEvents.StorePurchase
@@ -39,6 +38,75 @@ local function spamE(times)
         task.wait(0.05)
     end
     task.wait(0.3)
+end
+
+-- ========== BASEPLATE (ABU-ABU, 6 STUDS DI BAWAH PLAYER) ==========
+local basePlate = nil
+local function createBasePlate()
+    if basePlate then basePlate:Destroy() end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local plateY = hrp.Position.Y - 6
+    local plate = Instance.new("Part")
+    plate.Size = Vector3.new(1000, 1, 1000)
+    plate.CFrame = CFrame.new(hrp.Position.X, plateY, hrp.Position.Z)
+    plate.Anchored = true
+    plate.CanCollide = true
+    plate.Material = Enum.Material.SmoothPlastic
+    plate.Color = Color3.fromRGB(128, 128, 128)  -- abu-abu
+    plate.Transparency = 0
+    plate.Name = "FullyNV_BasePlate"
+    plate.Parent = workspace
+    basePlate = plate
+    print("✅ Baseplate abu-abu dibuat di Y = " .. plateY)
+end
+
+-- ========== TELEPORT DENGAN TURUN 6 → BLINK BAWAH → SAMPAI → NAIK 6 ==========
+local function moveToTarget(targetPos)
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+
+    -- 1. TURUN 6 STUDS KE BAWAH (ke baseplate)
+    hrp.CFrame = CFrame.new(hrp.Position.X, hrp.Position.Y - 6, hrp.Position.Z)
+    task.wait(0.2)
+
+    -- 2. BLINK DI BAWAH (5 studs per step, cooldown 1 detik)
+    local targetXZ = Vector3.new(targetPos.X, hrp.Position.Y, targetPos.Z)
+    while fullyActive and (hrp.Position - targetXZ).Magnitude > 5 do
+        local dir = (targetXZ - hrp.Position).Unit
+        local newPos = hrp.Position + dir * 5
+        hrp.CFrame = CFrame.new(newPos)
+        task.wait(1)  -- cooldown 1 detik
+        char = player.Character
+        hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then break end
+    end
+
+    -- 3. LOMPAT TERAKHIR KE TARGET X,Z (masih di bawah)
+    if hrp then
+        hrp.CFrame = CFrame.new(targetXZ)
+    end
+
+    -- 4. NAIK 6 STUDS KE ATAS (kembali ke permukaan target)
+    if hrp then
+        hrp.CFrame = CFrame.new(hrp.Position.X, targetPos.Y + 2, hrp.Position.Z)
+    end
+    task.wait(0.3)
+    return true
+end
+
+-- ========== TWEEN UNTUK APART (slow tween 2 detik) ==========
+local function tweenTo(targetCFrame)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local tween = TweenService:Create(hrp, TweenInfo.new(2.0, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
+    tween:Play()
+    tween.Completed:Wait()
+    if hrp and (hrp.Position - targetCFrame.Position).Magnitude > 3 then
+        hrp.CFrame = targetCFrame
+    end
 end
 
 -- ========== KOORDINAT ==========
@@ -86,41 +154,12 @@ local apartCoords = {
     },
 }
 
--- ========== TELEPORT BLINK (5 studs, cooldown 1 detik) ==========
-local function blinkTo(targetPos)
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    while running and (hrp.Position - targetPos).Magnitude > 5 do
-        local dir = (targetPos - hrp.Position).Unit
-        hrp.CFrame = CFrame.new(hrp.Position + dir * 5)
-        task.wait(1)
-        char = player.Character
-        hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then break end
-    end
-    if hrp then hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0)) end
-    return true
-end
-
--- ========== TWEEN UNTUK APART (slow tween 2 detik) ==========
-local function tweenTo(targetCFrame)
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local tween = TweenService:Create(hrp, TweenInfo.new(2.0, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
-    tween:Play()
-    tween.Completed:Wait()
-    if hrp and (hrp.Position - targetCFrame.Position).Magnitude > 3 then
-        hrp.CFrame = targetCFrame
-    end
-end
-
 -- ========== PROSES MASAK DI APART ==========
 local function cookAtApartment()
     local coords = apartCoords[selectedApart]
     if not coords then return false end
     for i, stage in ipairs(coords) do
-        if not running then return false end
+        if not fullyActive then return false end
         if statusLabel then statusLabel.Text = "→ Tahap " .. i end
         if type(stage) == "table" then
             tweenTo(selectedPot == "KANAN" and stage.kanan or stage.kiri)
@@ -134,7 +173,7 @@ local function cookAtApartment()
     equip("Water")
     spamE(10)
     task.wait(20)
-    if not running then return false end
+    if not fullyActive then return false end
     if statusLabel then statusLabel.Text = "🧂 Sugar..." end
     equip("Sugar Block Bag")
     spamE(10)
@@ -145,7 +184,7 @@ local function cookAtApartment()
     task.wait(1)
     if statusLabel then statusLabel.Text = "🔥 Cooking 45 detik..." end
     task.wait(45)
-    if not running then return false end
+    if not fullyActive then return false end
     if statusLabel then statusLabel.Text = "🎒 Take Marshmallow..." end
     equip("Empty Bag")
     spamE(10)
@@ -154,11 +193,11 @@ local function cookAtApartment()
     return true
 end
 
--- ========== BELI BAHAN ==========
+-- ========== BELI & JUAL ==========
 local function buyIngredients(amount)
     if statusLabel then statusLabel.Text = "🛒 Membeli " .. amount .. " set..." end
     for i = 1, amount do
-        if not running then return false end
+        if not fullyActive then return false end
         pcall(function()
             buyRemote:FireServer("Water", 1)
             task.wait(0.4)
@@ -173,13 +212,12 @@ local function buyIngredients(amount)
     return true
 end
 
--- ========== JUAL SEMUA MASSHROM ==========
 local function sellAllMS()
     if statusLabel then statusLabel.Text = "💰 Menjual..." end
     local sold = 0
     local bags = {"Small Marshmallow Bag", "Medium Marshmallow Bag", "Large Marshmallow Bag"}
     for _, bag in pairs(bags) do
-        while running and countItem(bag) > 0 do
+        while fullyActive and countItem(bag) > 0 do
             if equip(bag) then
                 spamE(10)
                 task.wait(0.8)
@@ -194,7 +232,7 @@ local function sellAllMS()
 end
 
 -- ========== LOOP UTAMA ==========
-local running = false
+local fullyActive = false
 local selectedApart = nil
 local selectedPot = nil
 local targetMS = 5
@@ -205,28 +243,28 @@ local startBtn = nil
 local stopBtn = nil
 
 local function mainLoop()
-    while running do
+    while fullyActive do
         if statusLabel then statusLabel.Text = "🚀 Ke NPC Beli..." end
-        if not blinkTo(NPC_BUY) then break end
+        if not moveToTarget(NPC_BUY) then break end
         if not buyIngredients(targetMS) then break end
-        
+
         if statusLabel then statusLabel.Text = "🚀 Ke " .. selectedApart .. "..." end
-        if not blinkTo(APART_POS[selectedApart]) then break end
-        
+        if not moveToTarget(APART_POS[selectedApart]) then break end
+
         for i = 1, targetMS do
-            if not running then break end
+            if not fullyActive then break end
             if statusLabel then statusLabel.Text = "🔥 Masak " .. i .. "/" .. targetMS end
             if not cookAtApartment() then break end
         end
-        
+
         if statusLabel then statusLabel.Text = "🚀 Ke NPC Jual..." end
-        if not blinkTo(NPC_SELL) then break end
+        if not moveToTarget(NPC_SELL) then break end
         if not sellAllMS() then break end
-        
+
         if statusLabel then statusLabel.Text = "🔄 Loop selesai, ulang..." end
         task.wait(1)
     end
-    running = false
+    fullyActive = false
     if statusLabel then statusLabel.Text = "⏹️ FULLY NV STOP" end
     if startBtn then startBtn.Visible = true end
     if stopBtn then stopBtn.Visible = false end
@@ -239,8 +277,8 @@ gui.Parent = player:WaitForChild("PlayerGui")
 gui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame", gui)
-mainFrame.Size = UDim2.new(0, 420, 0, 500)
-mainFrame.Position = UDim2.new(0.5, -210, 0.5, -250)
+mainFrame.Size = UDim2.new(0, 420, 0, 520)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -260)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
 mainFrame.BorderSizePixel = 0
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
@@ -271,7 +309,7 @@ closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
 closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 closeBtn.MouseButton1Click:Connect(function()
-    running = false
+    fullyActive = false
     gui:Destroy()
 end)
 
@@ -280,7 +318,7 @@ scroll.Size = UDim2.new(1, 0, 1, -40)
 scroll.Position = UDim2.new(0, 0, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.ScrollBarThickness = 3
-scroll.CanvasSize = UDim2.new(0, 0, 0, 520)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 540)
 
 local pad = Instance.new("UIPadding", scroll)
 pad.PaddingLeft = UDim.new(0, 12)
@@ -292,7 +330,7 @@ local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 8)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- ========== PILIH APART ==========
+-- Pilih Apart
 local apartFrame = Instance.new("Frame", scroll)
 apartFrame.Size = UDim2.new(1, 0, 0, 80)
 apartFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
@@ -342,7 +380,7 @@ apartDropdown.MouseButton1Click:Connect(function()
     task.delay(5, function() pcall(function() menu:Destroy() end) end)
 end)
 
--- ========== PILIH POT ==========
+-- Pilih Pot
 local potFrame = Instance.new("Frame", scroll)
 potFrame.Size = UDim2.new(1, 0, 0, 80)
 potFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
@@ -381,19 +419,15 @@ potKanan.MouseButton1Click:Connect(function()
     selectedPot = "KANAN"
     TweenService:Create(potKanan, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(48, 88, 200)}):Play()
     TweenService:Create(potKiri, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(25, 25, 45)}):Play()
-    potKanan.TextColor3 = Color3.fromRGB(255, 255, 255)
-    potKiri.TextColor3 = Color3.fromRGB(200, 200, 200)
 end)
 
 potKiri.MouseButton1Click:Connect(function()
     selectedPot = "KIRI"
     TweenService:Create(potKiri, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(48, 88, 200)}):Play()
     TweenService:Create(potKanan, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(25, 25, 45)}):Play()
-    potKiri.TextColor3 = Color3.fromRGB(255, 255, 255)
-    potKanan.TextColor3 = Color3.fromRGB(200, 200, 200)
 end)
 
--- ========== SLIDER JUMLAH MS ==========
+-- Slider Jumlah MS
 local sliderFrame = Instance.new("Frame", scroll)
 sliderFrame.Size = UDim2.new(1, 0, 0, 60)
 sliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
@@ -437,19 +471,16 @@ plusBtn.TextSize = 18
 plusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 Instance.new("UICorner", plusBtn).CornerRadius = UDim.new(0, 6)
 
-local currentTarget = 5
 minusBtn.MouseButton1Click:Connect(function()
-    currentTarget = math.max(1, currentTarget - 1)
-    targetVal.Text = tostring(currentTarget)
-    targetMS = currentTarget
+    targetMS = math.max(1, targetMS - 1)
+    targetVal.Text = tostring(targetMS)
 end)
 plusBtn.MouseButton1Click:Connect(function()
-    currentTarget = math.min(50, currentTarget + 1)
-    targetVal.Text = tostring(currentTarget)
-    targetMS = currentTarget
+    targetMS = math.min(50, targetMS + 1)
+    targetVal.Text = tostring(targetMS)
 end)
 
--- ========== STATUS ==========
+-- Status
 local statusFrame = Instance.new("Frame", scroll)
 statusFrame.Size = UDim2.new(1, 0, 0, 50)
 statusFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
@@ -465,7 +496,7 @@ statusLabel.TextSize = 12
 statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 statusLabel.TextXAlignment = Enum.TextXAlignment.Center
 
--- ========== STATISTIK ==========
+-- Statistik
 local statFrame = Instance.new("Frame", scroll)
 statFrame.Size = UDim2.new(1, 0, 0, 60)
 statFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
@@ -507,7 +538,7 @@ soldValue.Font = Enum.Font.GothamBold
 soldValue.TextSize = 16
 soldValue.TextColor3 = Color3.fromRGB(100, 190, 255)
 
--- ========== TOMBOL START/STOP ==========
+-- Tombol Start/Stop
 local btnFrame = Instance.new("Frame", scroll)
 btnFrame.Size = UDim2.new(1, 0, 0, 50)
 btnFrame.BackgroundTransparency = 1
@@ -534,7 +565,7 @@ Instance.new("UICorner", stopBtn).CornerRadius = UDim.new(0, 8)
 stopBtn.Visible = false
 
 startBtn.MouseButton1Click:Connect(function()
-    if running then return end
+    if fullyActive then return end
     if not selectedApart then
         statusLabel.Text = "❌ Pilih apart casino dulu!"
         statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
@@ -545,7 +576,8 @@ startBtn.MouseButton1Click:Connect(function()
         statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
         return
     end
-    running = true
+    createBasePlate()
+    fullyActive = true
     startBtn.Visible = false
     stopBtn.Visible = true
     statusLabel.Text = "✅ FULLY NV START"
@@ -554,14 +586,14 @@ startBtn.MouseButton1Click:Connect(function()
 end)
 
 stopBtn.MouseButton1Click:Connect(function()
-    running = false
+    fullyActive = false
     startBtn.Visible = true
     stopBtn.Visible = false
     statusLabel.Text = "⏹️ FULLY NV STOP"
     statusLabel.TextColor3 = Color3.fromRGB(255, 160, 40)
 end)
 
--- Update statistik loop
+-- Update statistik
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -572,7 +604,7 @@ task.spawn(function()
     end
 end)
 
--- Drag system
+-- Drag window
 do
     local drag = false
     local startPos = nil
@@ -597,4 +629,4 @@ do
     end)
 end
 
-print("[FULLY NV] GUI LOADED! Pilih apart dan pot, lalu klik START.")
+print("[FULLY NV] LOADED. Baseplate abu-abu 6 studs di bawah. Pilih apart & pot, lalu START.")

@@ -1,4 +1,4 @@
--- FULLY NV FINAL (LENGKAP, BLINK 5 STUDS, COOLDOWN 1 DETIK, BASEPLATE DI ROAD)
+-- FULLY NV FINAL (BLINK HALUS 5 STUDS 0.2dt + COOLDOWN 0.8dt, BASEPLATE GLOBAL)
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
@@ -39,84 +39,71 @@ local function spamE(times)
     task.wait(0.3)
 end
 
--- ========== BASEPLATE (posisi tetap berdasarkan road) ==========
+-- ========== BASEPLATE GLOBAL ==========
 local basePlate = nil
-local roadY = nil
-
-local function findRoadY()
-    local keywords = {"road","street","sidewalk","pavement","asphalt","ground","floor","path","lane","crossing","jalan","trotoar","jalanan"}
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            local name = obj.Name:lower()
-            for _, kw in pairs(keywords) do
-                if name:find(kw) then
-                    return obj.Position.Y
-                end
-            end
-            if obj.Parent and obj.Parent.Name:lower():find("road") then
-                return obj.Position.Y
-            end
-        end
-    end
-    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    return hrp and hrp.Position.Y - 6 or 0
-end
+local BASE_Y = -10  -- cukup dalam tapi tidak mengganggu
 
 local function createBasePlate()
     if basePlate then basePlate:Destroy() end
-    roadY = findRoadY()
-    local plateY = roadY - 6
     local plate = Instance.new("Part")
-    plate.Size = Vector3.new(1000, 1, 1000)
-    plate.CFrame = CFrame.new(0, plateY, 0)
+    plate.Size = Vector3.new(2000, 1, 2000)
+    plate.CFrame = CFrame.new(0, BASE_Y, 0)
     plate.Anchored = true
     plate.CanCollide = true
     plate.Material = Enum.Material.SmoothPlastic
     plate.Color = Color3.fromRGB(128, 128, 128)
-    plate.Transparency = 0
+    plate.Transparency = 0.5
     plate.Name = "FullyNV_BasePlate"
     plate.Parent = workspace
     basePlate = plate
-    print("✅ Baseplate abu-abu dibuat di Y = " .. plateY .. " (berdasarkan road)")
+    print("✅ Baseplate global dibuat di Y = " .. BASE_Y)
 end
 
--- ========== BLINK (5 studs per step, COOLDOWN 1 DETIK) ==========
+-- ========== BLINK HALUS (tween 5 studs dalam 0.2dt + cooldown 0.8dt) ==========
 local function moveByBlink(targetPos)
     local char = player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
 
-    -- 1. TURUN KE BASEPLATE (Y = roadY - 6)
-    hrp.CFrame = CFrame.new(hrp.Position.X, roadY - 6, hrp.Position.Z)
+    -- 1. Turun ke baseplate (Y = BASE_Y)
+    local startY = hrp.Position.Y
+    hrp.CFrame = CFrame.new(hrp.Position.X, BASE_Y, hrp.Position.Z)
     task.wait(0.1)
 
-    local targetXZ = Vector3.new(targetPos.X, roadY - 6, targetPos.Z)
+    local targetXZ = Vector3.new(targetPos.X, BASE_Y, targetPos.Z)
+    local step = 5
 
-    -- 2. BLINK STEP by STEP (5 studs, cooldown 1 detik)
-    while fullyActive and (hrp.Position - targetXZ).Magnitude > 5 do
+    -- 2. Blink step by step dengan tween
+    while fullyActive and (hrp.Position - targetXZ).Magnitude > step do
         local dir = (targetXZ - hrp.Position).Unit
-        local newPos = hrp.Position + dir * 5
-        hrp.CFrame = CFrame.new(newPos)
-        task.wait(1)   -- COOLDOWN 1 DETIK
+        local newPos = hrp.Position + dir * step
+        local tween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), {CFrame = CFrame.new(newPos)})
+        tween:Play()
+        tween.Completed:Wait()
+        task.wait(0.8)  -- sisa cooldown sampai total 1 detik
         char = player.Character
         hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then break end
     end
 
-    -- 3. LANGKAH TERAKHIR (sisa jarak <= 5)
+    -- 3. Langkah terakhir (sisa <= 5)
     if hrp and fullyActive then
-        hrp.CFrame = CFrame.new(targetXZ)
+        local finalTween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetXZ)})
+        finalTween:Play()
+        finalTween:Wait()
     end
 
-    -- 4. NAIK KE PERMUKAAN (Y target + 2)
+    -- 4. Naik ke permukaan (Y target + 2)
     if hrp and fullyActive then
-        hrp.CFrame = CFrame.new(hrp.Position.X, targetPos.Y + 2, hrp.Position.Z)
+        local upTween = TweenService:Create(hrp, TweenInfo.new(0.3, Enum.EasingStyle.Linear), {CFrame = CFrame.new(hrp.Position.X, targetPos.Y + 2, hrp.Position.Z)})
+        upTween:Play()
+        upTween:Wait()
     end
     task.wait(0.2)
     return fullyActive
 end
 
--- ========== TWEEN UNTUK APART (slow tween 2 detik) ==========
+-- ========== TWEEN UNTUK APART (slow tween 2 detik per tahap) ==========
 local function tweenTo(targetCFrame)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -289,7 +276,7 @@ local function mainLoop()
     if stopBtn then stopBtn.Visible = false end
 end
 
--- ========== GUI ==========
+-- ========== GUI (sama seperti sebelumnya, hanya ditambah drag & tombol stop) ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "FULLY_NV"
 gui.Parent = player:WaitForChild("PlayerGui")
@@ -299,7 +286,6 @@ local mainFrame = Instance.new("Frame", gui)
 mainFrame.Size = UDim2.new(0, 420, 0, 520)
 mainFrame.Position = UDim2.new(0.5, -210, 0.5, -260)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-mainFrame.BorderSizePixel = 0
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
 local titleBar = Instance.new("Frame", mainFrame)
@@ -310,11 +296,10 @@ Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
 local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
-title.Text = "FULLY NV - AUTO APART CASINO"
+title.Text = "FULLY NV"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 14
+title.TextSize = 16
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextXAlignment = Enum.TextXAlignment.Center
 
 local closeBtn = Instance.new("TextButton", titleBar)
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -324,7 +309,6 @@ closeBtn.Text = "X"
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 14
 closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
-closeBtn.BorderSizePixel = 0
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 closeBtn.MouseButton1Click:Connect(function()
     fullyActive = false
@@ -348,7 +332,7 @@ local layout = Instance.new("UIListLayout", scroll)
 layout.Padding = UDim.new(0, 8)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Pilih Apart
+-- Apart (sama seperti sebelumnya, simpan)
 local apartFrame = Instance.new("Frame", scroll)
 apartFrame.Size = UDim2.new(1, 0, 0, 80)
 apartFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
@@ -373,7 +357,7 @@ apartDropdown.Font = Enum.Font.GothamBold
 apartDropdown.TextSize = 12
 Instance.new("UICorner", apartDropdown).CornerRadius = UDim.new(0, 6)
 
-local apartList = {"APART CASINO 1", "APART CASINO 2", "APART CASINO 3", "APART CASINO 4"}
+local apartList = {"APART CASINO 1","APART CASINO 2","APART CASINO 3","APART CASINO 4"}
 apartDropdown.MouseButton1Click:Connect(function()
     local menu = Instance.new("Frame", scroll)
     menu.Size = UDim2.new(0.8, 0, 0, 120)
@@ -398,7 +382,7 @@ apartDropdown.MouseButton1Click:Connect(function()
     task.delay(5, function() pcall(function() menu:Destroy() end) end)
 end)
 
--- Pilih Pot
+-- Pot
 local potFrame = Instance.new("Frame", scroll)
 potFrame.Size = UDim2.new(1, 0, 0, 80)
 potFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
@@ -419,8 +403,6 @@ potKanan.Position = UDim2.new(0.05, 0, 0, 35)
 potKanan.BackgroundColor3 = Color3.fromRGB(48, 88, 200)
 potKanan.Text = "KANAN"
 potKanan.TextColor3 = Color3.fromRGB(255, 255, 255)
-potKanan.Font = Enum.Font.GothamBold
-potKanan.TextSize = 12
 Instance.new("UICorner", potKanan).CornerRadius = UDim.new(0, 6)
 
 local potKiri = Instance.new("TextButton", potFrame)
@@ -429,8 +411,6 @@ potKiri.Position = UDim2.new(0.55, 0, 0, 35)
 potKiri.BackgroundColor3 = Color3.fromRGB(25, 25, 45)
 potKiri.Text = "KIRI"
 potKiri.TextColor3 = Color3.fromRGB(255, 255, 255)
-potKiri.Font = Enum.Font.GothamBold
-potKiri.TextSize = 12
 Instance.new("UICorner", potKiri).CornerRadius = UDim.new(0, 6)
 
 potKanan.MouseButton1Click:Connect(function()
@@ -438,14 +418,13 @@ potKanan.MouseButton1Click:Connect(function()
     TweenService:Create(potKanan, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(48, 88, 200)}):Play()
     TweenService:Create(potKiri, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(25, 25, 45)}):Play()
 end)
-
 potKiri.MouseButton1Click:Connect(function()
     selectedPot = "KIRI"
     TweenService:Create(potKiri, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(48, 88, 200)}):Play()
     TweenService:Create(potKanan, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(25, 25, 45)}):Play()
 end)
 
--- Slider Jumlah MS
+-- Slider target MS
 local sliderFrame = Instance.new("Frame", scroll)
 sliderFrame.Size = UDim2.new(1, 0, 0, 60)
 sliderFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
@@ -556,7 +535,7 @@ soldValue.Font = Enum.Font.GothamBold
 soldValue.TextSize = 16
 soldValue.TextColor3 = Color3.fromRGB(100, 190, 255)
 
--- Tombol Start/Stop
+-- Tombol
 local btnFrame = Instance.new("Frame", scroll)
 btnFrame.Size = UDim2.new(1, 0, 0, 50)
 btnFrame.BackgroundTransparency = 1
@@ -611,7 +590,6 @@ stopBtn.MouseButton1Click:Connect(function()
     statusLabel.TextColor3 = Color3.fromRGB(255, 160, 40)
 end)
 
--- Update statistik
 task.spawn(function()
     while true do
         task.wait(0.5)
@@ -622,7 +600,7 @@ task.spawn(function()
     end
 end)
 
--- Drag window
+-- Drag
 do
     local drag = false
     local startPos = nil
@@ -647,4 +625,4 @@ do
     end)
 end
 
-print("[FULLY NV] LOADED. Baseplate abu-abu dari road. Pilih apart & pot, lalu START.")
+print("[FULLY NV] READY. Pilih apart & pot, lalu START.")

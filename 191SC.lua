@@ -1,4 +1,4 @@
--- ELIXIR 3.5 -- FULLY NV INTEGRATED (BLINK + TWEEN)
+-- ELIXIR 3.5 -- FULLY NV + AUTO BASEPLATE 2999x2999
 local Players = game:GetService("Players")
 local player = game.Players.LocalPlayer
 local vim = game:GetService("VirtualInputManager")
@@ -7,6 +7,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 repeat task.wait() until player.Character
 
@@ -28,6 +29,8 @@ local fullyRunningNV = false
 local fullyTargetNV = 5
 local selectedApartNV = "APART CASINO 1"
 local selectedPotNV = "KANAN"
+local baseplateSpawned = false
+local currentBaseplate = nil
 
 -- ============================================================
 -- ANTI AFK
@@ -91,7 +94,58 @@ local function fill(bar, time)
 end
 
 -- ============================================================
--- COLOR PALETTE
+-- BASEPLATE SPAWNER (2999x2999, 7 studs below lowest map point)
+-- ============================================================
+local function spawnBaseplate2999()
+    -- Hapus baseplate lama jika ada
+    if currentBaseplate and currentBaseplate.Parent then
+        currentBaseplate:Destroy()
+    end
+    
+    -- Cari titik terendah map
+    local lowestPoint = math.huge
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Anchored then
+            local bottomY = obj.Position.Y - (obj.Size.Y / 2)
+            if bottomY < lowestPoint then
+                lowestPoint = bottomY
+            end
+        end
+    end
+    
+    if lowestPoint == math.huge then
+        lowestPoint = 0
+    end
+    
+    -- Posisi 7 studs DI BAWAH titik terendah
+    local underMapPosition = Vector3.new(0, lowestPoint - 7, 0)
+    
+    -- Buat baseplate ukuran 2999x2999
+    local newBaseplate = Instance.new("Part")
+    newBaseplate.Name = "MegaBaseplate_2999x2999_FullyNV"
+    newBaseplate.Size = Vector3.new(2999, 1, 2999)
+    newBaseplate.Position = underMapPosition
+    newBaseplate.Anchored = true
+    newBaseplate.BrickColor = BrickColor.new("Dark grey")
+    newBaseplate.Material = Enum.Material.Granite
+    newBaseplate.Transparency = 0.3
+    newBaseplate.Parent = Workspace
+    
+    -- Add efek glow
+    local glow = Instance.new("SelectionBox", newBaseplate)
+    glow.Adornee = newBaseplate
+    glow.Color3 = Color3.fromRGB(148, 80, 255)
+    glow.Transparency = 0.7
+    glow.LineThickness = 0.5
+    
+    currentBaseplate = newBaseplate
+    
+    print("[System Dark] Baseplate 2999x2999 spawned di Y = " .. underMapPosition.Y .. " (7 studs di bawah map)")
+    return newBaseplate
+end
+
+-- ============================================================
+-- COLOR PALETTE (LENGKAP DENGAN C.line)
 -- ============================================================
 local C = {
     bg        = Color3.fromRGB(8,  7,  14),
@@ -113,6 +167,9 @@ local C = {
     purple    = Color3.fromRGB(148, 80,  255),
     cyan      = Color3.fromRGB(50,  210, 230),
     orange    = Color3.fromRGB(255, 160, 40),
+    line      = Color3.fromRGB(38,  32,  62),  -- FIX: C.line sekarang terdefinisi
+    blue      = Color3.fromRGB(82,  130, 255),
+    blueD     = Color3.fromRGB(48,  88,  200),
 }
 
 -- ============================================================
@@ -414,6 +471,85 @@ local function stepperRow(p, y, lbl, minV, maxV, defV, unit)
     return function() return curVal end
 end
 
+local function makeSlider(parent, labelText, minV, maxV, defaultV, order, callback)
+    local wrap = mkFrame(parent, C.card, 2)
+    wrap.Size = UDim2.new(1, -24, 0, 54)
+    wrap.Position = UDim2.new(0, 12, 0, order)
+    corner(wrap, 8)
+
+    local lbl = mkLabel(wrap, labelText, C.textMid, Enum.Font.GothamSemibold, Enum.TextXAlignment.Left, 3, 11)
+    lbl.Size = UDim2.new(1, -80, 0, 16)
+    lbl.Position = UDim2.new(0, 12, 0, 8)
+
+    local valLbl = mkLabel(wrap, tostring(defaultV), C.accentGlow, Enum.Font.GothamBold, Enum.TextXAlignment.Right, 3, 12)
+    valLbl.Size = UDim2.new(0, 42, 0, 16)
+    valLbl.Position = UDim2.new(1, -52, 0, 8)
+
+    local track = mkFrame(wrap, C.border, 3)
+    track.Size = UDim2.new(1, -24, 0, 5)
+    track.Position = UDim2.new(0, 12, 0, 34)
+    track.Active = true
+    corner(track, 2)
+
+    local fill = mkFrame(track, C.accent, 4)
+    fill.Size = UDim2.new((defaultV - minV)/(maxV - minV), 0, 1, 0)
+    corner(fill, 2)
+
+    local knob = mkFrame(track, Color3.new(1,1,1), 5)
+    knob.Size = UDim2.new(0, 14, 0, 14)
+    knob.Position = UDim2.new((defaultV - minV)/(maxV - minV), -7, 0.5, -7)
+    corner(knob, 7)
+    stroke(knob, C.accent, 2)
+
+    local dragging = false
+    local function update(x)
+        local pos = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+        local val = math.floor(minV + pos * (maxV - minV))
+        knob.Position = UDim2.new(pos, -7, 0.5, -7)
+        fill.Size = UDim2.new(pos, 0, 1, 0)
+        valLbl.Text = tostring(val)
+        if callback then callback(val) end
+    end
+
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            update(input.Position.X)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            update(input.Position.X)
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    return wrap, valLbl
+end
+
+local function makeProgressBar(parent, label, y)
+    local f = mkFrame(parent, C.card, 2)
+    f.Size = UDim2.new(1, -24, 0, 34)
+    f.Position = UDim2.new(0, 12, 0, y)
+    corner(f, 8)
+    local l = mkLabel(f, label, C.textMid, Enum.Font.Gotham, Enum.TextXAlignment.Left, 3, 10)
+    l.Size = UDim2.new(1, -10, 0, 14)
+    l.Position = UDim2.new(0, 10, 0, 5)
+    local bg = mkFrame(f, C.border, 3)
+    bg.Size = UDim2.new(1, -20, 0, 5)
+    bg.Position = UDim2.new(0, 10, 0, 22)
+    corner(bg, 2)
+    local bar = mkFrame(bg, C.accent, 4)
+    bar.Size = UDim2.new(0, 0, 1, 0)
+    return bar
+end
+
 -- ============================================================
 -- MAIN WINDOW
 -- ============================================================
@@ -531,7 +667,7 @@ for i, name in ipairs(menuNames) do
 end
 
 -- ============================================================
--- FARM PAGE FUNCTIONS
+-- FARM PAGE
 -- ============================================================
 local fp = pages["FARM"]
 local lblStatus = mkLabel(fp, "Siap digunakan", C.cyan, Enum.Font.Gotham, Enum.TextXAlignment.Center, 4, 10)
@@ -587,23 +723,6 @@ local function cook()
     lblStatus.Text = "IDLE"
 end
 
-local function makeProgressBar(parent, label, y)
-    local f = mkFrame(parent, C.card, 2)
-    f.Size = UDim2.new(1, -24, 0, 34)
-    f.Position = UDim2.new(0, 12, 0, y)
-    corner(f, 8)
-    local l = mkLabel(f, label, C.textMid, Enum.Font.Gotham, Enum.TextXAlignment.Left, 3, 10)
-    l.Size = UDim2.new(1, -10, 0, 14)
-    l.Position = UDim2.new(0, 10, 0, 5)
-    local bg = mkFrame(f, C.border, 3)
-    bg.Size = UDim2.new(1, -20, 0, 5)
-    bg.Position = UDim2.new(0, 10, 0, 22)
-    corner(bg, 2)
-    local bar = mkFrame(bg, C.accent, 4)
-    bar.Size = UDim2.new(0, 0, 1, 0)
-    return bar
-end
-
 local buying = false
 local function autoBuy()
     if buying then return end
@@ -647,7 +766,7 @@ sellToggleBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- AUTO PAGE FUNCTIONS (disederhanakan)
+-- AUTO PAGE
 -- ============================================================
 local ap = pages["AUTO"]
 secHdr(ap, 8, "AUTO FARM LOOP")
@@ -678,7 +797,7 @@ autoFarmToggle.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- STATUS PAGE (sederhana)
+-- STATUS PAGE
 -- ============================================================
 local sp = pages["STATUS"]
 local statWater = statRow(sp, 20, "💧", "Water", C.cyan)
@@ -689,7 +808,7 @@ local statMedium = statRow(sp, 180, "🍬", "Medium MS", C.green)
 local statLarge = statRow(sp, 220, "🍬", "Large MS", C.green)
 
 -- ============================================================
--- TP PAGE (sederhana)
+-- TP PAGE
 -- ============================================================
 local tp = pages["TP"]
 local tpBtns = {
@@ -704,7 +823,7 @@ for _, btn in ipairs(tpBtns) do
 end
 
 -- ============================================================
--- ESP PAGE (sederhana)
+-- ESP PAGE
 -- ============================================================
 local ep = pages["ESP"]
 local espToggle = makeActionBtn(ep, "ENABLE ESP", C.accentDim, 20)
@@ -714,8 +833,40 @@ espToggle.MouseButton1Click:Connect(function()
     espToggle.Text = espEnabled and "DISABLE ESP" or "ENABLE ESP"
 end)
 
+-- Simple ESP Drawing
+local Camera = workspace.CurrentCamera
+local ESPLines = {}
+local function updateESP()
+    if not espEnabled then
+        for _, line in pairs(ESPLines) do if line then line.Visible = false end end
+        return
+    end
+    -- Simple ESP implementation
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local pos, onScreen = Camera:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
+            if onScreen then
+                if not ESPLines[plr] then
+                    ESPLines[plr] = Drawing.new("Text")
+                    ESPLines[plr].Size = 12
+                    ESPLines[plr].Center = true
+                    ESPLines[plr].Color = Color3.fromRGB(148, 80, 255)
+                    ESPLines[plr].Outline = true
+                end
+                ESPLines[plr].Text = plr.Name
+                ESPLines[plr].Position = Vector2.new(pos.X, pos.Y - 30)
+                ESPLines[plr].Visible = true
+            elseif ESPLines[plr] then
+                ESPLines[plr].Visible = false
+            end
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(updateESP)
+
 -- ============================================================
--- RESPAWN PAGE (sederhana)
+-- RESPAWN PAGE
 -- ============================================================
 local rp = pages["RESPAWN"]
 local spawnPos = Vector3.new(511, 3, 601)
@@ -727,7 +878,7 @@ respawnBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- UNDERPOT PAGE (sederhana)
+-- UNDERPOT PAGE
 -- ============================================================
 local up = pages["UNDERPOT"]
 local lowerBtn = makeActionBtn(up, "LOWER ROAD", C.accentDim, 20)
@@ -742,7 +893,7 @@ lowerBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- FULLY NV PAGE (BLINK + TWEEN)
+-- FULLY NV PAGE (BLINK + TWEEN + BASEPLATE SPAWNER)
 -- ============================================================
 local fullyNVPage = pages["FULLYNV"]
 local fullyNVScroll = Instance.new("ScrollingFrame")
@@ -756,20 +907,21 @@ fullyNVScroll.Parent = fullyNVPage
 secHdr(fullyNVScroll, 8, "AUTO FULLY NV — APART CASINO")
 
 local infoBox = mkFrame(fullyNVScroll, Color3.fromRGB(11,16,28), 3)
-infoBox.Size = UDim2.new(1, -24, 0, 58)
+infoBox.Size = UDim2.new(1, -24, 0, 70)
 infoBox.Position = UDim2.new(0, 12, 0, 26)
 corner(infoBox, 8)
 stroke(infoBox, C.purple, 1)
 
-mkLabel(infoBox, "Blink bawah 6 studs + cooldown 1s sebelum setiap gerakan", C.cyan, Enum.Font.Gotham, Enum.TextXAlignment.Left, 4, 9).Size = UDim2.new(1, -10, 0.5, 0)
-mkLabel(infoBox, "Di dalam Apart: Tween (<2s) | Luar: Blink", C.orange, Enum.Font.Gotham, Enum.TextXAlignment.Left, 4, 9).Size = UDim2.new(1, -10, 0.5, 0)
+mkLabel(infoBox, "Blink bawah 6 studs + cooldown 1s sebelum setiap gerakan", C.cyan, Enum.Font.Gotham, Enum.TextXAlignment.Left, 4, 9).Size = UDim2.new(1, -10, 0.33, 0)
+mkLabel(infoBox, "Di dalam Apart: Tween (<2s) | Luar: Blink", C.orange, Enum.Font.Gotham, Enum.TextXAlignment.Left, 4, 9).Size = UDim2.new(1, -10, 0.33, 0)
+mkLabel(infoBox, "BASEPLATE 2999x2999 otomatis spawn 7 studs di bawah map saat START", C.green, Enum.Font.Gotham, Enum.TextXAlignment.Left, 4, 9).Size = UDim2.new(1, -10, 0.33, 0)
 
-line(fullyNVScroll, 90)
-secHdr(fullyNVScroll, 96, "PILIH APART")
+line(fullyNVScroll, 102)
+secHdr(fullyNVScroll, 108, "PILIH APART")
 
 local apartCard = mkFrame(fullyNVScroll, C.card, 3)
 apartCard.Size = UDim2.new(1, -24, 0, 50)
-apartCard.Position = UDim2.new(0, 12, 0, 114)
+apartCard.Position = UDim2.new(0, 12, 0, 126)
 corner(apartCard, 8)
 
 local apartNames = {"APT 1", "APT 2", "APT 3", "APT 4"}
@@ -790,12 +942,12 @@ for i, name in ipairs(apartNames) do
     end)
 end
 
-line(fullyNVScroll, 170)
-secHdr(fullyNVScroll, 176, "PILIH POT")
+line(fullyNVScroll, 182)
+secHdr(fullyNVScroll, 188, "PILIH POT")
 
 local potCard = mkFrame(fullyNVScroll, C.card, 3)
 potCard.Size = UDim2.new(1, -24, 0, 50)
-potCard.Position = UDim2.new(0, 12, 0, 194)
+potCard.Position = UDim2.new(0, 12, 0, 206)
 corner(potCard, 8)
 
 local potKanan = mkBtn(potCard, "POT KANAN", C.text, Enum.Font.GothamBold, 4, 10)
@@ -823,24 +975,24 @@ potKiri.MouseButton1Click:Connect(function()
     TweenService:Create(potKiri, TweenInfo.new(0.1), {BackgroundColor3 = C.purple}):Play()
 end)
 
-line(fullyNVScroll, 250)
-secHdr(fullyNVScroll, 256, "SETTING")
-local getTarget = stepperRow(fullyNVScroll, 272, "Target MS per loop", 1, 50, 5, "x")
+line(fullyNVScroll, 262)
+secHdr(fullyNVScroll, 268, "SETTING")
+local getTarget = stepperRow(fullyNVScroll, 284, "Target MS per loop", 1, 50, 5, "x")
 
-line(fullyNVScroll, 322)
-secHdr(fullyNVScroll, 328, "STATUS")
+line(fullyNVScroll, 334)
+secHdr(fullyNVScroll, 340, "STATUS")
 local statusBox = mkFrame(fullyNVScroll, C.bg, 3)
 statusBox.Size = UDim2.new(1, -24, 0, 28)
-statusBox.Position = UDim2.new(0, 12, 0, 346)
+statusBox.Position = UDim2.new(0, 12, 0, 358)
 corner(statusBox, 8)
 stroke(statusBox, C.line, 1)
 local statusLbl = mkLabel(statusBox, "Belum dimulai", C.textMid, Enum.Font.Gotham, Enum.TextXAlignment.Center, 4, 10)
 statusLbl.Size = UDim2.new(1, -8, 1, 0)
 
-local msStat = statRow(fullyNVScroll, 386, "🍬", "Total MS Dibuat", C.cyan)
+local msStat = statRow(fullyNVScroll, 398, "🍬", "Total MS Dibuat", C.cyan)
 
-local startW, startB = actionBtn(fullyNVScroll, 426, "⚡ START FULLY NV", C.purple, C.text)
-local stopW, stopB = actionBtn(fullyNVScroll, 426, "■ STOP FULLY NV", C.red, C.text)
+local startW, startB = actionBtn(fullyNVScroll, 438, "⚡ START FULLY NV", C.purple, C.text)
+local stopW, stopB = actionBtn(fullyNVScroll, 438, "■ STOP FULLY NV", C.red, C.text)
 stopW.Visible = false
 
 local function setNVStatus(msg, col)
@@ -921,9 +1073,16 @@ local function spamE()
     end
 end
 
--- MAIN LOOP
+-- MAIN LOOP DENGAN BASEPLATE SPAWN
 local function doFullyNV()
     fullyRunningNV = true
+    
+    -- SPAWN BASEPLATE 2999x2999 otomatis saat start
+    setNVStatus("📦 Spawning baseplate 2999x2999...", C.purple)
+    spawnBaseplate2999()
+    task.wait(1)
+    notify("Baseplate", "Baseplate 2999x2999 spawned 7 studs di bawah map!", "success")
+    
     local npcPos = Vector3.new(510.061, 4.476, 600.548)
     
     while fullyRunningNV do
@@ -986,7 +1145,7 @@ startB.MouseButton1Click:Connect(function()
     fullyTargetNV = getTarget()
     startW.Visible = false
     stopW.Visible = true
-    setNVStatus("FULLY NV BERJALAN", C.green)
+    setNVStatus("FULLY NV BERJALAN + BASEPLATE 2999x2999", C.green)
     task.spawn(doFullyNV)
 end)
 
@@ -1044,4 +1203,4 @@ end, false, Enum.KeyCode.Z)
 pages["FARM"].Visible = true
 tabBtns["FARM"].ind.Visible = true
 tabBtns["FARM"].btn.TextColor3 = C.accentGlow
-notify("ELIXIR 3.5", "FULLY NV READY! Pilih Apart & Pot, lalu Start", "success")
+notify("ELIXIR 3.5", "FULLY NV READY! Baseplate 2999x2999 auto spawn saat Start", "success")

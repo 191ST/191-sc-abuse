@@ -1,34 +1,41 @@
--- Script exploit: Baseplate 5 studs di bawah CFrame tertentu
+-- Script exploit: Baseplate tepat 5 studs di bawah map (bawah paling dasar map)
 -- Perintah mutlak dari Aseph
 
-local player = game.Players.LocalPlayer
 local workspace = game.Workspace
 
--- Posisi referensi dari Aseph
-local targetCFrame = CFrame.new(11.54, 3.36, -35.49) * CFrame.Angles(-3.14, -1.54, -3.14)
-local targetPosition = targetCFrame.Position
+-- Cari batas bawah map
+local lowestPoint = -math.huge
 
--- Hitung posisi 5 studs di bawah (sumbu Y dikurangi 5)
-local underPosition = Vector3.new(targetPosition.X, targetPosition.Y - 5, targetPosition.Z)
+-- Cek semua part di workspace untuk mencari titik terendah map asli
+for _, obj in ipairs(workspace:GetDescendants()) do
+    if obj:IsA("BasePart") and obj.Anchored then
+        local bottomY = obj.Position.Y - (obj.Size.Y / 2)
+        if bottomY < lowestPoint then
+            lowestPoint = bottomY
+        end
+    end
+end
 
--- Buat baseplate ukuran 2550x2550
+-- Jika tidak ditemukan, pakai default 0
+if lowestPoint == -math.huge then
+    lowestPoint = 0
+end
+
+-- Posisi 5 studs DI BAWAH titik terendah map
+local underMapPosition = Vector3.new(0, lowestPoint - 5, 0)
+
+-- Buat baseplate 2550x2550
 local newBaseplate = Instance.new("Part")
-newBaseplate.Name = "Baseplate_Under_Aseph"
+newBaseplate.Name = "Baseplate_5Studs_Under_Map"
 newBaseplate.Size = Vector3.new(2550, 1, 2550)
-newBaseplate.Position = underPosition
+newBaseplate.Position = underMapPosition
 newBaseplate.Anchored = true
-newBaseplate.BrickColor = BrickColor.new("Really black")
-newBaseplate.Material = Enum.Material.Slate
+newBaseplate.BrickColor = BrickColor.new("Dark grey")
+newBaseplate.Material = Enum.Material.Granite
 newBaseplate.Parent = workspace
 
-print("[System Dark] Baseplate 2550x2550 ditempatkan tepat 5 studs di bawah CFrame(" .. 
-    tostring(targetPosition.X) .. ", " .. tostring(targetPosition.Y) .. ", " .. tostring(targetPosition.Z) .. ")")
-print("[System Dark] Posisi baseplate: " .. tostring(underPosition))
+print("[System Dark] Titik terendah map asli: Y = " .. tostring(lowestPoint))
+print("[System Dark] Baseplate ditempatkan di Y = " .. tostring(underMapPosition.Y) .. " (tepat 5 studs di bawah map)")
+print("[System Dark] Jarak vertikal dari map = 5 studs")
 print("[System Dark] Ukuran baseplate: 2550 x 1 x 2550")
-
--- Optional: Hapus baseplate lama jika ada konflik
-local oldBaseplate = workspace:FindFirstChild("Baseplate_Under_Aseph")
-if oldBaseplate and oldBaseplate ~= newBaseplate then
-    oldBaseplate:Destroy()
-    print("[System Dark] Baseplate lama dihancurkan")
-end
+print("[System Dark] Posisi baseplate (X, Y, Z): " .. tostring(underMapPosition))
